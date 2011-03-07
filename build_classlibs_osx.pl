@@ -1,5 +1,6 @@
 use lib ('.', "perl_lib");
-use Cwd;
+use Cwd ;
+use Cwd 'abs_path';
 use File::Path;
 use File::Copy::Recursive qw(dircopy);
 use Getopt::Long;
@@ -10,6 +11,7 @@ print "My Path: $ENV{PATH}\n";
 
 my $root = getcwd();
 
+my $monoroot = abs_path($root."/../Mono");
 my $monodistro = "$root/builds/monodistribution";
 my $lib = "$monodistro/lib";
 my $libmono = "$lib/mono";
@@ -24,8 +26,8 @@ if ($ENV{UNITY_THISISABUILDMACHINE}) {
 	print "not rmtree-ing $root/builds, as we're not on a buildmachine\n";
 }
 
-my $unity=1;
-my $monotouch=1;
+my $unity=0;
+my $monotouch=0;
 my $injectSecurityAttributes=0;
 
 my $skipbuild=0;
@@ -56,53 +58,38 @@ if (not $skipbuild)
 	if ($cleanbuild)
 	{
 		rmtree($monoprefix);
-		chdir("$root/eglib") eq 1 or die ("Failed chdir 1");
-		system("make","clean");
 	}
-	chdir("$root") eq 1 or die ("failed to chdir 2");
+	chdir("$monoroot") eq 1 or die ("failed to chdir 2");
 	if ($cleanbuild)
 	{
 		my $withMonotouch = $monotouch ? "yes" : "no";
 		my $withUnity = $unity ? "yes" : "no";
 		
-		chdir("$root/eglib") eq 1 or die("failed to chdir 3");
-		print(">>>Calling autoreconf in eglib\n");
-		system("autoreconf -i") eq 0 or die ("failed autoreconfing eglib");
-		chdir("$root") eq 1 or die("failed to chdir4");
+		chdir("$monoroot") eq 1 or die("failed to chdir4");
 		print(">>>Calling autoreconf in mono\n");
 		system("autoreconf -i") eq 0 or die("failed to autoreconf mono");
 		print(">>>Calling configure in mono\n");
-		system("./configure","--prefix=$monoprefix","--with-monotouch=$withMonotouch","-with-unity=$withUnity", "--with-glib=embedded","--with-mcs-docs=no","--with-macversion=10.4", "--disable-nls") eq 0 or die ("failing autogenning mono");
+		system("./configure","--prefix=$monoprefix","--with-monotouch=$withMonotouch","-with-unity=$withUnity", "--with-profile4=yes","--with-glib=embedded","--with-mcs-docs=no","--with-macversion=10.4", "--disable-nls") eq 0 or die ("failing autogenning mono");
 		print("calling make clean in mono\n");
 		system("make","clean") eq 0 or die ("failed to make clean");
 	}
 	system("make") eq 0 or die ("Failed running make");
 	system("make install") eq 0 or die ("Failed running make install");
-	print(">>>Making micro lib\n");
-	chdir("$root/mcs/class/corlib") eq 1 or die("failed to chdir corlib");
-	system("make PROFILE=monotouch_bootstrap") eq 0 or die ("Failed making monotouch bootstrap");
-	system("make PROFILE=monotouch MICRO=1 clean") eq 0 or die ("Failed cleaning micro corlib");
-	system("make PROFILE=monotouch MICRO=1") eq 0 or die ("Failed making micro corlib");
-	
 }
 chdir ($root);
 
 $File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
 
-mkpath("$libmono/2.0");
-dircopy("$monoprefix/lib/mono/2.0","$libmono/2.0");
-system("rm $libmono/2.0/*.mdb");
-mkpath("$libmono/micro");
-system("cp $root/mcs/class/lib/monotouch/mscorlib.dll $libmono/micro") eq 0 or die("Failed to copy micro corlib");
-system("cp $monoprefix/lib/mono/gac/Mono.Cecil/*/Mono.Cecil.dll $libmono/2.0") eq 0 or die("failed to copy Mono.Cecil.dll");
+my @profiles = ("2.0","4.0");
+for my $profile (@profiles)
+{
+	mkpath("$libmono/$profile");
+	dircopy("$monoprefix/lib/mono/$profile","$libmono/$profile");
+	system("rm $libmono/$profile/*.mdb");
+	system("cp $monoprefix/lib/mono/gac/Mono.Cecil/*/Mono.Cecil.dll $libmono/$profile") eq 0 or die("failed to copy Mono.Cecil.dll");
+}
 system("cp -r $monoprefix/bin $monodistro/") eq 0 or die ("failed copying bin folder");
-
 system("cp -r $monoprefix/etc $monodistro/") eq 0 or die("failed copy 4");
-mkpath("$root/builds/headers/mono");
-system("cp -r $monoprefix/include/mono-1.0/mono $root/builds/headers/") eq 0 or die("failed copy 5");
-system("cp $root/eglib/src/glib.h $root/builds/headers/") eq 0 or die("failed copying glib.h");
-system("cp $root/eglib/src/eglib-config.hw $root/builds/headers/") eq 0 or die ("failed copying eglib-config.hw");
-system('perl -e \"s/\\bmono_/mangledmono_/g;\" -pi $(find '.$root.'/builds/headers -type f)');
 
 sub CopyIgnoringHiddenFiles
 {
@@ -148,7 +135,7 @@ sub CopyProfileAssembliesToPrefix
 	my $prefix = shift;
 	
 	my $targetDir = "$prefix/lib/mono/$targetName";
-	CopyAssemblies("$root/mcs/class/lib/$sourceName", $targetDir);
+	CopyAssemblies("$monoroot/mcs/class/lib/$sourceName", $targetDir);
 }
 
 my $securityAttributesPath = "tuning/SecurityAttributes";
