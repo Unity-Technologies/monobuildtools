@@ -1,0 +1,6 @@
+builds/embedruntimes/osx/MonoBundleBinary
+builds/embedruntimes/osx/libmono.0.dylib
+builds/embedruntimes/osx/libmono.0.dylib.dSYM
+builds/embedruntimes/osx/libmono.a
+builds/monodistribution/bin/mono
+builds/monodistribution/bin/pedump
