@@ -108,6 +108,7 @@ if (not $skipbuild)
 	my @autogenparams = ();
 	unshift(@autogenparams, "--cache-file=osx.cache");
 	unshift(@autogenparams, "--disable-mcs-build");
+	unshift(@autogenparams, "--with-sgen=no");
 	unshift(@autogenparams, "--with-glib=embedded");
 	if (!$iphone_simulator)
 	{
