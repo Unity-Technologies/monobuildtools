@@ -3,9 +3,10 @@
 # NB! Prereq : ANDROID_NDK_ROOT=/usr/local/android-ndk-xxx or similar
 # Todo: set appropriate ARM flags for hard floats
 
+ROOT=`pwd`
 export ANDROID_PLATFORM=android-5
 GCC_VERSION=4.4.0
-OUTDIR=builds/embedruntimes/android
+OUTDIR=$ROOT/builds/embedruntimes/android
 PREFIX=`pwd`/builds/android
 
 NDK_ROOT=`cd $ANDROID_NDK_ROOT && pwd`
@@ -34,7 +35,6 @@ esac
 
 PLATFORM_ROOT=$NDK_ROOT/platforms/$ANDROID_PLATFORM/arch-arm
 TOOLCHAIN=$NDK_ROOT/toolchains/arm-eabi-$GCC_VERSION/prebuilt/$HOST_ENV
-ROOT=`pwd`
 
 if [ ! -a $TOOLCHAIN -o ! -a $PLATFORM_ROOT ]; then
 	NDK_NAME=`basename $NDK_ROOT`
