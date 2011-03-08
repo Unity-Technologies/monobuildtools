@@ -96,7 +96,7 @@ mkpath($bintarget);
 mkpath($libtarget);
 
 print "Copying libmono.so\n";
-system("cp", "$monoroot/mono/mini/.libs/libmono-2.0.so.0","$libtarget/libmono.so") eq 0 or die ("failed copying libmono.so.0");
+system("cp", "$monoroot/mono/mini/.libs/libmono-2.0.so","$libtarget/libmono.so") eq 0 or die ("failed copying libmono.so");
 
 print "Copying libmono.a\n";
 system("cp", "$monoroot/mono/mini/.libs/libmono-2.0.a","$libtarget/libmono-static.a") eq 0 or die ("failed copying libmono.a");
