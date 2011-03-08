@@ -4,7 +4,7 @@ use File::Basename;
 use File::Copy;
 use File::Path;
 my $root = File::Spec->rel2abs( dirname($0) );
-
+my $monoroot = File::Spec->rel2abs( dirname($0) . "/../mono" );
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
 	print "rmtree-ing $root/builds because we're on a buildserver, and want to make sure we don't include old artifacts\n";
@@ -14,17 +14,21 @@ if ($ENV{UNITY_THISISABUILDMACHINE})
 }
 
 
-CompileVCProj("$root/msvc/mono.sln","Release_eglib",0);
+CompileVCProj("$monoroot/msvc/mono.sln","Release",0);
 my $remove = "$root/builds/embedruntimes/win32/libmono.bsc";
 if (-e $remove)
 {
 	unlink($remove) or die("can't delete libmono.bsc");
 }
 
+mkpath("$root/builds/embedruntimes/win32");
+mkpath("$root/builds/monodistribution/bin");
+copy("$monoroot/msvc/Win32/bin/mono-2.0.dll","$root/builds/embedruntimes/win32/mono.dll");
+copy("$monoroot/msvc/Win32/bin/mono-2.0.pdb","$root/builds/embedruntimes/win32/mono.pdb");
+copy("$monoroot/msvc/Win32/bin/mono.exe","$root/builds/monodistribution/bin/mono.exe");
+copy("$monoroot/msvc/Win32/bin/mono-2.0.dll","$root/builds/monodistribution/bin/");
+copy("$monoroot/msvc/Win32/bin/mono-2.0.pdb","$root/builds/monodistribution/bin/");
 
-#have a duplicate for now...
-copy("$root/builds/embedruntimes/win32/mono.dll","$root/builds/monodistribution/bin/mono.dll");
-copy("$root/builds/embedruntimes/win32/mono.pdb","$root/builds/monodistribution/bin/mono.pdb");
 
 sub CompileVCProj
 {
@@ -35,8 +39,8 @@ sub CompileVCProj
 	my @optional = @_;
 	
 	
-	my @devenvlocations = ($ENV{"PROGRAMFILES(X86)"}."/Microsoft Visual Studio 9.0/Common7/IDE/devenv.com",
-		       "$ENV{PROGRAMFILES}/Microsoft Visual Studio 9.0/Common7/IDE/devenv.com",
+	my @devenvlocations = ($ENV{"PROGRAMFILES(X86)"}."/Microsoft Visual Studio 10.0/Common7/IDE/devenv.com",
+		       "$ENV{PROGRAMFILES}/Microsoft Visual Studio 10.0/Common7/IDE/devenv.com",
 		       "$ENV{REALVSPATH}/Common7/IDE/devenv.com");
 	
 	my $devenv;
