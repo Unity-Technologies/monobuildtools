@@ -34,6 +34,7 @@ esac
 
 PLATFORM_ROOT=$NDK_ROOT/platforms/$ANDROID_PLATFORM/arch-arm
 TOOLCHAIN=$NDK_ROOT/toolchains/arm-eabi-$GCC_VERSION/prebuilt/$HOST_ENV
+ROOT=`pwd`
 
 if [ ! -a $TOOLCHAIN -o ! -a $PLATFORM_ROOT ]; then
 	NDK_NAME=`basename $NDK_ROOT`
@@ -58,6 +59,7 @@ CFLAGS="\
 -D_POSIX_PATH_MAX=256 -DS_IWRITE=S_IWUSR \
 -DHAVE_PTHREAD_MUTEX_TIMEDLOCK \
 -fpic -g -I$PLATFORM_ROOT/usr/include \
+-I$ROOT/android \
 -ffunction-sections -fdata-sections"
 CXXFLAGS=$CFLAGS
 LDFLAGS="\
@@ -86,12 +88,10 @@ fi
 
 function clean_build
 {
+	cd `pwd`/../Mono
 	make clean && make distclean
 	rm android_cross.cache
 
-	pushd eglib
-	autoreconf -i
-	popd
 	autoreconf -i
 
 	./configure $CONFIG_OPTS \
@@ -107,8 +107,8 @@ function clean_build
 	make && echo "Build SUCCESS!" || exit 1
 
 	mkdir -p $3
-	cp mono/mini/.libs/libmono.a $3
-	cp mono/mini/.libs/libmono.so $3
+	cp mono/mini/.libs/libmono-2.0.a $3
+	cp mono/mini/.libs/libmono-2.0.so $3
 }
 
 CCFLAGS_ARMv5_CPU="-DARM_FPU_NONE=1 -march=armv5te -mtune=xscale -msoft-float"
