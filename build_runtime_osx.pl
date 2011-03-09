@@ -11,8 +11,8 @@ my $skipbuild=0;
 my $debug = 0;
 my $minimal = 0;
 my $iphone_simulator = 0;
-my $minmacversion = "10.4";
-my $sdkversion = "10.4u";
+my $minmacversion = "10.5";
+my $sdkversion = "10.5";
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
@@ -100,6 +100,8 @@ if (not $skipbuild)
 
 	$ENV{CFLAGS} = $ENV{CFLAGS}.$osx_gcc_arguments ;
 
+	print "cflags = $ENV{CFLAGS}\n";
+
 	print "monoroot is $monoroot\n";	
 	chdir("$monoroot") eq 1 or die ("failed to chdir 1");
 	#this will fail on a fresh working copy, so don't die on it.
@@ -146,7 +148,7 @@ chdir($root);
 mkpath($bintarget);
 mkpath($libtarget);
 
-my $cmdline = "gcc -arch $arch -bundle -reexport_library $monoroot/mono/mini/.libs/libmono-2.0.a my $osx_gcc_arguments -all_load -framework CoreFoundation -liconv -o $libtarget/MonoBundleBinary";
+my $cmdline = "gcc -arch $arch -bundle -reexport_library $monoroot/mono/mini/.libs/libmono-2.0.a $osx_gcc_arguments -all_load -framework CoreFoundation -liconv -o $libtarget/MonoBundleBinary";
 
 
 if (!$iphone_simulator)
