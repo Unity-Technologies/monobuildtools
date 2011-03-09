@@ -11,8 +11,8 @@ my $skipbuild=0;
 my $debug = 0;
 my $minimal = 0;
 my $iphone_simulator = 0;
-my $macversion = "10.5";
-my $sdkversion = "10.5";
+my $minmacversion = "10.4";
+my $sdkversion = "10.4u";
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
@@ -64,6 +64,15 @@ system("rm $bintarget/mono");
 system("rm $libtarget/libmono.dylib");
 system("rm -rf $libtarget/libmono.dylib.dSYM");
 
+if ($iphone_simulator)
+{
+	$ENV{CFLAGS} = "-DTARGET_IPHONE_SIMULATOR -g -O0";
+	$minmacversion = "10.5";
+	$sdkversion = "10.5";
+}
+
+my $osx_gcc_arguments = " -isysroot /Developer/SDKs/MacOSX$sdkversion.sdk -mmacosx-version-min=$minmacversion ";
+
 if (not $skipbuild)
 {
 	#rmtree($bintarget);
@@ -89,12 +98,8 @@ if (not $skipbuild)
 		$ENV{CFLAGS} = "-Os -DMONO_DISABLE_SHM=1"  #optimize for size
 	}
 
-	if ($iphone_simulator)
-	{
-		$ENV{CFLAGS} = "-DTARGET_IPHONE_SIMULATOR -g -O0";
-		$macversion = "10.5";
-		$sdkversion = "10.5";
-	}
+	$ENV{CFLAGS} = $ENV{CFLAGS}.$osx_gcc_arguments ;
+
 	print "monoroot is $monoroot\n";	
 	chdir("$monoroot") eq 1 or die ("failed to chdir 1");
 	#this will fail on a fresh working copy, so don't die on it.
@@ -110,10 +115,6 @@ if (not $skipbuild)
 	unshift(@autogenparams, "--disable-mcs-build");
 	unshift(@autogenparams, "--with-sgen=no");
 	unshift(@autogenparams, "--with-glib=embedded");
-	if (!$iphone_simulator)
-	{
-		unshift(@autogenparams, "--with-macversion=$macversion");
-	}
 	unshift(@autogenparams, "--disable-nls");  #this removes the dependency on gettext package
 
 	# From Massi: I was getting failures in install_name_tool about space
@@ -145,7 +146,7 @@ chdir($root);
 mkpath($bintarget);
 mkpath($libtarget);
 
-my $cmdline = "gcc -arch $arch -bundle -reexport_library $monoroot/mono/mini/.libs/libmono-2.0.a -isysroot /Developer/SDKs/MacOSX$sdkversion.sdk -mmacosx-version-min=$macversion -all_load -framework CoreFoundation -liconv -o $libtarget/MonoBundleBinary";
+my $cmdline = "gcc -arch $arch -bundle -reexport_library $monoroot/mono/mini/.libs/libmono-2.0.a my $osx_gcc_arguments -all_load -framework CoreFoundation -liconv -o $libtarget/MonoBundleBinary";
 
 
 if (!$iphone_simulator)
