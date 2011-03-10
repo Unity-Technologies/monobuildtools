@@ -26,7 +26,7 @@ if ($ENV{UNITY_THISISABUILDMACHINE}) {
 	print "not rmtree-ing $root/builds, as we're not on a buildmachine\n";
 }
 
-my $unity=0;
+my $unity=1;
 my $monotouch=0;
 my $injectSecurityAttributes=0;
 
@@ -69,7 +69,7 @@ if (not $skipbuild)
 		print(">>>Calling autoreconf in mono\n");
 		system("autoreconf -i") eq 0 or die("failed to autoreconf mono");
 		print(">>>Calling configure in mono\n");
-		system("./configure","--prefix=$monoprefix","--with-monotouch=$withMonotouch","-with-unity=$withUnity", "--with-profile4=yes","--with-glib=embedded","--with-mcs-docs=no","--with-macversion=10.4", "--disable-nls") eq 0 or die ("failing autogenning mono");
+		system("./configure","--prefix=$monoprefix","--with-monotouch=no", "--with-profile4=yes","--with-glib=embedded","--with-mcs-docs=no", "--disable-nls") eq 0 or die ("failing autogenning mono");
 		print("calling make clean in mono\n");
 		system("make","clean") eq 0 or die ("failed to make clean");
 	}
