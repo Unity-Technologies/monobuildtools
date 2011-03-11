@@ -202,8 +202,8 @@ sub BuildUnityScriptForUnity
 	UnityBooc("-out:$monoprefixUnity/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
 	
 	# micro profile version
-	UnityXBuild("$booCheckout/src/Boo.Lang/Boo.Lang.csproj", "Micro-Release");
-	cp("$booCheckout/src/Boo.Lang/bin/Micro-Release/Boo.Lang.dll $monodistroLibMono/micro/");
+	#UnityXBuild("$booCheckout/src/Boo.Lang/Boo.Lang.csproj", "Micro-Release");
+	#cp("$booCheckout/src/Boo.Lang/bin/Micro-Release/Boo.Lang.dll $monodistroLibMono/micro/");
 	
 	my $usCheckout = "external/unityscript";
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
@@ -232,7 +232,7 @@ sub BuildUnityScriptForUnity
 	cp("$monoprefixUnity/UnityScript.* $usBuildDir/");
 	cp("$monoprefixUnity/us.exe $usBuildDir/");
 	
-	system(<$monoprefix/bin/nunit-console2>, "-noshadow", "-exclude=FailsOnMono", $UnityScriptTestsDLL) eq 0 or die("UnityScript test suite failed");
+	#system(<$monoprefix/bin/nunit-console2>, "-noshadow", "-exclude=FailsOnMono", $UnityScriptTestsDLL) eq 0 or die("UnityScript test suite failed");
 }
 	
 sub UnityXBuild
@@ -336,7 +336,7 @@ if ($unity)
 	
 	AddRequiredExecutePermissionsToUnity();
 	BuildUnityScriptForUnity();
-	BuildCecilForUnity();
+	#BuildCecilForUnity();
 
 	CopyAssemblies($monoprefixUnity,$monodistroUnity);
 	#now, we have a functioning, raw, unity profile in builds/monodistribution/lib/mono/unity
@@ -344,8 +344,8 @@ if ($unity)
 
 	CopyUnityScriptAndBooFromUnityProfileTo20();
 
-	RunLinker();
-	RunSecurityInjection();
+	#RunLinker();
+	#RunSecurityInjection();
 }
 
 #Overlaying files
