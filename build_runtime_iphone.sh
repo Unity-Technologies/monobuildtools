@@ -1,5 +1,5 @@
 #!/bin/sh
-SDK_VERSION=4.2
+SDK_VERSION=4.3
 ASPEN_ROOT=/Developer/Platforms/iPhoneOS.platform/Developer
 SIMULATOR_ASPEN_ROOT=/Developer/Platforms/iPhoneSimulator.platform/Developer
 ASPEN_SDK=$ASPEN_ROOT/SDKs/iPhoneOS${SDK_VERSION}.sdk/
@@ -21,7 +21,7 @@ setenv () {
 	export C_INCLUDE_PATH="$ASPEN_SDK/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$ASPEN_SDK/usr/include"
 	export CPLUS_INCLUDE_PATH="$ASPEN_SDK/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$ASPEN_SDK/usr/include"
 	#export CFLAGS="-DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden"
-	export CFLAGS="-DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden -Os"
+	export CFLAGS="-DHAVE_ARMV6=1 -DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden -Os"
 	export CXXFLAGS="$CFLAGS"
 	export CC="gcc-4.2 -arch $1"
 	export CXX="g++-4.2 -arch $1"
@@ -56,21 +56,22 @@ build_arm_mono ()
 {
 	setenv "$1"
 
-	cd $MONOROOT
+	cd "$MONOROOT"
 	make clean
 	rm config.h*
 
-	./autogen.sh --prefix=$PRFX --disable-mcs-build --host=arm-apple-darwin9 --disable-shared-handles --with-tls=pthread --with-sigaltstack=no --with-glib=embedded --enable-minimal=jit,profiler,com --disable-nls || exit 1
+	./autogen.sh --prefix="$PRFX" --disable-mcs-build --host=arm-apple-darwin9 --disable-shared-handles --with-tls=pthread --with-sigaltstack=no --with-glib=embedded --enable-minimal=jit,profiler,com --disable-nls || exit 1
 	perl -pi -e 's/MONO_SIZEOF_SUNPATH 0/MONO_SIZEOF_SUNPATH 104/' config.h
 	perl -pi -e 's/#define HAVE_FINITE 1//' config.h
 	#perl -pi -e 's/#define HAVE_MMAP 1//' config.h
 	perl -pi -e 's/#define HAVE_CURSES_H 1//' config.h
+	perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
 	make
 
 	make || exit 1
 
-	mkdir -p $ROOT/builds/embedruntimes/iphone
-	cp $MONOROOT/mono/mini/.libs/libmono-2.0.a "$ROOT/builds/embedruntimes/iphone/libmono-$1.a" || exit 1
+	mkdir -p "$ROOT/builds/embedruntimes/iphone"
+	cp "$MONOROOT/mono/mini/.libs/libmono-2.0.a" "$ROOT/builds/embedruntimes/iphone/libmono-$1.a" || exit 1
 }
 
 build_iphone_runtime () 
@@ -79,9 +80,9 @@ build_iphone_runtime ()
 	build_arm_mono "armv7" || exit 1
 	build_arm_mono "armv6" || exit 1
 
-	libtool -static -o $ROOT/builds/embedruntimes/iphone/libmono.a $ROOT/builds/embedruntimes/iphone/libmono-armv6.a $ROOT/builds/embedruntimes/iphone/libmono-armv7.a || exit 1
-	rm $ROOT/builds/embedruntimes/iphone/libmono-armv6.a
-	rm $ROOT/builds/embedruntimes/iphone/libmono-armv7.a
+	libtool -static -o "$ROOT/builds/embedruntimes/iphone/libmono.a" "$ROOT/builds/embedruntimes/iphone/libmono-armv6.a" "$ROOT/builds/embedruntimes/iphone/libmono-armv7.a" || exit 1
+	rm "$ROOT/builds/embedruntimes/iphone/libmono-armv6.a"
+	rm "$ROOT/builds/embedruntimes/iphone/libmono-armv7.a"
 	unsetenv
 	echo "iPhone runtime build done"
 }
@@ -93,11 +94,11 @@ build_iphone_crosscompiler ()
 
 	export PLATFORM_IPHONE_XCOMP=1	
 	cd $MONOROOT
-	./autogen.sh --prefix=$PRF --with-macversion=10.5 --disable-mcs-build --disable-shared-handles --with-tls=pthread --with-signalstack=no --with-glib=embedded --target=arm-darwin --disable-nls || exit 1
+	./autogen.sh --prefix="$PRF" --with-macversion=10.5 --disable-mcs-build --disable-shared-handles --with-tls=pthread --with-signalstack=no --with-glib=embedded --target=arm-darwin --disable-nls || exit 1
 	make clean || exit 1
 	make || exit 1
-	mkdir -p $ROOT/builds/crosscompiler/iphone
-	cp $MONOROOT/mono/mini/mono $ROOT/builds/crosscompiler/iphone/mono-xcompiler
+	mkdir -p "$ROOT/builds/crosscompiler/iphone"
+	cp "$MONOROOT/mono/mini/mono" "$ROOT/builds/crosscompiler/iphone/mono-xcompiler"
 	unsetenv
 	echo "iPhone cross compiler build done"
 }
@@ -109,11 +110,11 @@ build_iphone_simulator ()
 	export MACSDKOPTIONS="-miphoneos-version-min=3.0 $MACSYSROOT"
 	export CC="$SIMULATOR_ASPEN_ROOT/usr/bin/gcc-4.2"
 	export CXX="$SIMULATOR_ASPEN_ROOT/usr/bin/g++-4.2"
-	cd $ROOT
+	cd "$ROOT"
 	perl build_runtime_osx.pl -iphone_simulator=1 || exit 1
 	echo "Copying iPhone simulator static lib to final destination";
-	mkdir -p $ROOT/builds/embedruntimes/iphone
-	cp $MONOROOT/mono/mini/.libs/libmono-2.0.a builds/embedruntimes/iphone/libmono-i386.a
+	mkdir -p "$ROOT/builds/embedruntimes/iphone"
+	cp "$MONOROOT/mono/mini/.libs/libmono-2.0.a" "builds/embedruntimes/iphone/libmono-i386.a"
 	unsetenv
 }
 
