@@ -8,7 +8,8 @@ System.Object System.Xml.XmlUrlResolver::GetEntity(System.Uri,System.String,Syst
 System.Object System.Xml.Xsl.XslTransform::GetDefaultDebugger() => System.String System.Environment::GetEnvironmentVariable(System.String)
 
 #I wrapped this in a try/batch block
-System.Void System.Diagnostics.DefaultTraceListener::WriteLogFile(System.String,System.String) => System.Void System.Diagnostics.DefaultTraceListener::WriteLogFileImpl(System.String,System.String)
+# Not found
+# System.Void System.Diagnostics.DefaultTraceListener::WriteLogFile(System.String,System.String) => System.Void System.Diagnostics.DefaultTraceListener::WriteLogFileImpl(System.String,System.String)
 
 #I wrapped this in a try/batch block
 System.Void System.Diagnostics.Trace::DoTrace(System.String,System.Reflection.Assembly,System.String) => System.String System.Reflection.Assembly::get_Location()
