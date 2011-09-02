@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="3.5" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -60,13 +60,13 @@
     <Compile Include="StringAssert.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\mcs\class\Mono.Cecil\Mono.Cecil.csproj">
-      <Project>{D8F63DFF-5230-43E4-9AB2-DA6E721A1FAE}</Project>
-      <Name>Mono.Cecil</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CoreClr.Tools\CoreClr.Tools.csproj">
       <Project>{B3F61884-1AB9-420A-BC5F-A4D2974D4317}</Project>
       <Name>CoreClr.Tools</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Mono.Cecil\Mono.Cecil.csproj">
+      <Project>{D8F63DFF-5230-43E4-9AB2-DA6E721A1FAE}</Project>
+      <Name>Mono.Cecil</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
