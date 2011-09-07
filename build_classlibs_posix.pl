@@ -351,6 +351,7 @@ if ($unity)
 	#BuildCecilForUnity();
 
 	CopyAssemblies($monoprefixUnity,$monodistroUnity);
+	CopyAssemblies($monoprefixUnity,$monodistroUnityWeb); # Just copy unity profile to unity_web for now
 	#now, we have a functioning, raw, unity profile in builds/monodistribution/lib/mono/unity
 	#we're now going to transform that into the unity_web profile by running it trough the linker, and decorating it with security attributes.	
 
