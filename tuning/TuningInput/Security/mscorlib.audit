@@ -2186,3 +2186,6 @@ System.Byte[] System.Threading.Thread::ByteArrayToRootDomain(System.Byte[])
 
 #Passing internal parameter to icall
 System.Byte[] System.Reflection.Emit.ModuleBuilder::ResolveSignature(System.Int32)
+
+#Harmless
+System.Boolean System.Threading.Thread::Yield()
