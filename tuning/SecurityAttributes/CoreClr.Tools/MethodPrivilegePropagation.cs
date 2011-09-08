@@ -25,11 +25,11 @@ namespace CoreClr.Tools
 		private Dictionary<MethodDefinition, List<PropagationReason>> _propagationGraph;
 		private Queue<MethodDefinition> _propagationQueue = new Queue<MethodDefinition>();
 		private MethodMap _methodMap;
-	    private ICollection<TypeDefinition> _criticalTypes;
+	    private HashSet<TypeDefinition> _criticalTypes;
 
 		
 
-		public MethodPrivilegePropagation(AssemblyDefinition[] assemblies, IEnumerable<MethodDefinition> methodRequiringPrivileges, IEnumerable<MethodDefinition> sscMethods, ICollection<TypeDefinition> criticalTypes, ICollection<MethodToMethodCall> ignoreCalls)
+		public MethodPrivilegePropagation(AssemblyDefinition[] assemblies, IEnumerable<MethodDefinition> methodRequiringPrivileges, IEnumerable<MethodDefinition> sscMethods, HashSet<TypeDefinition> criticalTypes, ICollection<MethodToMethodCall> ignoreCalls)
 		{
 			_assemblies = assemblies;
             AssemblySetResolver.SetUp(assemblies);
@@ -46,7 +46,7 @@ namespace CoreClr.Tools
 			return new MethodPrivilegePropagationReportBuilder(_assemblies, _methodRequiringPrivilegesThemselves, _canBeSscManual, _resultingCriticalMethods, _propagationGraph, _criticalTypes);
 		}
 
-		private void Analyze(IEnumerable<MethodDefinition> methodRequiringPrivileges, IEnumerable<MethodDefinition> sscMethods, ICollection<TypeDefinition> criticalTypes, ICollection<MethodToMethodCall> ignoreMethodCalls)
+		private void Analyze(IEnumerable<MethodDefinition> methodRequiringPrivileges, IEnumerable<MethodDefinition> sscMethods, HashSet<TypeDefinition> criticalTypes, ICollection<MethodToMethodCall> ignoreMethodCalls)
 		{	
 			_methodRequiringPrivilegesThemselves = methodRequiringPrivileges.ToList();
 			_canBeSscManual = new HashSet<MethodDefinition>(sscMethods);

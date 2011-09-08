@@ -74,7 +74,7 @@ namespace DetectMethodPrivileges
 			}
 			
 			var assemblies = TimeFunction("Assembly loading", () => LoadAssembliesAndSetUpAssemblyResolver(assemblypaths, profileDirectory));
-			var criticalTypes = CriticalTypes(assemblies, profileDirectory).ToList();
+			var criticalTypes = new HashSet<TypeDefinition> (CriticalTypes(assemblies, profileDirectory));
 			EnsureCriticalTypesEnheritanceRulesAreCompliedWith(assemblies, criticalTypes);
             
 			MethodPrivilegeDetector.CriticalTypes = criticalTypes.Cast<TypeReference>().ToList();
@@ -109,7 +109,7 @@ namespace DetectMethodPrivileges
 			return count;
 		}
 
-    	private static void EnsureCriticalTypesEnheritanceRulesAreCompliedWith(AssemblyDefinition[] assemblies, List<TypeDefinition> criticalTypes)
+    	private static void EnsureCriticalTypesEnheritanceRulesAreCompliedWith(AssemblyDefinition[] assemblies, IEnumerable<TypeDefinition> criticalTypes)
     	{
 			foreach(var ass in assemblies)
 			{
