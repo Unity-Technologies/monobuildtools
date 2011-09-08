@@ -109,11 +109,11 @@ System.Reflection.MonoProperty
 
 
 #only used behind the scenes
-#System.Reflection.MonoCMethod
-#System.Reflection.MonoMethod
+System.Reflection.MonoCMethod
+System.Reflection.MonoMethod
 #System.Reflection.MonoGenericClass
-#System.Reflection.MonoGenericCMethod
-#System.Reflection.MonoGenericMethod
+System.Reflection.MonoGenericCMethod
+System.Reflection.MonoGenericMethod
 #System.MonoType
 
 #not sure what to do
@@ -150,3 +150,5 @@ System.Security.Policy.StrongNameMembershipCondition
 
 #criticaltype in moonlight
 System.Resources.ResourceWriter
+
+System.Reflection.MonoField

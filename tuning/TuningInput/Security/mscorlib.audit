@@ -2025,3 +2025,114 @@ System.Globalization.CultureInfo System.Globalization.CultureInfo::GetCultureInf
 System.Void System.Globalization.CultureInfo::.ctor(System.Int32,System.Boolean)
 System.Globalization.CultureInfo System.Globalization.CultureInfo::GetCultureInfo(System.String)
 System.Void System.Globalization.CultureInfo::.ctor(System.String,System.Boolean)
+
+System.Type System.Reflection.Emit.AssemblyBuilder::GetType(System.String,System.Boolean,System.Boolean)
+	levi - Reviewed code, exactly the same as System.Reflection.Assembly::GetType
+
+System.Reflection.AssemblyName[] System.Reflection.Emit.AssemblyBuilder::GetReferencedAssemblies()
+	levi - Reviewed code, exactly the same as System.Reflection.Assembly::GetReferencedAssemblies
+	
+System.Type System.Reflection.Emit.ModuleBuilder::ResolveType(System.Int32,System.Type[],System.Type[])
+	levi - Reviewed code, exactly the same as System.Reflection.Module::ResolveType
+	
+System.Reflection.MethodBase System.Reflection.Emit.ModuleBuilder::ResolveMethod(System.Int32,System.Type[],System.Type[])
+	levi - Reviewed code, exactly the same as System.Reflection.Module::ResolveMethod
+	
+System.Reflection.FieldInfo System.Reflection.Emit.ModuleBuilder::ResolveField(System.Int32,System.Type[],System.Type[])
+	levi - Reviewed code, exactly the same as System.Reflection.Module::ResolveField
+	
+System.String System.Reflection.Emit.ModuleBuilder::ResolveString(System.Int32)
+	levi - Reviewed code, exactly the same as System.Reflection.Module::ResolveString
+	
+System.Reflection.MemberInfo System.Reflection.Emit.ModuleBuilder::ResolveMember(System.Int32,System.Type[],System.Type[])
+	levi - Reviewed code, exactly the same as System.Reflection.Module::ResolveMember
+	
+System.Int32 System.Text.ASCIIEncoding::GetBytes(System.String,System.Int32,System.Int32,System.Byte[],System.Int32)
+System.Int32 System.Text.Latin1Encoding::GetBytes(System.String,System.Int32,System.Int32,System.Byte[],System.Int32)
+System.Int32 System.Text.ASCIIEncoding::GetBytes(System.Char[],System.Int32,System.Int32,System.Byte[],System.Int32)
+System.Int32 System.Text.Latin1Encoding::GetBytes(System.Char[],System.Int32,System.Int32,System.Byte[],System.Int32)
+	levi - Reviewed code, wraps already-SSC overload of GetBytes
+	
+System.Int32 System.Text.UTF32Encoding::GetBytes(System.String,System.Int32,System.Int32,System.Byte[],System.Int32)
+System.Int32 System.Text.UTF7Encoding::GetBytes(System.String,System.Int32,System.Int32,System.Byte[],System.Int32)
+System.Int32 System.Text.UTF32Encoding::GetBytes(System.Char[],System.Int32,System.Int32,System.Byte[],System.Int32)
+System.Int32 System.Text.UTF7Encoding::GetBytes(System.Char[],System.Int32,System.Int32,System.Byte[],System.Int32)
+	levi - Reviewed code, invokes already-SSC base method
+	
+System.Int32 System.Text.UTF8Encoding::GetBytes(System.Char[],System.Int32,System.Int32,System.Byte[],System.Int32)
+	levi - Reviewed code, invokes already-SSC InternalGetBytes
+	
+System.Object System.Collections.ArrayList/SynchronizedArrayListWrapper::get_Item(System.Int32)
+System.Object System.Collections.ArrayList/SynchronizedListWrapper::get_Item(System.Int32)
+System.Object System.Collections.ArrayList::get_Item(System.Int32)
+	levi - Reviewed code, invokes already-SSC System.Collections.Array::System.Collections.IList.get_Item
+	
+System.Void System.Collections.ArrayList/SynchronizedArrayListWrapper::set_Item(System.Int32,System.Object)
+System.Void System.Collections.ArrayList/SynchronizedListWrapper::set_Item(System.Int32,System.Object)
+System.Void System.Collections.ArrayList/ArrayListWrapper::set_Item(System.Int32,System.Object)
+System.Void System.Collections.ArrayList::set_Item(System.Int32,System.Object)
+	levi - Reviewed code, invokes already-SSC System.Collections.Array::System.Collections.IList.set_Item
+	
+System.Int32 System.Collections.ArrayList/SynchronizedArrayListWrapper::IndexOf(System.Object)
+System.Int32 System.Collections.ArrayList/SynchronizedListWrapper::IndexOf(System.Object)
+System.Int32 System.Collections.ArrayList/ArrayListWrapper::IndexOf(System.Object)
+System.Int32 System.Collections.ArrayList::IndexOf(System.Object)
+	levi - Reviewed code, invokes already-SSC System.Collections.Array::IndexOf
+	
+System.Boolean System.Collections.ArrayList/SynchronizedArrayListWrapper::Contains(System.Object)
+System.Boolean System.Collections.ArrayList/SynchronizedListWrapper::Contains(System.Object)
+System.Boolean System.Collections.ArrayList/ArrayListWrapper::Contains(System.Object)
+System.Boolean System.Collections.ArrayList::Contains(System.Object)
+	levi - Reviewed code, invokes already-SSC System.Collections.Array::IndexOf
+	
+System.Boolean System.Reflection.Emit.TypeBuilder::IsCOMObjectImpl()
+System.Reflection.Module System.Reflection.MemberInfo::get_Module()
+System.Reflection.GenericParameterAttributes System.Reflection.Emit.GenericTypeParameterBuilder::get_GenericParameterAttributes()
+System.Boolean System.Reflection.Emit.GenericTypeParameterBuilder::IsSubclassOf(System.Type)
+System.Boolean System.Reflection.Emit.TypeBuilder::IsSubclassOf(System.Type)
+System.Type System.Reflection.Emit.TypeBuilder::get_UnderlyingSystemType()
+System.Boolean System.Reflection.MonoGenericClass::IsAssignableFrom(System.Type)
+System.Type System.Reflection.MonoGenericClass::get_BaseType()
+System.Type System.Reflection.MonoGenericClass::get_DeclaringType()
+System.Int32 System.Reflection.Emit.ConstructorOnTypeBuilderInst::get_MetadataToken()
+System.Int32 System.Reflection.Emit.FieldOnTypeBuilderInst::get_MetadataToken()
+System.Int32 System.Reflection.Emit.MethodOnTypeBuilderInst::get_MetadataToken()
+System.Type System.Reflection.Emit.PropertyOnTypeBuilderInst::get_DeclaringType()
+System.String System.Reflection.Emit.DerivedType::get_Name()
+System.String System.Reflection.Emit.DerivedType::get_FullName()
+System.String System.Reflection.MonoGenericClass::get_FullName(),System.String System.Type::get_FullName()
+	levi - Reviewed code
+System.Type System.Reflection.FieldInfo::get_FieldType()
+System.Void System.Threading.Monitor::Enter(System.Object,System.Boolean&)
+System.Void System.Threading.Tasks.ThreadWorker::Dispose()
+
+#Bounds checking
+System.Void System.Array::Resize<T>(T[]&,System.Int32)
+System.Void System.Threading.SpinWait::SpinOnce()
+System.Byte[] System.Text.Encoding::GetBytes(System.Char[])
+
+#Checks bounds
+System.Void System.Collections.ArrayList::Sort(System.Collections.IComparer)
+System.Void System.Collections.ArrayList/ArrayListAdapter::Sort(System.Collections.IComparer)
+System.Void System.Collections.ArrayList/RangedArrayList::Sort(System.Collections.IComparer)
+System.Void System.Collections.ArrayList/ArrayListAdapter::Sort(System.Int32, System.Int32, System.Collections.IComparer)
+System.Void System.Collections.ArrayList/RangedArrayList::Sort(System.Int32, System.Int32, System.Collections.IComparer)
+
+#Argument checks
+System.Delegate System.Delegate::CreateDelegate(System.Type,System.Object,System.Reflection.MethodInfo,System.Boolean,System.Boolean)
+
+#Validates parameters
+System.Object System.Reflection.Emit.DynamicMethod::Invoke(System.Object,System.Reflection.BindingFlags,System.Reflection.Binder,System.Object[],System.Globalization.CultureInfo)
+
+#Argument checks
+System.Int32 System.Reflection.Emit.ModuleBuilder::GetToken(System.Reflection.MemberInfo,System.Boolean)
+System.Int32 System.Threading.Thread::get_ManagedThreadId()
+
+#Validates parameters
+System.Int32 System.Text.UTF8Encoding::InternalGetByteCount(System.Char[],System.Int32,System.Int32,System.Text.EncoderFallback,System.Char&,System.Boolean)
+
+#Validates parameters
+System.Int32 System.Text.UTF8Encoding::InternalGetBytes(System.Char[],System.Int32,System.Int32,System.Byte[],System.Int32,System.Text.EncoderFallback,System.Text.EncoderFallbackBuffer&,System.Char&,System.Boolean)
+
+#Validates parameters
+System.Void System.Array::Sort(System.Array,System.Collections.IComparer)
