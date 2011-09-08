@@ -209,7 +209,7 @@ namespace SecurityAttributesReviewer
 			var typename = dotsplit.Last();
 			var ns = method.Substring(0, method.IndexOf(typename)-1);
 
-			var sourcefile = DetectMethodPrivileges.Program.Paths.Combine(monoroot, "mcs","class",assembly, ns, typename+".cs");
+			var sourcefile = DetectMethodPrivileges.Program.Paths.Combine(monoroot, "..", "mono", "mcs","class",assembly, ns, typename+".cs");
 
 			var methodname = signature.Substring(signature.IndexOf("::") + 2);
 			methodname = methodname.Substring(0, methodname.IndexOf("("));
