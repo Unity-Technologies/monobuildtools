@@ -77,6 +77,7 @@ System.Void System.Net.FtpDataStream::Write(System.Byte[],System.Int32,System.In
 System.Int32 System.Net.FtpDataStream::Read(System.Byte[],System.Int32,System.Int32)
 System.Boolean System.Net.FtpAsyncResult::WaitUntilComplete(System.Int32,System.Boolean)
 System.IO.Stream System.Net.HttpWebRequest::GetRequestStream()
+System.IO.Stream System.Net.FtpWebRequest::GetRequestStream()
 
 #user cannot control path
 System.Void System.Net.EndPointListener::LoadCertificateAndKey(System.Net.IPAddress,System.Int32)
@@ -91,3 +92,5 @@ System.Void System.Diagnostics.DefaultTraceListener::WriteWindowsDebugString(Sys
 
 #only accesses processid, which is harmless
 System.Void System.Diagnostics.TraceEventCache::.ctor()
+System.IAsyncResult System.Net.Sockets.Socket::BeginReceive(System.Byte[],System.Int32,System.Int32,System.Net.Sockets.SocketFlags,System.AsyncCallback,System.Object)
+System.IAsyncResult System.Net.Sockets.Socket::BeginSend(System.Byte[],System.Int32,System.Int32,System.Net.Sockets.SocketFlags,System.AsyncCallback,System.Object)
