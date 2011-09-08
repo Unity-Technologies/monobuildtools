@@ -286,3 +286,6 @@ System.Reflection.Emit.AssemblyBuilder System.AppDomain::DefineDynamicAssembly\(
 #unsure about this one, but it has been offlimits in 3.0b0->b5. maybe it could be opened up
 System.Reflection.Assembly System.Reflection.Assembly::Load\(System.Reflection.AssemblyName\)
 System.Reflection.MethodBody System.Reflection.MethodBase::GetMethodBody\(\)
+
+#Not implemented anyway
+System.Int32 System.AppDomain::ExecuteAssembly\(System.String,System.Security.Policy.Evidence,System.String\[\],System.Byte\[\],System.Configuration.Assemblies.AssemblyHashAlgorithm\)

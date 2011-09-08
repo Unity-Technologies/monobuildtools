@@ -30,6 +30,7 @@ System.Transactions
 System.Reflection.Emit
 System.Collections.Concurrent
 System.Threading.Tasks
+System.Threading.SemaphoreSlim
 +System.Reflection.Emit.DynamicILInfo
 +System.Reflection.Emit.EventToken
 +System.Reflection.Emit.FlowControl

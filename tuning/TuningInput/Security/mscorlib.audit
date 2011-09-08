@@ -2136,3 +2136,53 @@ System.Int32 System.Text.UTF8Encoding::InternalGetBytes(System.Char[],System.Int
 
 #Validates parameters
 System.Void System.Array::Sort(System.Array,System.Collections.IComparer)
+
+#Validating parameters
+System.Void System.Array::Sort(System.Array,System.Array,System.Collections.IComparer)
+
+#Validating parameters
+System.Void System.Array::Sort(System.Array,System.Int32,System.Int32,System.Collections.IComparer)
+
+#Validating parameters
+System.Void System.Threading.Monitor::TryEnter(System.Object,System.Int32,System.Boolean&)
+#No arguments to icall
+System.Threading.InternalThread System.Threading.Thread::get_Internal()
+
+#Reasonable use of MonoField
+System.Void System.Runtime.Serialization.FormatterServices::GetFields(System.Type,System.Type,System.Collections.ArrayList)
+
+#Unsafe arguments are private to CustomAttributeData
+System.Void System.Reflection.CustomAttributeData::ResolveArguments()
+
+#Validating parameters
+System.String System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)
+
+#Validating parameters
+System.String System.String::Join(System.String,System.Object[])
+
+#Validating parameters
+System.String System.String::Join<T>(System.String,System.Collections.Generic.IEnumerable`1<T>)
+
+#Validating parameters
+System.String System.String::Concat(System.Collections.Generic.IEnumerable`1<System.String>)
+
+#Validating parameters
+System.String System.String::Concat<T>(System.Collections.Generic.IEnumerable`1<T>)
+
+#Reasonable use of critical icall
+System.Boolean System.Enum::HasFlag(System.Enum)
+
+#Reasonable use of icall
+System.Guid System.Reflection.Module::GetModuleVersionId()
+
+#Validates parameters
+System.Boolean System.Threading.ManualResetEventSlim::Wait(System.Int32,System.Threading.CancellationToken)
+
+#Reasonable use of icall
+System.Int64 System.Threading.Watch::TicksNow()
+
+#All webplayer content runs in the root domain
+System.Byte[] System.Threading.Thread::ByteArrayToRootDomain(System.Byte[])
+
+#Passing internal parameter to icall
+System.Byte[] System.Reflection.Emit.ModuleBuilder::ResolveSignature(System.Int32)

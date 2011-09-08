@@ -94,3 +94,12 @@ System.Void System.Diagnostics.DefaultTraceListener::WriteWindowsDebugString(Sys
 System.Void System.Diagnostics.TraceEventCache::.ctor()
 System.IAsyncResult System.Net.Sockets.Socket::BeginReceive(System.Byte[],System.Int32,System.Int32,System.Net.Sockets.SocketFlags,System.AsyncCallback,System.Object)
 System.IAsyncResult System.Net.Sockets.Socket::BeginSend(System.Byte[],System.Int32,System.Int32,System.Net.Sockets.SocketFlags,System.AsyncCallback,System.Object)
+
+#SSC in moonlight, reviewed code
+System.Void System.Net.Sockets.Socket::Connect(System.Net.EndPoint)
+
+#Validates parameters
+System.Void System.Net.Sockets.Socket::socket_pool_queue(System.Net.Sockets.Socket/SocketAsyncCall,System.Net.Sockets.Socket/SocketAsyncResult)
+
+#Reasonable use of critical method
+System.Void System.Configuration.DefaultConfig::Init()

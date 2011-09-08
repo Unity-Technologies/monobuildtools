@@ -45,3 +45,9 @@ System.ComponentModel.LicenseProvider::
 
 #no need to have this available
 System.Void System.ComponentModel.Win32Exception::.ctor
+
+#Uploads a local file
+System.Void System.Net.WebClient::UploadFileAsync\(System.Uri,System.String\)
+
+#Uploads a local file
+System.Void System.Net.WebClient::UploadFileAsync\(System.Uri,System.String,System.String\)

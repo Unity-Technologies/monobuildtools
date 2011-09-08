@@ -21,3 +21,7 @@ System.IO.Compression.GZipStream
 
 #need zlib installed anyway
 System.IO.Compression.DeflateStream
+
+#File access
+System.Net.FileWebRequestCreator
+

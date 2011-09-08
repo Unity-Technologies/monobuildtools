@@ -20,3 +20,15 @@ System.Int32 Mono.Security.BitConverterLE::ToInt32(System.Byte[],System.Int32)
 
 #SSC in moonlgiht
 System.UInt32 Mono.Security.BitConverterLE::ToUInt32(System.Byte[],System.Int32)
+
+#Only touches system-controlled paths
+Mono.Security.X509.X509CertificateCollection Mono.Security.X509.X509StoreManager::get_IntermediateCACertificates()
+
+#Only touches system-controlled paths
+System.Collections.ArrayList Mono.Security.X509.X509StoreManager::get_IntermediateCACrls()
+
+#Only touches system-controlled paths
+System.Collections.ArrayList Mono.Security.X509.X509StoreManager::get_TrustedRootCACrls()
+
+#Only touches system-controlled paths
+Mono.Security.X509.X509CertificateCollection Mono.Security.X509.X509StoreManager::get_UntrustedCertificates()
