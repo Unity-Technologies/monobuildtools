@@ -185,6 +185,7 @@ sub PackageSecurityAttributeInjectionTools
 }
 
 my $monoprefixUnity = "$monoprefix/lib/mono/unity";
+my $monoprefix20 = "$monoprefix/lib/mono/2.0";
 my $monodistroLibMono = "$monodistro/lib/mono";
 my $monodistroUnity = "$monodistroLibMono/unity";
 my $monoprefixUnityWeb = "$monoprefix/lib/mono/unity_web";
@@ -195,6 +196,13 @@ sub UnityBooc
 	my $commandLine = shift;
 	
 	system("$monoprefixUnity/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $commandLine");
+}
+
+sub Booc
+{
+	my $commandLine = shift;
+	
+	system("$monoprefix20/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $commandLine");
 }
 
 sub BuildUnityScriptForUnity
@@ -247,6 +255,53 @@ sub BuildUnityScriptForUnity
 	#system(<$monoprefix/bin/nunit-console2>, "-noshadow", "-exclude=FailsOnMono", $UnityScriptTestsDLL) eq 0 or die("UnityScript test suite failed");
 }
 	
+# TODO: Refactor with BuildUnityScriptForUnity
+sub BuildUnityScriptFor20
+{
+	my $booCheckout = "external/boo";
+	
+	# TeamCity is handling this
+	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
+		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout);
+	}
+	XBuild("$booCheckout/src/booc/booc.csproj", "/t:Rebuild");
+	
+	cp("$booCheckout/ide-build/Boo.Lang*.dll $monoprefix20/");
+	cp("$booCheckout/ide-build/booc.exe $monoprefix20/");
+	cp("$monoprefixUnity/booc $monoprefix20/");
+	cp("$monoprefixUnity/mono-env $monoprefix20/");
+	Booc("-out:$monoprefix20/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll");
+	Booc("-out:$monoprefix20/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
+	Booc("-out:$monoprefix20/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
+	
+	my $usCheckout = "external/unityscript";
+	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
+		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout);
+	}
+	
+	my $UnityScriptLangDLL = "$monoprefix20/UnityScript.Lang.dll";
+	Booc("-out:$UnityScriptLangDLL -srcdir:$usCheckout/src/UnityScript.Lang");
+	
+	my $UnityScriptDLL = "$monoprefix20/UnityScript.dll";
+	Booc("-out:$UnityScriptDLL -srcdir:$usCheckout/src/UnityScript -r:$UnityScriptLangDLL -r:Boo.Lang.Parser.dll -r:Boo.Lang.PatternMatching.dll");
+	Booc("-out:$monoprefix20/us.exe -srcdir:$usCheckout/src/us -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:Boo.Lang.Useful.dll");
+	
+	# unityscript test suite
+	my $UnityScriptTestsCSharpDLL = "$usCheckout/src/UnityScript.Tests.CSharp/bin/Debug/UnityScript.Tests.CSharp.dll";
+	XBuild("$usCheckout/src/UnityScript.Tests.CSharp/UnityScript.Tests.CSharp.csproj", "/t:Rebuild");
+	
+	my $usBuildDir = "$usCheckout/build";
+	mkdir($usBuildDir);
+	
+	my $UnityScriptTestsDLL = <$usBuildDir/UnityScript.Tests.dll>;
+	Booc("-out:$UnityScriptTestsDLL -srcdir:$usCheckout/src/UnityScript.Tests -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:$UnityScriptTestsCSharpDLL -r:Boo.Lang.Compiler.dll -r:Boo.Lang.Useful.dll");
+	
+	cp("$UnityScriptTestsCSharpDLL $usBuildDir/");
+	cp("$monoprefix20/Boo.* $usBuildDir/");
+	cp("$monoprefix20/UnityScript.* $usBuildDir/");
+	cp("$monoprefix20/us.exe $usBuildDir/");
+}
+	
 sub UnityXBuild
 {
 	my $projectFile = shift;
@@ -295,9 +350,11 @@ sub BuildCecilForUnity
 
 sub AddRequiredExecutePermissionsToUnity
 {
-	my @scripts = ("smcs", "booc", "us");
-	for my $script (@scripts) { 
-		chmod(0777, $monoprefixUnity . "/$script");
+	for my $profile (@_) {
+		my @scripts = ("smcs", "booc", "us");
+		for my $script (@scripts) { 
+			chmod(0777, $profile. "/$script");
+		}
 	}
 }
 
@@ -346,8 +403,9 @@ if ($unity)
 {
 	CopyProfileAssembliesToPrefix("unity", "unity", $monoprefix);
 	
-	AddRequiredExecutePermissionsToUnity();
+	AddRequiredExecutePermissionsToUnity($monoprefixUnity, $monoprefix20);
 	BuildUnityScriptForUnity();
+	BuildUnityScriptFor20();
 	#BuildCecilForUnity();
 
 	CopyAssemblies($monoprefixUnity,$monodistroUnity);
@@ -355,7 +413,7 @@ if ($unity)
 	#now, we have a functioning, raw, unity profile in builds/monodistribution/lib/mono/unity
 	#we're now going to transform that into the unity_web profile by running it trough the linker, and decorating it with security attributes.	
 
-	CopyUnityScriptAndBooFromUnityProfileTo20();
+	# CopyUnityScriptAndBooFromUnityProfileTo20();
 
 	#RunLinker();
 	#RunSecurityInjection();
