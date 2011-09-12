@@ -187,6 +187,7 @@ sub PackageSecurityAttributeInjectionTools
 my $monoprefixUnity = "$monoprefix/lib/mono/unity";
 my $monoprefix20 = "$monoprefix/lib/mono/2.0";
 my $monodistroLibMono = "$monodistro/lib/mono";
+my $monodistro20 = "$monodistroLibMono/2.0";
 my $monodistroUnity = "$monodistroLibMono/unity";
 my $monoprefixUnityWeb = "$monoprefix/lib/mono/unity_web";
 my $monodistroUnityWeb = "$monodistro/lib/mono/unity_web";
@@ -408,6 +409,7 @@ if ($unity)
 	BuildUnityScriptFor20();
 	#BuildCecilForUnity();
 
+	CopyAssemblies($monoprefix20,$monodistro20);
 	CopyAssemblies($monoprefixUnity,$monodistroUnity);
 	CopyAssemblies($monoprefixUnity,$monodistroUnityWeb); # Just copy unity profile to unity_web for now
 	#now, we have a functioning, raw, unity profile in builds/monodistribution/lib/mono/unity
