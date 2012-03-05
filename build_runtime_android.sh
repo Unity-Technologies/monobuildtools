@@ -67,7 +67,7 @@ LDFLAGS="\
 -Wl,--no-undefined \
 -L$PLATFORM_ROOT/usr/lib \
 -Wl,-rpath-link=$PLATFORM_ROOT/usr/lib \
--ldl -lm -llog -lc"
+-ldl -lm -llog -lc -lgcc"
 
 CONFIG_OPTS="\
 --prefix=$PREFIX \
