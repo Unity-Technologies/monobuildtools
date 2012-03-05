@@ -113,7 +113,7 @@ clean_build ()
 
 CCFLAGS_ARMv5_CPU="-DARM_FPU_NONE=1 -march=armv5te -mtune=xscale -msoft-float"
 CCFLAGS_ARMv5_VFP="-DARM_FPU_VFP=1  -march=armv5te -mtune=xscale -msoft-float -mfloat-abi=softfp -mfpu=vfp"
-CCFLAGS_ARMv6_VFP="-DARM_FPU_VFP=1  -march=armv6 -mtune=xscale -msoft-float -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1"
+# CCFLAGS_ARMv6_VFP="-DARM_FPU_VFP=1  -march=armv6 -mtune=xscale -msoft-float -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1"
 CCFLAGS_ARMv7_VFP="-DARM_FPU_VFP=1  -march=armv7-a                            -mfloat-abi=softfp -mfpu=vfp -HAVE_ARMV6=1"
 LDFLAGS_ARMv5=""
 LDFLAGS_ARMv7="-Wl,--fix-cortex-a8"
