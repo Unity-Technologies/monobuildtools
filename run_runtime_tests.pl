@@ -12,6 +12,8 @@ if ($ENV{UNITY_THISISABUILDMACHINE}) {
 	$teamcity = 1;
 }
 
+system("cp $root/test-driver $monoroot/mono/tests") eq 0 or die("failed copy test-driver");
+
 #do build
 chdir("$monoroot/mono/tests") eq 1 or die("failed to chdir tests");
 if ($teamcity) {
