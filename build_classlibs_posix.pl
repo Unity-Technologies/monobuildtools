@@ -11,7 +11,7 @@ print "My Path: $ENV{PATH}\n";
 
 my $root = getcwd();
 
-my $monoroot = abs_path($root."/../Mono");
+my $monoroot = abs_path($root."/../mono");
 my $monodistro = "$root/builds/monodistribution";
 my $lib = "$monodistro/lib";
 my $libmono = "$lib/mono";
@@ -129,8 +129,8 @@ sub CopyAssemblies
 	
 	mkpath($targetFolder);
 	cp("$sourceFolder/*.dll $targetFolder/");
-	cp("$sourceFolder/*.exe $targetFolder/");
-	cp("$sourceFolder/*.mdb $targetFolder/");
+	#cp("$sourceFolder/*.exe $targetFolder/");
+	#cp("$sourceFolder/*.mdb $targetFolder/");
 }
 
 sub CopyProfileAssemblies
@@ -212,7 +212,7 @@ sub BuildUnityScriptForUnity
 	
 	# TeamCity is handling this
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
-		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout);
+		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout, "unity-trunk");
 	}
 	UnityXBuild("$booCheckout/src/booc/booc.csproj");
 	
@@ -228,7 +228,7 @@ sub BuildUnityScriptForUnity
 	
 	my $usCheckout = "external/unityscript";
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
-		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout);
+		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout, "unity-trunk");
 	}
 	
 	my $UnityScriptLangDLL = "$monoprefixUnity/UnityScript.Lang.dll";
@@ -263,7 +263,7 @@ sub BuildUnityScriptFor20
 	
 	# TeamCity is handling this
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
-		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout);
+		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout, "unity-trunk");
 	}
 	XBuild("$booCheckout/src/booc/booc.csproj", "/t:Rebuild");
 	
@@ -277,7 +277,7 @@ sub BuildUnityScriptFor20
 	
 	my $usCheckout = "external/unityscript";
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
-		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout);
+		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout, "unity-trunk");
 	}
 	
 	my $UnityScriptLangDLL = "$monoprefix20/UnityScript.Lang.dll";
