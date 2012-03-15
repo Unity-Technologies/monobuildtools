@@ -1,6 +1,7 @@
 #!/bin/sh
-. $(dirname $0)/mono-env
+#. $(dirname $0)/mono-env
+MONO_PREFIX=$(dirname $0)/../../..
 
-SMCS=$MONO_PATH/smcs.exe
+MONO_ENV_OPTIONS=$MONO_ENV_OPTIONS:--runtime=moonlight:--security=temporary-smcs-hack
 
-exec $MONO $MONO_OPTIONS --runtime=moonlight --security=temporary-smcs-hack $SMCS "$@"
+$MONO_PREFIX/bin/smcs "$@"
