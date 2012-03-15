@@ -11,7 +11,7 @@ print "My Path: $ENV{PATH}\n";
 
 my $root = getcwd();
 
-my $monoroot = abs_path($root."/../mono");
+my $monoroot = abs_path($root."/../Mono");
 my $monodistro = "$root/builds/monodistribution";
 my $lib = "$monodistro/lib";
 my $libmono = "$lib/mono";
