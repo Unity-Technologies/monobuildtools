@@ -79,7 +79,8 @@ CONFIG_OPTS="\
 --with-tls=pthread \
 --with-glib=embedded \
 --enable-nls=no \
-mono_cv_uscore=yes"
+mono_cv_uscore=yes \
+mono_cv_clang=no"
 
 if [ ${UNITY_THISISABUILDMACHINE:+1} ]; then
         echo "Erasing builds folder to make sure we start with a clean slate"
