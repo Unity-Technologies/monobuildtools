@@ -48,6 +48,7 @@ unsetenv () {
 }
 
 export mono_cv_uscore=yes
+export mono_cv_clang=no
 export cv_mono_sizeof_sunpath=104
 export ac_cv_func_posix_getpwuid_r=yes
 export ac_cv_func_backtrace_symbols=no
