@@ -92,7 +92,7 @@ chdir ($root);
 
 $File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
 
-my @profiles = ("2.0","3.5","4.0");
+my @profiles = ("2.0","3.5","4.0","4.5");
 for my $profile (@profiles)
 {
 	mkpath("$libmono/$profile");
