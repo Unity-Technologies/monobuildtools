@@ -424,6 +424,9 @@ if ($unity)
 
 #Overlaying files
 CopyIgnoringHiddenFiles("add_to_build_results/", "$root/builds/");
+# now remove nunit
+system("rm -rf $monoprefix/lib/mono/2.0/nunit*") eq 0 or die("failed to delete nunit from 2.0");
+system("rm -rf $monoprefix/lib/mono/gac/nunit*") eq 0 or die("failed to delete nunit from gac");
 
 #zip up the results for teamcity
 chdir("$root/builds");
