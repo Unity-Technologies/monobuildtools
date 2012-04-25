@@ -424,6 +424,22 @@ if ($unity)
 
 #Overlaying files
 CopyIgnoringHiddenFiles("add_to_build_results/", "$root/builds/");
+
+if($ENV{UNITY_THISISABUILDMACHINE})
+{
+	my %checkouts = (
+		'mono-classlibs' => 'BUILD_VCS_NUMBER_Mono2_12_x_Unity_4_x',
+		'boo' => 'BUILD_VCS_NUMBER_Boo',
+		'unityscript' => 'BUILD_VCS_NUMBER_UnityScript',
+		'cecil' => 'BUILD_VCS_NUMBER_Cecil'
+	);
+
+	system("echo '' > $root/builds/versions.txt");
+	for my $key (keys %checkouts) {
+		system("echo \"$key = $ENV{$checkouts{$key}}\" >> $root/builds/versions.txt");
+	}
+}
+
 # now remove nunit
 system("rm -rf $monodistro/lib/mono/2.0/nunit*") eq 0 or die("failed to delete nunit from 2.0");
 system("rm -rf $monodistro/lib/mono/gac/nunit*") eq 0 or die("failed to delete nunit from gac");
