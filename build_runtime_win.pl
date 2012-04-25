@@ -62,7 +62,7 @@ copy("$monoroot/msvc/$platform/bin/mono-2.0.pdb","$root/builds/monodistribution/
 
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
-	system("echo mono-runtime-$embedDir = $ENV{'BUILD_VCS_NUMBER'} > $monoroot\\builds\\versions.txt");
+	system("echo mono-runtime-$embedDir = $ENV{'BUILD_VCS_NUMBER'} > $root\\builds\\versions.txt");
 }
 
 sub CompileVCProj
