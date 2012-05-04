@@ -118,7 +118,9 @@ CopyIgnoringHiddenFiles("add_to_build_results/monodistribution/", "$monoprefix/"
 sub cp
 {
 	my $cmdLine = shift;
-	system("cp $cmdLine") eq 0 or die("failed to copy '$cmdLine'");
+	# we can't die if copy fails, as some profiles may not have *.exe files
+	#system("cp $cmdLine") eq 0 or die("failed to copy '$cmdLine'");
+	system("cp $cmdLine");
 }
 
 sub CopyAssemblies
@@ -130,8 +132,8 @@ sub CopyAssemblies
 	
 	mkpath($targetFolder);
 	cp("$sourceFolder/*.dll $targetFolder/");
-	#cp("$sourceFolder/*.exe $targetFolder/");
-	#cp("$sourceFolder/*.mdb $targetFolder/");
+	cp("$sourceFolder/*.exe $targetFolder/");
+	cp("$sourceFolder/*.mdb $targetFolder/");
 }
 
 sub CopyProfileAssemblies
