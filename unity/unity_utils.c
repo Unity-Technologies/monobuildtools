@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #endif
 #include <mono/metadata/object.h>
+#include <mono/metadata/metadata.h>
 #include <glib.h>
 
 #ifdef WIN32
@@ -100,4 +101,10 @@ void
 mono_unity_socket_security_enabled_set (gboolean enabled)
 {
 	socket_security_enabled = enabled;
+}
+
+void
+mono_unity_class_is_interface(MonoClass* klass)
+{
+	return MONO_CLASS_IS_INTERFACE(klass);
 }
