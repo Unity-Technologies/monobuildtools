@@ -26,9 +26,16 @@ namespace UnityProfileShaper
 			}
 
 			var types = assembly.MainModule.Types;
+			var externTypes = assembly.MainModule.ExternTypes;
 
 			foreach (var requiredtype in typenames.Where(requiredtype => !types.Cast<TypeDefinition>().Any(type => type.FullName == requiredtype)))
 			{
+				// ignore forwarded types
+				if (externTypes.Contains(requiredtype))
+				{
+					// TODO: do we need to check if forwarded assembly is one we ship?
+					continue;
+				}
 				throw new Exception("The type "+requiredtype+" was shipped in a previous version of Unity, but is currently being linked away");
 			}
 		}
