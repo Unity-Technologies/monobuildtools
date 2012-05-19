@@ -1,7 +1,16 @@
 #!/bin/sh
-SDK_VERSION=4.3
-ASPEN_ROOT=/Developer/Platforms/iPhoneOS.platform/Developer
-SIMULATOR_ASPEN_ROOT=/Developer/Platforms/iPhoneSimulator.platform/Developer
+SDK_VERSION=5.0
+MAC_SDK_VERSION=10.6
+ASPEN_ROOT=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer
+SIMULATOR_ASPEN_ROOT=/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer
+XCOMP_ASPEN_ROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX${MAC_SDK_VERSION}.sdk
+
+if [ ! -d $ASPEN_ROOT/SDKs/iPhoneOS${SDK_VERSION}.sdk ]; then
+	SDK_VERSION=5.1
+fi
+
+echo "Using SDK $SDK_VERSION"
+
 ASPEN_SDK=$ASPEN_ROOT/SDKs/iPhoneOS${SDK_VERSION}.sdk/
 SIMULATOR_ASPEN_SDK=$SIMULATOR_ASPEN_ROOT/SDKs/iPhoneSimulator${SDK_VERSION}.sdk
 
@@ -20,11 +29,11 @@ setenv () {
 
 	export C_INCLUDE_PATH="$ASPEN_SDK/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$ASPEN_SDK/usr/include"
 	export CPLUS_INCLUDE_PATH="$ASPEN_SDK/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$ASPEN_SDK/usr/include"
-	#export CFLAGS="-DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden"
+	#export CFLAGS="-DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden -g -O0"
 	export CFLAGS="-DHAVE_ARMV6=1 -DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden -Os"
 	export CXXFLAGS="$CFLAGS"
-	export CC="gcc-4.2 -arch $1"
-	export CXX="g++-4.2 -arch $1"
+	export CC="gcc -arch $1"
+	export CXX="g++ -arch $1"
 	export CPP="cpp -nostdinc -U__powerpc__ -U__i386__ -D__arm__"
 	export CXXPP="cpp -nostdinc -U__powerpc__ -U__i386__ -D__arm__"
 	export LD=$CC
@@ -61,7 +70,12 @@ build_arm_mono ()
 	make clean
 	rm config.h*
 
-	./autogen.sh --prefix="$PRFX" --disable-mcs-build --host=arm-apple-darwin9 --disable-shared-handles --with-tls=pthread --with-sigaltstack=no --with-glib=embedded --enable-minimal=jit,profiler,com --disable-nls --with-sgen=no || exit 1
+	pushd eglib 
+	./autogen.sh --host=arm-apple-darwin9 --prefix=$PRFX
+	make clean
+	popd
+
+	./autogen.sh --prefix=$PRFX --disable-mcs-build --host=arm-apple-darwin9 --disable-shared-handles --with-tls=pthread --with-sigaltstack=no --with-glib=embedded --enable-minimal=jit,profiler,com --disable-nls --with-sgen=no || exit 1
 	perl -pi -e 's/MONO_SIZEOF_SUNPATH 0/MONO_SIZEOF_SUNPATH 104/' config.h
 	perl -pi -e 's/#define HAVE_FINITE 1//' config.h
 	#perl -pi -e 's/#define HAVE_MMAP 1//' config.h
@@ -92,10 +106,22 @@ build_iphone_crosscompiler ()
 {
 	echo "Building iPhone cross compiler";
 	export CFLAGS="-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP"	
+	export CC="gcc -arch i386"
+	export CXX="g++ -arch i386"
+	export CPP="$CC -E"
+	export LD=$CC
+	export MACSDKOPTIONS="-mmacosx-version-min=$MAC_SDK_VERSION -isysroot $XCOMP_ASPEN_ROOT"
 
 	export PLATFORM_IPHONE_XCOMP=1	
 	cd $MONOROOT
-	./autogen.sh --prefix="$PRF" --with-macversion=10.5 --disable-mcs-build --disable-shared-handles --with-tls=pthread --with-signalstack=no --with-glib=embedded --target=arm-darwin --disable-nls || exit 1
+
+	pushd eglib 
+	./autogen.sh --prefix=$PRFX || exit 1
+	make clean
+	popd
+	
+	./autogen.sh --prefix=$PRFX --with-macversion=$MAC_SDK_VERSION --disable-mcs-build --disable-shared-handles --with-tls=pthread --with-signalstack=no --with-glib=embedded --target=arm-darwin --disable-nls || exit 1
+	perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
 	make clean || exit 1
 	make || exit 1
 	mkdir -p "$ROOT/builds/crosscompiler/iphone"
@@ -109,8 +135,8 @@ build_iphone_simulator ()
 	echo "Building iPhone simulator static lib";
 	export MACSYSROOT="-isysroot $SIMULATOR_ASPEN_SDK"
 	export MACSDKOPTIONS="-miphoneos-version-min=3.0 $MACSYSROOT"
-	export CC="$SIMULATOR_ASPEN_ROOT/usr/bin/gcc-4.2"
-	export CXX="$SIMULATOR_ASPEN_ROOT/usr/bin/g++-4.2"
+	export CC="$SIMULATOR_ASPEN_ROOT/usr/bin/gcc -arch i386"
+	export CXX="$SIMULATOR_ASPEN_ROOT/usr/bin/g++ -arch i386"
 	cd "$ROOT"
 	perl build_runtime_osx.pl -iphone_simulator=1 || exit 1
 	echo "Copying iPhone simulator static lib to final destination";
