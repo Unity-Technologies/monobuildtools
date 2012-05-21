@@ -12,8 +12,8 @@ my $debug = 0;
 my $minimal = 0;
 my $iphone_simulator = 0;
 my $skipclasslibs = 1;
-my $minmacversion = "10.5";
-my $sdkversion = "10.5";
+my $macversion = "10.4";
+my $sdkversion = "10.4u";
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
@@ -66,15 +66,6 @@ system("rm $bintarget/mono");
 system("rm $libtarget/libmono.dylib");
 system("rm -rf $libtarget/libmono.dylib.dSYM");
 
-if ($iphone_simulator)
-{
-	$ENV{CFLAGS} = "-DTARGET_IPHONE_SIMULATOR -g -O0";
-	$minmacversion = "10.5";
-	$sdkversion = "10.5";
-}
-
-my $osx_gcc_arguments = " -isysroot /Developer/SDKs/MacOSX$sdkversion.sdk -mmacosx-version-min=$minmacversion ";
-
 if (not $skipbuild)
 {
 	#rmtree($bintarget);
@@ -100,9 +91,12 @@ if (not $skipbuild)
 		$ENV{CFLAGS} = "-Os -DMONO_DISABLE_SHM=1"  #optimize for size
 	}
 
-	$ENV{CFLAGS} = $ENV{CFLAGS}.$osx_gcc_arguments ;
-
-	print "cflags = $ENV{CFLAGS}\n";
+	if ($iphone_simulator)
+	{
+		$ENV{CFLAGS} = "-D_XOPEN_SOURCE=1 -DTARGET_IPHONE_SIMULATOR -g -O0";
+		$macversion = "10.6";
+		$sdkversion = "10.6";
+	}
 
 	print "monoroot is $monoroot\n";	
 	chdir("$monoroot") eq 1 or die ("failed to chdir 1");
@@ -113,15 +107,26 @@ if (not $skipbuild)
         #more robust if other targetplatforms have been built from this same workincopy
         system("rm osx.cache");
 
+	chdir("$monoroot/eglib") eq 1 or die ("Failed chdir 1");
+	
+	#this will fail on a fresh working copy, so don't die on it.
+	system("make distclean");
+	system("autoreconf -i") eq 0 or die ("Failed autoreconfing eglib");
+	chdir("$monoroot") eq 1 or die ("failed to chdir 2");
 	system("autoreconf -i") eq 0 or die ("Failed autoreconfing mono");
 	my @autogenparams = ();
 	unshift(@autogenparams, "--cache-file=osx.cache");
+	unshift(@autogenparams, "--disable-mcs-build");
+	unshift(@autogenparams, "--with-glib=embedded");
+	unshift(@autogenparams, "--with-sgen=no");
+	if (!$iphone_simulator)
+	{
+		unshift(@autogenparams, "--with-macversion=$macversion");
+	}
 	if ($skipclasslibs)
 	{
 		unshift(@autogenparams, "--disable-mcs-build");
 	}
-	unshift(@autogenparams, "--with-sgen=no");
-	unshift(@autogenparams, "--with-glib=embedded");
 	unshift(@autogenparams, "--disable-nls");  #this removes the dependency on gettext package
 
 	# From Massi: I was getting failures in install_name_tool about space
@@ -145,6 +150,10 @@ if (not $skipbuild)
 	system("./configure", @autogenparams) eq 0 or die ("failing configuring mono");
 
 	system("make clean") eq 0 or die ("failed make cleaning");
+	if ($iphone_simulator)
+	{
+		system("perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h");
+	}
 	system("make") eq 0 or die ("failing runnig make for mono");
 }
 
@@ -153,7 +162,7 @@ chdir($root);
 mkpath($bintarget);
 mkpath($libtarget);
 
-my $cmdline = "gcc -arch $arch -bundle -reexport_library $monoroot/mono/mini/.libs/libmono-2.0.a $osx_gcc_arguments -all_load -framework CoreFoundation -liconv -o $libtarget/MonoBundleBinary";
+my $cmdline = "gcc -arch $arch -bundle -reexport_library $monoroot/mono/mini/.libs/libmono-2.0.a  -isysroot /Developer/SDKs/MacOSX$sdkversion.sdk -mmacosx-version-min=$macversion -all_load -framework CoreFoundation -liconv -o $libtarget/MonoBundleBinary";
 
 
 if (!$iphone_simulator)
@@ -172,11 +181,12 @@ if (!$iphone_simulator)
 		system("ln","-fs", "$monoroot/mono/mini/.libs/libmono-2.0.dylib.dSYM","$libtarget/libmono.0.dylib.dSYM") eq 0 or die ("failed symlinking libmono-2.0.dylib.dSYM");
 	}
  
-#if ($ENV{"UNITY_THISISABUILDMACHINE"})
-#{
+if ($ENV{"UNITY_THISISABUILDMACHINE"})
+{
 #	system("strip $libtarget/libmono.0.dylib") eq 0 or die("failed to strip libmono");
 #	system("strip $libtarget/MonoBundleBinary") eq 0 or die ("failed to strip MonoBundleBinary");
-#}
+	system("echo \"mono-runtime-osx = $ENV{'BUILD_VCS_NUMBER'}\" > $root/builds/versions.txt");
+}
 
 InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmono.0.dylib");
 
