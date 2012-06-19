@@ -75,7 +75,7 @@ build_arm_mono ()
 	make clean
 	popd
 
-	./autogen.sh --prefix=$PRFX --disable-mcs-build --host=arm-apple-darwin9 --disable-shared-handles --with-tls=pthread --with-sigaltstack=no --with-glib=embedded --enable-minimal=jit,profiler,com --disable-nls --with-sgen=no || exit 1
+	./autogen.sh --prefix=$PRFX --disable-mcs-build --host=arm-apple-darwin9 --disable-shared-handles --with-tls=pthread --with-sigaltstack=no --with-glib=embedded --enable-minimal=jit,profiler,com --disable-nls --with-sgen=yes || exit 1
 	perl -pi -e 's/MONO_SIZEOF_SUNPATH 0/MONO_SIZEOF_SUNPATH 104/' config.h
 	perl -pi -e 's/#define HAVE_FINITE 1//' config.h
 	#perl -pi -e 's/#define HAVE_MMAP 1//' config.h
