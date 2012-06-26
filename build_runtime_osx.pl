@@ -65,6 +65,8 @@ print("libtarget: $libtarget\n");
 system("rm $bintarget/mono");
 system("rm $libtarget/libmono.dylib");
 system("rm -rf $libtarget/libmono.dylib.dSYM");
+system("rm $libtarget/libmonosgen-2.0.0.dylib");
+system("rm -rf $libtarget/libmonosgen-2.0.0.dylib.dSYM");
 
 if (not $skipbuild)
 {
@@ -180,7 +182,19 @@ if (!$iphone_simulator)
 	{
 		system("ln","-fs", "$monoroot/mono/mini/.libs/libmono-2.0.dylib.dSYM","$libtarget/libmono.0.dylib.dSYM") eq 0 or die ("failed symlinking libmono-2.0.dylib.dSYM");
 	}
- 
+
+	print "Symlinking libmonosgen-2.0.0.dylib\n";
+	system("ln","-f", "$monoroot/mono/mini/.libs/libmonosgen-2.0.0.dylib","$libtarget/libmonosgen-2.0.0.dylib") eq 0 or die ("failed symlinking libmonosgen-2.0.0.dylib");
+
+	print "Symlinking libmonosgen-2.0.a\n";
+	system("ln","-f", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$libtarget/libmonosgen-2.0.a") eq 0 or die ("failed symlinking libmonosgen-2.0.a");
+
+	if (($arch eq 'i386') and (not $ENV{"UNITY_THISISABUILDMACHINE"}))
+	{
+		system("ln","-fs", "$monoroot/mono/mini/.libs/libmonosgen-2.0.0.dylib.dSYM","$libtarget/libmonosgen-2.0.0.dylib.dSYM") eq 0 or die ("failed symlinking libmonosgen-2.0.0.dylib.dSYM");
+	}
+
+
 if ($ENV{"UNITY_THISISABUILDMACHINE"})
 {
 #	system("strip $libtarget/libmono.0.dylib") eq 0 or die("failed to strip libmono");
@@ -189,7 +203,9 @@ if ($ENV{"UNITY_THISISABUILDMACHINE"})
 }
 
 InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmono.0.dylib");
+InstallNameTool("$libtarget/libmonosgen-2.0.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.0.dylib");
 
 system("ln","-f","$monoroot/mono/mini/mono","$bintarget/mono") eq 0 or die("failed symlinking mono executable");
+system("ln","-f","$monoroot/mono/mini/mono-sgen","$bintarget/mono-sgen") eq 0 or die("failed symlinking mono-sgen executable");
 system("ln","-f","$monoroot/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed symlinking pedump executable");
 }
