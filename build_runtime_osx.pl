@@ -12,8 +12,8 @@ my $debug = 0;
 my $minimal = 0;
 my $iphone_simulator = 0;
 my $skipclasslibs = 1;
-my $macversion = "10.5";
-my $sdkversion = "10.5";
+my $macversion = "10.4";
+my $sdkversion = "10.4u";
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
@@ -118,16 +118,15 @@ if (not $skipbuild)
 	system("autoreconf -i") eq 0 or die ("Failed autoreconfing mono");
 	my @autogenparams = ();
 	unshift(@autogenparams, "--cache-file=osx.cache");
-	unshift(@autogenparams, "--disable-mcs-build");
+	if ($skipclasslibs)
+	{
+		unshift(@autogenparams, "--disable-mcs-build");
+	}
 	unshift(@autogenparams, "--with-glib=embedded");
 	unshift(@autogenparams, "--with-sgen=yes");
 	if (!$iphone_simulator)
 	{
 		unshift(@autogenparams, "--with-macversion=$macversion");
-	}
-	if ($skipclasslibs)
-	{
-		unshift(@autogenparams, "--disable-mcs-build");
 	}
 	unshift(@autogenparams, "--disable-nls");  #this removes the dependency on gettext package
 
