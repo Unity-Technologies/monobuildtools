@@ -110,7 +110,7 @@ build_iphone_crosscompiler ()
 	export CXX="g++ -arch i386"
 	export CPP="$CC -E"
 	export LD=$CC
-	export MACSDKOPTIONS="-mmacosx-version-min=$MAC_SDK_VERSION -isysroot $XCOMP_ASPEN_ROOT"
+	export MACSDKOPTIONS="-D_XOPEN_SOURCE -mmacosx-version-min=$MAC_SDK_VERSION -isysroot $XCOMP_ASPEN_ROOT"
 
 	export PLATFORM_IPHONE_XCOMP=1	
 	cd $MONOROOT
