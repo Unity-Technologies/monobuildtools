@@ -136,6 +136,7 @@ build_iphone_simulator ()
 	export MACSYSROOT="-isysroot $SIMULATOR_ASPEN_SDK"
 	export MACSDKOPTIONS="-miphoneos-version-min=3.0 $MACSYSROOT"
 	export CC="$SIMULATOR_ASPEN_ROOT/usr/bin/gcc -arch i386"
+	export CPP="$CC -E"
 	export CXX="$SIMULATOR_ASPEN_ROOT/usr/bin/g++ -arch i386"
 	export LIBTOOLIZE=`which glibtoolize`
 	cd "$ROOT"
