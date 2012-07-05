@@ -12,8 +12,8 @@ my $debug = 0;
 my $minimal = 0;
 my $iphone_simulator = 0;
 my $skipclasslibs = 1;
-my $macversion = "10.4";
-my $sdkversion = "10.4u";
+my $macversion = "10.5";
+my $sdkversion = "10.5";
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
