@@ -1,5 +1,6 @@
 #!/bin/sh
 . $(dirname $0)/mono-env-unity
 
-$MONO_PREFIX/bin/mcs -sdk:unity "$@"
+#$MONO_PREFIX/bin/mcs -sdk:unity "$@"
+$MONO $MONO_PREFIX/lib/mono/unity/smcs.exe "$@"
 

@@ -1,4 +1,4 @@
 . $(dirname $0)/mono-env
 
-#export MONO_PATH=$MONO_PREFIX/lib/mono/unity
+export MONO_PATH=$MONO_PREFIX/lib/mono/unity
 
