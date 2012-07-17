@@ -92,7 +92,8 @@ chdir ($root);
 
 $File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
 
-my @profiles = ("2.0","3.5","4.0","4.5");
+#my @profiles = ("2.0","3.5","4.0","4.5");
+my @profiles = ("2.0","3.5","4.0");
 for my $profile (@profiles)
 {
 	mkpath("$libmono/$profile");
@@ -189,10 +190,10 @@ sub PackageSecurityAttributeInjectionTools
 
 my $monoprefixUnity = "$monoprefix/lib/mono/unity";
 my $monoprefix20 = "$monoprefix/lib/mono/2.0";
-my $monoprefix45 = "$monoprefix/lib/mono/4.5";
+my $monoprefix45 = "$monoprefix/lib/mono/4.0";
 my $monodistroLibMono = "$monodistro/lib/mono";
 my $monodistro20 = "$monodistroLibMono/2.0";
-my $monodistro45 = "$monodistroLibMono/4.5";
+my $monodistro45 = "$monodistroLibMono/4.0";
 my $monodistroUnity = "$monodistroLibMono/unity";
 my $monoprefixUnityWeb = "$monoprefix/lib/mono/unity_web";
 my $monodistroUnityWeb = "$monodistro/lib/mono/unity_web";
