@@ -209,7 +209,7 @@ sub Booc
 {
 	my $commandLine = shift;
 	
-	system("$monoprefix20/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $commandLine");
+	system("$monoprefix45/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $commandLine");
 }
 
 sub BuildUnityScriptForUnity
@@ -459,7 +459,7 @@ if ($unity)
 	
 	AddRequiredExecutePermissionsToUnity($monoprefixUnity, $monoprefix20);
 	BuildUnityScriptForUnity();
-	BuildUnityScriptFor20();
+	#BuildUnityScriptFor20();
 	BuildUnityScriptFor45();
 	#BuildCecilForUnity();
 
