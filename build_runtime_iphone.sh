@@ -86,7 +86,7 @@ build_arm_mono ()
 	make || exit 1
 
 	mkdir -p "$ROOT/builds/embedruntimes/iphone"
-	cp "$MONOROOT/mono/mini/.libs/libmono-2.0.a" "$ROOT/builds/embedruntimes/iphone/libmono-$1.a" || exit 1
+	cp "$MONOROOT/mono/mini/.libs/libmono-2.0.a" "$ROOT/builds/embedruntimes/iphone/libmono-2.0-$1.a" || exit 1
 }
 
 build_iphone_runtime () 
@@ -95,9 +95,9 @@ build_iphone_runtime ()
 	build_arm_mono "armv7" || exit 1
 	build_arm_mono "armv6" || exit 1
 
-	libtool -static -o "$ROOT/builds/embedruntimes/iphone/libmono.a" "$ROOT/builds/embedruntimes/iphone/libmono-armv6.a" "$ROOT/builds/embedruntimes/iphone/libmono-armv7.a" || exit 1
-	rm "$ROOT/builds/embedruntimes/iphone/libmono-armv6.a"
-	rm "$ROOT/builds/embedruntimes/iphone/libmono-armv7.a"
+	libtool -static -o "$ROOT/builds/embedruntimes/iphone/libmono-2.0.a" "$ROOT/builds/embedruntimes/iphone/libmono-2.0-armv6.a" "$ROOT/builds/embedruntimes/iphone/libmono-2.0-armv7.a" || exit 1
+	rm "$ROOT/builds/embedruntimes/iphone/libmono-2.0-armv6.a"
+	rm "$ROOT/builds/embedruntimes/iphone/libmono-2.0-armv7.a"
 	unsetenv
 	echo "iPhone runtime build done"
 }
@@ -143,7 +143,7 @@ build_iphone_simulator ()
 	perl build_runtime_osx.pl -iphone_simulator=1 || exit 1
 	echo "Copying iPhone simulator static lib to final destination";
 	mkdir -p "$ROOT/builds/embedruntimes/iphone"
-	cp "$MONOROOT/mono/mini/.libs/libmono-2.0.a" "builds/embedruntimes/iphone/libmono-i386.a"
+	cp "$MONOROOT/mono/mini/.libs/libmono-2.0.a" "builds/embedruntimes/iphone/libmono-2.0-i386.a"
 	unsetenv
 }
 
