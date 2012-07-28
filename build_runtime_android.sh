@@ -123,11 +123,11 @@ rm -rf "$OUTDIR"
 
 clean_build "$CCFLAGS_ARMv5_CPU" "$LDFLAGS_ARMv5" "$OUTDIR/armv5"
 # clean_build "$CCFLAGS_ARMv5_VFP" "$LDFLAGS_ARMv5" "$OUTDIR/armv5_vfp"
-# clean_build "$CCFLAGS_ARMv6_VFP" "$LDFLAGS_ARMv5" "$OUTDIR/armv6_vfp"
+clean_build "$CCFLAGS_ARMv6_VFP" "$LDFLAGS_ARMv5" "$OUTDIR/armv6_vfp"
 clean_build "$CCFLAGS_ARMv7_VFP" "$LDFLAGS_ARMv7" "$OUTDIR/armv7a"
 
 NUM_LIBS_BUILT=`ls -AlR "$OUTDIR" | grep libmono | wc -l`
-if [ $NUM_LIBS_BUILT -eq 4 ]; then
+if [ $NUM_LIBS_BUILT -eq 6 ]; then
 	echo "Android STATIC/SHARED libraries are found here: $OUTDIR"
 else
 	echo "Build failed? Android STATIC/SHARED library cannot be found... Found $NUM_LIBS_BUILT libs under $OUTDIR"
