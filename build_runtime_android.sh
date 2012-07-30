@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # NB! Prereq : ANDROID_NDK_ROOT=/usr/local/android-ndk-xxx or similar
 # Todo: set appropriate ARM flags for hard floats
@@ -9,6 +9,8 @@ GCC_PREFIX=arm-linux-androideabi-
 GCC_VERSION=4.4.3
 OUTDIR="$ROOT/builds/embedruntimes/android"
 PREFIX="$ROOT/builds/android"
+
+perl PrepareAndroidSDK.pl -ndk=r8 -env=envsetup.sh && source envsetup.sh
 
 NDK_ROOT=`cd "$ANDROID_NDK_ROOT" && pwd`
 
@@ -39,7 +41,7 @@ TOOLCHAIN="$NDK_ROOT/toolchains/$GCC_PREFIX$GCC_VERSION/prebuilt/$HOST_ENV"
 
 if [ ! -e "$TOOLCHAIN" -o ! -e "$PLATFORM_ROOT" ]; then
 	NDK_NAME=`basename "$NDK_ROOT"`
-	echo "Failed to locate toolchain/platform; $NDK_NAME | $HOST_ENV | $GCC_VERSION | $ANDROID_PLATFORM"
+	echo "Failed to locate toolchain/platform; $NDK_NAME | $HOST_ENV | $GCC_PREFIX$GCC_VERSION | $ANDROID_PLATFORM"
 	exit 1
 fi
 
@@ -87,14 +89,17 @@ if [ ${UNITY_THISISABUILDMACHINE:+1} ]; then
         rm -rf builds
 fi
 
-clean_build ()
+function clean_build
 {
 	cd "$ROOT/../Mono"
 	make clean && make distclean
 	rm android_cross.cache
 
+	pushd eglib
 	autoreconf -i
-	
+	popd
+	autoreconf -i
+
 	./configure $CONFIG_OPTS \
 	PATH="$PATH" CC="$CC" CXX="$CXX" CPP="$CPP" CXXCPP="$CXXCPP" \
 	CFLAGS="$CFLAGS $1" CXXFLAGS="$CXXFLAGS $1" LDFLAGS="$LDFLAGS $2" \
@@ -113,7 +118,6 @@ clean_build ()
 }
 
 CCFLAGS_ARMv5_CPU="-DARM_FPU_NONE=1 -march=armv5te -mtune=xscale -msoft-float"
-CCFLAGS_ARMv5_VFP="-DARM_FPU_VFP=1  -march=armv5te -mtune=xscale -msoft-float -mfloat-abi=softfp -mfpu=vfp"
 CCFLAGS_ARMv6_VFP="-DARM_FPU_VFP=1  -march=armv6 -mtune=xscale -msoft-float -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1"
 CCFLAGS_ARMv7_VFP="-DARM_FPU_VFP=1  -march=armv7-a                            -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1"
 LDFLAGS_ARMv5=""
@@ -122,12 +126,14 @@ LDFLAGS_ARMv7="-Wl,--fix-cortex-a8"
 rm -rf "$OUTDIR"
 
 clean_build "$CCFLAGS_ARMv5_CPU" "$LDFLAGS_ARMv5" "$OUTDIR/armv5"
-# clean_build "$CCFLAGS_ARMv5_VFP" "$LDFLAGS_ARMv5" "$OUTDIR/armv5_vfp"
 clean_build "$CCFLAGS_ARMv6_VFP" "$LDFLAGS_ARMv5" "$OUTDIR/armv6_vfp"
 clean_build "$CCFLAGS_ARMv7_VFP" "$LDFLAGS_ARMv7" "$OUTDIR/armv7a"
 
+# works only with ndk-r6b and later
+source $ROOT/build_runtime_android_x86.sh dontclean
+
 NUM_LIBS_BUILT=`ls -AlR "$OUTDIR" | grep libmono | wc -l`
-if [ $NUM_LIBS_BUILT -eq 6 ]; then
+if [ $NUM_LIBS_BUILT -eq 8 ]; then
 	echo "Android STATIC/SHARED libraries are found here: $OUTDIR"
 else
 	echo "Build failed? Android STATIC/SHARED library cannot be found... Found $NUM_LIBS_BUILT libs under $OUTDIR"
