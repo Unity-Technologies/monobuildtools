@@ -148,6 +148,14 @@ System.Security.Policy.AllMembershipCondition
 System.Security.Policy.ZoneMembershipCondition
 System.Security.Policy.StrongNameMembershipCondition
 
+
+# jon
+#System.Security.SecurityFrame
+#System.Security.CodeAccessPermission
+System.Security.ISecurityPolicyEncodable
+System.Security.Policy.HashMembershipCondition
+System.Security.Principal.WindowsImpersonationContext
+
 #criticaltype in moonlight
 System.Resources.ResourceWriter
 

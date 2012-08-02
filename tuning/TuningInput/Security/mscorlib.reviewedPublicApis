@@ -289,3 +289,10 @@ System.Reflection.MethodBody System.Reflection.MethodBase::GetMethodBody\(\)
 
 #Not implemented anyway
 System.Int32 System.AppDomain::ExecuteAssembly\(System.String,System.Security.Policy.Evidence,System.String\[\],System.Byte\[\],System.Configuration.Assemblies.AssemblyHashAlgorithm\)
+
+#jon
+System.Collections.ObjectModel.ReadOnlyCollection`1<System.TimeZoneInfo> System.TimeZoneInfo::GetSystemTimeZones\(\)
+System.Security.Policy.Zone System.Security.Policy.Zone::CreateFromUrl\(System.String\)
+System.Boolean System.Security.Principal.WindowsPrincipal::IsInRole*
+System.Boolean System.Security.Principal.GenericPrincipal::IsInRole*
+System.Boolean System.Security.Principal.IPrincipal::IsInRole*

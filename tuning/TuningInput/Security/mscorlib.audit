@@ -2189,3 +2189,14 @@ System.Byte[] System.Reflection.Emit.ModuleBuilder::ResolveSignature(System.Int3
 
 #Harmless
 System.Boolean System.Threading.Thread::Yield()
+
+#need to review, added to fix build
+System.Boolean System.Threading.ThreadPool::UnsafeQueueUserWorkItem(System.Threading.WaitCallback,System.Object)
+System.Security.IPermission System.Security.Permissions.FileDialogPermissionAttribute::CreatePermission()
+System.Security.IPermission System.Security.Permissions.IsolatedStorageFilePermissionAttribute::CreatePermission()
+System.Security.IPermission System.Security.Permissions.KeyContainerPermissionAttribute::CreatePermission()
+System.Security.IPermission System.Security.Permissions.RegistryPermissionAttribute::CreatePermission()
+System.Security.IPermission System.Security.Permissions.UIPermissionAttribute::CreatePermission()
+System.Security.IPermission System.Security.Permissions.ZoneIdentityPermissionAttribute::CreatePermission()
+
+System.TimeZoneInfo System.TimeZoneInfo::FindSystemTimeZoneByFileName(System.String,System.String)
