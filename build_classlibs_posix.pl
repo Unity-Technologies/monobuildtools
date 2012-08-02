@@ -472,8 +472,8 @@ if ($unity)
 
 	# CopyUnityScriptAndBooFromUnityProfileTo20();
 
-	#RunLinker();
-	#RunSecurityInjection();
+	RunLinker();
+	RunSecurityInjection();
 }
 
 #Overlaying files
