@@ -8,7 +8,7 @@ namespace CoreClr.Tools.Tests
     {
         protected static MethodPrivilegePropagationStringReport PropagateRequiredPrivileges(ICollection<TypeDefinition> criticalTypes, string[] canBeSscManual, string[] methodsRequiringPrivilegesThemselves, params AssemblyDefinition[] assemblies)
         {
-            return new MethodPrivilegePropagation(assemblies, ResolveAllMethodDefinitions(assemblies, methodsRequiringPrivilegesThemselves), ResolveAllMethodDefinitions(assemblies, canBeSscManual), criticalTypes, new List<MethodToMethodCall>())
+            return new MethodPrivilegePropagation(assemblies, ResolveAllMethodDefinitions(assemblies, methodsRequiringPrivilegesThemselves), ResolveAllMethodDefinitions(assemblies, canBeSscManual), new HashSet<TypeDefinition>(criticalTypes), new List<MethodToMethodCall>())
                 .CreateReportBuilder()
                 .BuildStringReport();
         }

@@ -176,7 +176,7 @@ System.Void CriticalType1::M6()    #unavailable: lives in a critical type
 
 		private static MethodPrivilegePropagationStringReport PropagateRequiredPrivileges(ICollection<TypeDefinition> criticalTypes, string[] canBeSscManual, string[] methodsRequiringPrivilegesThemselves, params AssemblyDefinition[] assemblies)
 		{
-			return new MethodPrivilegePropagation(assemblies, ResolveAllMethodDefinitions(assemblies, methodsRequiringPrivilegesThemselves), ResolveAllMethodDefinitions(assemblies, canBeSscManual), criticalTypes, new List<MethodToMethodCall>())
+			return new MethodPrivilegePropagation(assemblies, ResolveAllMethodDefinitions(assemblies, methodsRequiringPrivilegesThemselves), ResolveAllMethodDefinitions(assemblies, canBeSscManual), new HashSet<TypeDefinition>(criticalTypes), new List<MethodToMethodCall>())
 				.CreateReportBuilder()
 				.BuildStringReport();
 		}

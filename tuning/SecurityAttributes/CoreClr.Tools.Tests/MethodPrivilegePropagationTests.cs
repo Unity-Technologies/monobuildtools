@@ -85,7 +85,7 @@ namespace CoreClr.Tools.Tests
 
             var assemblies = new[] { assembly1, assembly2 };
 
-            var propagation = new MethodPrivilegePropagation(assemblies, new[] { evilDo }, new MethodDefinition[] { }, new[] { criticaltype }, new List<MethodToMethodCall>());
+            var propagation = new MethodPrivilegePropagation(assemblies, new[] { evilDo }, new MethodDefinition[] { }, new HashSet<TypeDefinition>(new[] { criticaltype }), new List<MethodToMethodCall>());
             var report = propagation.CreateReportBuilder().Build();
 
             CollectionAssert.IsEmpty(report.GetInjectionsFor(assembly1));
@@ -526,7 +526,7 @@ namespace CoreClr.Tools.Tests
 
         private void PropagateAndAssert(PropagateTestDescription ptd)
         {
-            var propagation = new MethodPrivilegePropagation(new[] { _assembly }, ptd.methodsRequiringPrivileges, ptd.safeCriticalMethods, ptd.criticalTypes, ptd.callsToIgnore);
+            var propagation = new MethodPrivilegePropagation(new[] { _assembly }, ptd.methodsRequiringPrivileges, ptd.safeCriticalMethods, new HashSet<TypeDefinition>(ptd.criticalTypes), ptd.callsToIgnore);
             var report = propagation.CreateReportBuilder().Build();
             var injections = report.GetInjectionsFor(_assembly).ToList();
             CollectionAssert.AreEquivalent(ptd.expectedInjections.ToList(), injections);
