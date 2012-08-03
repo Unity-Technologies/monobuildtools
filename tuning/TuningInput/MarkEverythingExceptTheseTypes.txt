@@ -1,5 +1,6 @@
 #the types in this file will not be marked by the linker, which means that if nobody else is using them, they will be removed
 #items with a + mean that they will be marked (useful when you want to ensure a private type is not linked away)
+#items with a ~ mean that they will be marked (useful when you want to ensure a private type is not linked away), including private fields/methods
 System.IO.IsolatedStorage
 #System.Net
 System.Net.NetworkInformation
@@ -31,6 +32,8 @@ System.Reflection.Emit
 System.Collections.Concurrent
 System.Threading.Tasks
 System.Threading.SemaphoreSlim
+~System.Reflection.Mono*
+~System.Reflection.CustomAttribute*
 +System.Reflection.Emit.DynamicILInfo
 +System.Reflection.Emit.EventToken
 +System.Reflection.Emit.FlowControl
@@ -41,6 +44,7 @@ System.Threading.SemaphoreSlim
 +System.Reflection.Emit.SignatureToken
 +System.Reflection.Emit.StringToken
 +System.Reflection.Emit.TypeToken
+~System.MonoCQItem
 +System.Net.IPAddress
 +System.Net.IPHostEntry
 +System.Net.Sockets
@@ -122,6 +126,7 @@ System.Threading.SemaphoreSlim
 +System.InvalidTimeZoneException
 +System.TimeZoneInfo
 +System.TimeZoneNotFoundException
+~System.Threading.InternalThread
 +Mono.Security.ASN1
 +Mono.Security.ASN1Convert
 +Mono.Security.Authenticode.PrivateKey
