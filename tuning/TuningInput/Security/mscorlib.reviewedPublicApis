@@ -296,3 +296,4 @@ System.Security.Policy.Zone System.Security.Policy.Zone::CreateFromUrl\(System.S
 System.Boolean System.Security.Principal.WindowsPrincipal::IsInRole*
 System.Boolean System.Security.Principal.GenericPrincipal::IsInRole*
 System.Boolean System.Security.Principal.IPrincipal::IsInRole*
+System.Boolean System.Reflection.Emit.AssemblyBuilder::get_GlobalAssemblyCache\(\)

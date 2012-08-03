@@ -2200,3 +2200,17 @@ System.Security.IPermission System.Security.Permissions.UIPermissionAttribute::C
 System.Security.IPermission System.Security.Permissions.ZoneIdentityPermissionAttribute::CreatePermission()
 
 System.TimeZoneInfo System.TimeZoneInfo::FindSystemTimeZoneByFileName(System.String,System.String)
+
+System.Type System.Reflection.MonoAssembly::GetType(System.String,System.Boolean,System.Boolean)
+System.Reflection.AssemblyName[] System.Reflection.MonoAssembly::GetReferencedAssemblies()
+
+System.Type System.Reflection.MonoModule::GetType(System.String,System.Boolean,System.Boolean)
+System.Int32 System.Reflection.MonoModule::get_MetadataToken()
+System.Type[] System.Reflection.MonoModule::GetTypes()
+System.Type System.Reflection.MonoModule::ResolveType(System.Int32,System.Type[],System.Type[])
+System.Reflection.MethodBase System.Reflection.MonoModule::ResolveMethod(System.Int32,System.Type[],System.Type[])
+System.Reflection.FieldInfo System.Reflection.MonoModule::ResolveField(System.Int32,System.Type[],System.Type[])
+System.String System.Reflection.MonoModule::ResolveString(System.Int32)
+System.Reflection.MemberInfo System.Reflection.MonoModule::ResolveMember(System.Int32,System.Type[],System.Type[])
+
+System.Byte[] System.Reflection.MonoModule::ResolveSignature(System.Int32)
