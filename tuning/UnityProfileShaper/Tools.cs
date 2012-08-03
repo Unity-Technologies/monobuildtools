@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,6 +9,11 @@ namespace UnityProfileShaper
 {
 	class Tools
 	{
+		internal static IEnumerable<string> ReadLinesFromDataFileWithTilda(string file)
+		{
+			return ReadLinesFromDataFile(file).Where(l => l.StartsWith("~")).Select(l => l.Substring(1));
+		}
+
 		internal static IEnumerable<string> ReadLinesFromDataFileWithPlus(string file)
 		{
 			return ReadLinesFromDataFile(file).Where(l => l.StartsWith("+")).Select(l => l.Substring(1));
@@ -16,7 +21,7 @@ namespace UnityProfileShaper
 
 		internal static IEnumerable<string> ReadLinesFromDataFileWithoutPlus(string file)
 		{
-			return ReadLinesFromDataFile(file).Where(l => !l.StartsWith("+"));
+			return ReadLinesFromDataFile(file).Where(l => !l.StartsWith("+") && !l.StartsWith("~"));
 		}
 
 		internal static string[] ReadLinesFromDataFile(string filename)

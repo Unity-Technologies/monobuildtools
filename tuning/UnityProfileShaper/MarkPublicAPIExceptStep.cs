@@ -70,7 +70,7 @@ namespace Mono.Linker.Steps
 
 			foreach (TypeDefinition type in assembly.MainModule.Types)
 			{
-				if (!type.IsPublic) continue;
+				if (!NeedsFullyMarked(type) && !type.IsPublic) continue;
 	
 				if (IsInExceptionList(type)) continue;
 				Annotations.Mark(type, "MarkPublicAPIExceptStep");
@@ -85,7 +85,7 @@ namespace Mono.Linker.Steps
 		}
 
 		private static List<Regex> s_ExceptionListRegexes;
-		List<Regex> GetExceptionListReGetRegexes()
+		static List<Regex> GetExceptionListReGetRegexes()
 		{
 			if (s_ExceptionListRegexes==null)
 			{
@@ -96,7 +96,7 @@ namespace Mono.Linker.Steps
 		}
 
 		private static List<Regex> s_ExceptionListOverrideRegexes;
-		List<Regex> GetExceptionListOverrideRegexes()
+		static List<Regex> GetExceptionListOverrideRegexes()
 		{
 			if (s_ExceptionListOverrideRegexes == null)
 			{
@@ -105,7 +105,17 @@ namespace Mono.Linker.Steps
 			return s_ExceptionListOverrideRegexes;
 		}
 
-		private List<Regex> CreateRegexes(List<string> patterns)
+		private static List<Regex> s_ExceptionListOverrideFullRegexes;
+		static List<Regex> GetExceptionListOverrideFullRegexes()
+		{
+			if (s_ExceptionListOverrideFullRegexes == null)
+			{
+				s_ExceptionListOverrideFullRegexes = CreateRegexes(new List<string>(Tools.ReadLinesFromDataFileWithTilda("MarkEverythingExceptTheseTypes.txt")));
+			}
+			return s_ExceptionListOverrideFullRegexes;
+		}
+
+		static List<Regex> CreateRegexes(List<string> patterns)
 		{
 			var l = new List<Regex>();
 			foreach (var s in patterns)
@@ -124,8 +134,25 @@ namespace Mono.Linker.Steps
 			return IsInExceptionList(name);
 		}
 
+		static bool NeedsFullyMarked(TypeDefinition type)
+		{
+			return NeedsFullyMarked(type.FullName);
+		}
+
+		static bool NeedsFullyMarked(string name)
+		{
+			foreach (var regex in GetExceptionListOverrideFullRegexes())
+				if (regex.Match(name).Success)
+					return true;
+			
+			return false;
+		}
+
 		private bool IsInExceptionList(string name)
 		{
+			if (NeedsFullyMarked (name))
+					return false;
+
 			foreach (var regex in GetExceptionListOverrideRegexes())
 				if (regex.Match(name).Success)
 					return false;
@@ -141,7 +168,7 @@ namespace Mono.Linker.Steps
 		{
 			foreach (FieldDefinition field in fields)
 			{
-				if (field.IsPublic)
+				if (NeedsFullyMarked(markedby) || field.IsPublic)
 					Annotations.Mark(field, markedby);
 			}
 				
@@ -150,7 +177,7 @@ namespace Mono.Linker.Steps
 		void MarkMethods(ICollection methods, TypeDefinition markedby)
 		{
 			foreach (MethodDefinition method in methods)
-				if (method.IsPublic)
+				if (NeedsFullyMarked(markedby) || method.IsPublic)
 					if (!IsInExceptionList(method))
 						MarkMethod(method, MethodAction.ForceParse, markedby);
 		}
