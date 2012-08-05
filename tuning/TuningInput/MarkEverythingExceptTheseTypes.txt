@@ -32,6 +32,7 @@ System.Reflection.Emit
 System.Collections.Concurrent
 System.Threading.Tasks
 System.Threading.SemaphoreSlim
++System.Reflection.Assembly::GetFile
 ~System.Reflection.Mono*
 ~System.Reflection.CustomAttribute*
 +System.Reflection.Emit.DynamicILInfo

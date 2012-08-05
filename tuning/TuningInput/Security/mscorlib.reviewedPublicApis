@@ -297,3 +297,5 @@ System.Boolean System.Security.Principal.WindowsPrincipal::IsInRole*
 System.Boolean System.Security.Principal.GenericPrincipal::IsInRole*
 System.Boolean System.Security.Principal.IPrincipal::IsInRole*
 System.Boolean System.Reflection.Emit.AssemblyBuilder::get_GlobalAssemblyCache\(\)
+System.IO.FileStream\[\] System.Reflection.Emit.AssemblyBuilder::GetFiles*
+System.IO.FileStream\[\] System.Reflection.Assembly::GetFiles*
