@@ -1,5 +1,5 @@
 #!/bin/sh
 . $(dirname $0)/mono-env
 
-$MONO_PREFIX/bin/mcs -sdk:2 "$@"
+$MONO $MONO_PREFIX/lib/mono/2.0/gmcs.exe "$@"
 

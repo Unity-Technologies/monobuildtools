@@ -1,3 +1,0 @@
-. $(dirname $0)/mono-env
-
-#export MONO_PATH=$MONO_PREFIX/lib/mono/3.5:$MONO_PREFIX/lib/mono/2.0
