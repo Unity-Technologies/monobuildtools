@@ -170,12 +170,6 @@ sub XBuild
    system("$monoprefix/bin/xbuild", @_) eq 0 or die("Failed to xbuild @_");
 }
 
-sub XBuild20
-{
-   print "XBuild20 @_\n";
-   system("$monoprefix/bin/xbuild", @_, "/p:TargetFrameworkVersion=v3.5") eq 0 or die("Failed to xbuild @_");
-}
-
 sub RunXBuildTargetOnProfile
 {
 	my $target = shift;	
@@ -215,7 +209,7 @@ sub Booc
 {
 	my $commandLine = shift;
 	
-	system("$monoprefix20/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $commandLine");
+	system("$monoprefix45/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $commandLine");
 }
 
 sub BuildUnityScriptForUnity
@@ -277,7 +271,7 @@ sub BuildUnityScriptFor20
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
 		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout, "unity-trunk");
 	}
-	XBuild20("$booCheckout/src/booc/booc.csproj", "/t:Rebuild");
+	XBuild("$booCheckout/src/booc/booc.csproj", "/t:Rebuild");
 	
 	cp("$booCheckout/ide-build/Boo.Lang*.dll $monoprefix20/");
 	cp("$booCheckout/ide-build/booc.exe $monoprefix20/");
@@ -465,8 +459,8 @@ if ($unity)
 	
 	AddRequiredExecutePermissionsToUnity($monoprefixUnity, $monoprefix20);
 	BuildUnityScriptForUnity();
-	BuildUnityScriptFor20();
-	#BuildUnityScriptFor45();
+	#BuildUnityScriptFor20();
+	BuildUnityScriptFor45();
 	#BuildCecilForUnity();
 
 	CopyAssemblies($monoprefix20,$monodistro20);
