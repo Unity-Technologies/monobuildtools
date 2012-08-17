@@ -8,6 +8,11 @@ my $path = "incomingbuilds/";
 rmtree("collectedbuilds");
 mkpath("collectedbuilds");
 
+if ($ENV{"UNITY_THISISABUILDMACHINE"})
+{
+        system("echo \"monobuildtools = $ENV{'BUILD_VCS_NUMBER_monobuildtools_unity_2_10_2'}\" >> versions-aggregated.txt");
+}
+
 my @folders = ();
 opendir(DIR, $path) or die "cant find $path: $!";
 while (defined(my $file = readdir(DIR))) {

@@ -116,7 +116,7 @@ system("cp", "$monoroot/mono/mini/.libs/libmono-2.0.a","$libtarget/libmono-stati
 if ($ENV{"UNITY_THISISABUILDMACHINE"})
 {
 	system("strip $libtarget/libmono.so") eq 0 or die("failed to strip libmono (shared)");
-	system("echo \"mono-runtime-$platform = $ENV{'BUILD_VCS_NUMBER'}\" > $root/builds/versions.txt");
+	system("echo \"mono-runtime-$platform = $ENV{'BUILD_VCS_NUMBER_mono_unity_2_10_2'}\" > $root/builds/versions.txt");
 }
 
 system("ln","-f","$monoroot/mono/mini/mono","$bintarget/mono") eq 0 or die("failed symlinking mono executable");
