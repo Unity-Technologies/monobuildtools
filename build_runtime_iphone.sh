@@ -87,6 +87,7 @@ build_arm_mono ()
 
 	mkdir -p "$ROOT/builds/embedruntimes/iphone"
 	cp "$MONOROOT/mono/mini/.libs/libmono-2.0.a" "$ROOT/builds/embedruntimes/iphone/libmono-2.0-$1.a" || exit 1
+	cp "$MONOROOT/mono/mini/.libs/libmonosgen-2.0.a" "$ROOT/builds/embedruntimes/iphone/libmonosgen-2.0-$1.a" || exit 1
 }
 
 build_iphone_runtime () 
@@ -98,6 +99,9 @@ build_iphone_runtime ()
 	libtool -static -o "$ROOT/builds/embedruntimes/iphone/libmono-2.0.a" "$ROOT/builds/embedruntimes/iphone/libmono-2.0-armv6.a" "$ROOT/builds/embedruntimes/iphone/libmono-2.0-armv7.a" || exit 1
 	rm "$ROOT/builds/embedruntimes/iphone/libmono-2.0-armv6.a"
 	rm "$ROOT/builds/embedruntimes/iphone/libmono-2.0-armv7.a"
+	libtool -static -o "$ROOT/builds/embedruntimes/iphone/libmonosgen-2.0.a" "$ROOT/builds/embedruntimes/iphone/libmonosgen-2.0-armv6.a" "$ROOT/builds/embedruntimes/iphone/libmonosgen-2.0-armv7.a" || exit 1
+	rm "$ROOT/builds/embedruntimes/iphone/libmonosgen-2.0-armv6.a"
+	rm "$ROOT/builds/embedruntimes/iphone/libmonosgen-2.0-armv7.a"
 	unsetenv
 	echo "iPhone runtime build done"
 }
@@ -126,6 +130,7 @@ build_iphone_crosscompiler ()
 	make || exit 1
 	mkdir -p "$ROOT/builds/crosscompiler/iphone"
 	cp "$MONOROOT/mono/mini/mono" "$ROOT/builds/crosscompiler/iphone/mono-xcompiler"
+	cp "$MONOROOT/mono/mini/mono-sgen" "$ROOT/builds/crosscompiler/iphone/mono-sgen-xcompiler"
 	unsetenv
 	echo "iPhone cross compiler build done"
 }
