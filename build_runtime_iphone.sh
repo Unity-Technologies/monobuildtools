@@ -177,3 +177,6 @@ if [ $# -eq 0 ]; then
 	build_iphone_crosscompiler || exit 1
 	build_iphone_simulator || exit 1
 fi
+if [ ${UNITY_THISISABUILDMACHINE:+1} ]; then
+	echo "mono-runtime-iphone = $BUILD_VCS_NUMBER_mono_unity_2_10_2" > $ROOT/builds/versions.txt
+fi
