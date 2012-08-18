@@ -10,7 +10,7 @@ mkpath("collectedbuilds");
 
 if ($ENV{"UNITY_THISISABUILDMACHINE"})
 {
-        system("echo \"monobuildtools = $ENV{'BUILD_VCS_NUMBER_monobuildtools_unity_2_10_2'}\" >> versions-aggregated.txt");
+        system("echo \"monobuildtools = $ENV{'BUILD_VCS_NUMBER_monobuildtools_unity_2_10_2'}\" >> collectedbuilds/versions-aggregated.txt");
 }
 
 my @folders = ();
