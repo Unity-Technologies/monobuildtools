@@ -149,6 +149,7 @@ build_iphone_simulator ()
 	echo "Copying iPhone simulator static lib to final destination";
 	mkdir -p "$ROOT/builds/embedruntimes/iphone"
 	cp "$MONOROOT/mono/mini/.libs/libmono-2.0.a" "builds/embedruntimes/iphone/libmono-2.0-i386.a"
+	cp "$MONOROOT/mono/mini/.libs/libmonosgen-2.0.a" "builds/embedruntimes/iphone/libmonosgen-2.0-i386.a"
 	unsetenv
 }
 
