@@ -1,1 +1,1 @@
-@"%~dp0mcs.bat" -sdk:2 %*
+@"%~dp0cli.bat" %MONO_OPTIONS% "%~dp0..\lib\mono\2.0\gmcs.exe" %*
