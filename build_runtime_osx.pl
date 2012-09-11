@@ -3,7 +3,7 @@ use Cwd;
 use Cwd 'abs_path';
 use File::Path;
 use Getopt::Long;
-use Tools qw(InstallNameTool);
+use Tools qw(InstallNameTool GitClone);
 
 my $root = getcwd();
 my $monoroot = abs_path($root."/../Mono");
@@ -12,15 +12,21 @@ my $debug = 0;
 my $minimal = 0;
 my $iphone_simulator = 0;
 my $skipclasslibs = 1;
+my $llvm=0;
+my $llvmstatic=0;
 my $macversion = "10.5";
 my $sdkversion = "10.5";
+
+my $llvmCheckout = "$root/external/llvm";
+my $llvmPrefix = "$root/tmp/llvmprefix";
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
    "debug=i"=>\$debug,
    "minimal=i"=>\$minimal,
    "iphone_simulator=i"=>\$iphone_simulator,
-   "skipclasslibs=i"=>\$skipclasslibs
+   "skipclasslibs=i"=>\$skipclasslibs,
+   "llvm=i"=>\$llvm
 ) or die ("illegal cmdline options");
 
 my $arch;
@@ -70,6 +76,27 @@ system("rm -rf $libtarget/libmonosgen-2.0.0.dylib.dSYM");
 
 if (not $skipbuild)
 {
+	if ($llvm) {
+		if (!$ENV{UNITY_THISISABUILDMACHINE}) {
+			GitClone("git://github.com/mono/llvm.git", $llvmCheckout, "mono-2-10");
+		}
+		
+		$ENV{CFLAGS} = "-mmacosx-version-min=10.5 -isysroot /Developer/SDKs/MacOSX10.5.sdk";
+		$ENV{CXXFLAGS} = "-mmacosx-version-min=10.5 -isysroot /Developer/SDKs/MacOSX10.5.sdk";
+
+		chdir("$llvmCheckout");
+		my @configureparams = ();
+		unshift(@configureparams, "--prefix=$llvmPrefix");
+		unshift(@configureparams, "--host=i686-apple-darwin11");
+		unshift(@configureparams, "--target=i686-apple-darwin11");
+		unshift(@configureparams, "--build=i686-apple-darwin11");
+		system("./configure", @configureparams) eq 0 or die ("Failed llvm configure");
+		system("make") eq 0 or die ("Failed llvm make");
+		system("make install") eq 0 or die ("Failed llvm make");
+		
+		$ENV{PATH} = "$llvmPrefix/bin" . ":" . $ENV{PATH};
+	}	
+
 	#rmtree($bintarget);
 	#rmtree($libtarget);
 
@@ -124,6 +151,10 @@ if (not $skipbuild)
 	}
 	unshift(@autogenparams, "--with-glib=embedded");
 	unshift(@autogenparams, "--with-sgen=yes");
+	if ((!$iphone_simulator) && ($llvm)) {
+		unshift(@autogenparams, "--enable-llvm=yes");
+		unshift(@autogenparams, "--enable-loadedllvm=yes");
+	}
 	if (!$iphone_simulator)
 	{
 		unshift(@autogenparams, "--with-macversion=$macversion");
@@ -165,6 +196,14 @@ mkpath($libtarget);
 
 my $cmdline = "gcc -arch $arch -bundle -reexport_library $monoroot/mono/mini/.libs/libmono-2.0.a  -isysroot /Developer/SDKs/MacOSX$sdkversion.sdk -mmacosx-version-min=$macversion -all_load -framework CoreFoundation -liconv -o $libtarget/MonoBundleBinary";
 
+if ($llvmstatic) {
+	$ENV{PATH} = "$llvmPrefix/bin" . ":" . $ENV{PATH};
+
+	chop($llvmldflags = `llvm-config --ldflags`);
+	chop($llvmlibs = `llvm-config --libs core bitwriter jit x86codegen`);
+
+	$cmdline = "${cmdline} ${llvmldflags} ${llvmlibs} -lstdc++";
+}
 
 if (!$iphone_simulator)
 {
