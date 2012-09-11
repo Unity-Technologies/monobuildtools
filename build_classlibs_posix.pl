@@ -5,6 +5,7 @@ use File::Path;
 use File::Copy::Recursive qw(dircopy);
 use Getopt::Long;
 use File::Basename;
+use Tools qw(GitClone);
 
 system("source","~/.profile");
 print "My Path: $ENV{PATH}\n";
@@ -367,19 +368,6 @@ sub UnityXBuild
 	my $commandLine = "$monoprefix/bin/xbuild $projectFile /p:CscToolExe=smcs /p:CscToolPath=$monoprefixUnity /p:MonoTouch=True /t:$target /p:Configuration=$configuration /p:AssemblySearchPaths=$monoprefixUnity";
 	
 	system($commandLine) eq 0 or die("Failed to xbuild '$projectFile' for unity");
-}
-
-sub GitClone
-{
-	my $repo = shift;
-	my $localFolder = shift;
-	my $branch = shift;
-	$branch = defined($branch)?$branch:master;
-
-	if (-d $localFolder) {
-		return;
-	}
-	system("git clone --branch $branch $repo $localFolder") eq 0 or die("git clone $repo $localFolder failed!");
 }
 
 sub BuildCecilForUnity

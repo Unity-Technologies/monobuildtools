@@ -10,7 +10,7 @@ use File::stat;
 
 require Exporter;
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(InstallNameTool);
+our @EXPORT_OK = qw(InstallNameTool GitClone);
 
 
 sub InstallNameTool
@@ -23,3 +23,18 @@ sub InstallNameTool
   print "running otool after:\n";
   system("otool","-L",$target);
 }
+
+sub GitClone
+{
+	my $repo = shift;
+	my $localFolder = shift;
+	my $branch = shift;
+	$branch = defined($branch)?$branch:"master";
+
+	if (-d $localFolder) {
+		return;
+	}
+	print "running git clone --branch $branch $repo $localFolder\n";
+	system("git clone --branch $branch $repo $localFolder") eq 0 or die("git clone $repo $localFolder failed!");
+}
+
