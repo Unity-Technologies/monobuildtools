@@ -126,18 +126,6 @@ for $arch ('i386','x86_64') {
 			#rmtree($bintarget);
 			#rmtree($libtarget);
 
-			#we need to manually set the compiler to gcc4, because the 10.4 sdk only shipped with the gcc4 headers
-			#their setup is a bit broken as they dont autodetect this, but basically the gist is if you want to copmile
-			#against the 10.4 sdk, you better use gcc4, otherwise things go boink.
-			unless ($ENV{CC})
-			{
-				$ENV{CC} = "gcc";
-			}
-			unless ($ENV{CXX})
-			{
-				$ENV{CXX} = "g++";
-			}
-
 			if ($debug)
 			{
 				$ENV{CFLAGS} = "-g -O0 -DMONO_DISABLE_SHM=1 -arch $arch";
