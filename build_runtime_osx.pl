@@ -14,8 +14,8 @@ my $iphone_simulator = 0;
 my $skipclasslibs = 1;
 my $llvm=0;
 my $llvmstatic=0;
-my $macversion = "10.6";
-my $sdkversion = "10.6";
+my $macversion = "10.5";
+my $sdkversion = "10.5";
 
 my $llvmCheckout = "$root/external/llvm";
 my $llvmPrefix = "$root/tmp/llvmprefix";
