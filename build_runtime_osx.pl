@@ -263,7 +263,9 @@ for $file ('MonoBundleBinary','libmono.0.dylib','libmono.a') {
 	system ('lipo', "$root/builds/embedruntimes/osx-i386/$file", "$root/builds/embedruntimes/osx-x86_64/$file", '-create', '-output', "$root/builds/embedruntimes/osx/$file");
 }
 for $file ('mono','mono-sgen','pedump') {
-	system ('lipo', "$root/builds/monodistribution/bin-i386/$file", "$root/builds/monodistribution/bin-x86_64/$file", '-create', '-output', "$root/builds/monodistribution/bin/$file");
+	system ('lipo', "$root/builds/monodistribution/bin-i386/$file", '-create', '-output', "$root/builds/monodistribution/bin/$file");
+	# Don't add 64bit executables for now...
+	# system ('lipo', "$root/builds/monodistribution/bin-i386/$file", "$root/builds/monodistribution/bin-x86_64/$file", '-create', '-output', "$root/builds/monodistribution/bin/$file");
 }
 }
 }
