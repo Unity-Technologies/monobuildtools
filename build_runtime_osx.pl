@@ -56,10 +56,8 @@ for $arch ('i386','x86_64') {
 	my $bintarget = "$root/builds/monodistribution/bin-$arch";
 	my $libtarget = "$root/builds/embedruntimes/osx-$arch";
 
-	if ($minimal)
-	{
-		$libtarget = "$root/builds/embedruntimes/osx-minimal";
-	}
+	$libtarget = "$root/builds/embedruntimes/osx-minimal" if $minimal;
+
 	print("libtarget: $libtarget\n");
 
 	system("rm $bintarget/mono");
@@ -93,14 +91,12 @@ for $arch ('i386','x86_64') {
 			$ENV{PATH} = "$llvmPrefix/bin" . ":" . $ENV{PATH};
 		}	
 
-		#rmtree($bintarget);
-		#rmtree($libtarget);
-
 		if ($iphone_simulator)
 		{
-			$ENV{CFLAGS} = "-D_XOPEN_SOURCE=1 -DTARGET_IPHONE_SIMULATOR -g -O0";
+			$ENV{CFLAGS} = "-D_XOPEN_SOURCE=1 -DTARGET_IPHONE_SIMULATOR";
 			$macversion = "10.6";
 			$sdkversion = "10.6";
+			$debug = 1;
 		}
 
 		print "monoroot is $monoroot\n";	
@@ -121,81 +117,54 @@ for $arch ('i386','x86_64') {
 		system("autoreconf -i") eq 0 or die ("Failed autoreconfing mono");
 		my @autogenparams = ();
 		unshift(@autogenparams, "--cache-file=osx.cache");
-		if ($skipclasslibs)
-		{
-			#rmtree($bintarget);
-			#rmtree($libtarget);
 
-			if ($debug)
-			{
-				$ENV{CFLAGS} = "-g -O0 -DMONO_DISABLE_SHM=1 -arch $arch";
-				$ENV{LDFLAGS} = "-arch $arch";
-			} else
-			{
-				$ENV{CFLAGS} = "-Os -DMONO_DISABLE_SHM=1 -arch $arch";  #optimize for size
-				$ENV{LDFLAGS} = "-arch $arch";
-			}
+		$ENV{CFLAGS} = $ENV{CFLAGS}.$osx_gcc_arguments if !$iphone_simulator;
 
-			$ENV{CFLAGS} = $ENV{CFLAGS}.$osx_gcc_arguments if !$iphone_simulator;
+		print "cflags = $ENV{CFLAGS}\n";
 
-			print "cflags = $ENV{CFLAGS}\n";
+		print "monoroot is $monoroot\n";
+		chdir("$monoroot") eq 1 or die ("failed to chdir 1");
+		#this will fail on a fresh working copy, so don't die on it.
+		# system("make distclean");
+		#were going to tell autogen to use a specific cache file, that we purposely remove before starting.
+		#that way, autogen is forced to do all its config stuff again, which should make this buildscript
+		#more robust if other targetplatforms have been built from this same workincopy
+		system("rm osx.cache");
 
-			print "monoroot is $monoroot\n";	
-			chdir("$monoroot") eq 1 or die ("failed to chdir 1");
-			#this will fail on a fresh working copy, so don't die on it.
-			# system("make distclean");
-			#were going to tell autogen to use a specific cache file, that we purposely remove before starting.
-			#that way, autogen is forced to do all its config stuff again, which should make this buildscript
-			#more robust if other targetplatforms have been built from this same workincopy
-			system("rm osx.cache");
+		system("autoreconf -i") eq 0 or die ("Failed autoreconfing mono");
+		my @autogenparams = ();
+		unshift(@autogenparams, "--cache-file=osx.cache");
 
-			system("autoreconf -i") eq 0 or die ("Failed autoreconfing mono");
-			my @autogenparams = ();
-			unshift(@autogenparams, "--cache-file=osx.cache");
-			if ($skipclasslibs)
-			{
-				unshift(@autogenparams, "--disable-mcs-build");
-			}
-			unshift(@autogenparams, "--with-glib=embedded");
-			unshift(@autogenparams, "--with-sgen=yes");
-			unshift(@autogenparams, "--disable-nls");  #this removes the dependency on gettext package
-			if (!$iphone_simulator)
-			{
-				unshift(@autogenparams, "--with-macversion=$macversion");
-				if ($llvm)
-				{
-					unshift(@autogenparams, "--enable-llvm=yes");
-					unshift(@autogenparams, "--enable-loadedllvm=yes");
-				}
-			}
+		unshift(@autogenparams, "--disable-mcs-build") if $skipclasslibs;
+		unshift(@autogenparams, "--with-glib=embedded");
+		unshift(@autogenparams, "--with-sgen=yes");
+		unshift(@autogenparams, "--disable-nls");  #this removes the dependency on gettext package
 
-			# From Massi: I was getting failures in install_name_tool about space
-			# for the commands being too small, and adding here things like
-			# $ENV{LDFLAGS} = '-headerpad_max_install_names' and
-			# $ENV{LDFLAGS} = '-headerpad=0x40000' did not help at all (and also
-			# adding them to our final gcc invocation to make the bundle).
-			# Lucas noticed that I was lacking a Mono prefix, and having a long
-			# one would give us space, so here is this silly looong prefix.
-			# unshift(@autogenparams, "--prefix=/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890");
+		unshift(@autogenparams, "--with-macversion=$macversion") if !$iphone_simulator;
+		unshift(@autogenparams, "--enable-llvm=yes") if !$iphone_simulator && $llvm;
+		unshift(@autogenparams, "--enable-loadedllvm=yes") if !$iphone_simulator && $llvm;
 
-			if ($minimal)
-			{
-				unshift(@autogenparams,"--enable-minimal=aot,logging,com,profiler,debug");
-			}
+		# From Massi: I was getting failures in install_name_tool about space
+		# for the commands being too small, and adding here things like
+		# $ENV{LDFLAGS} = '-headerpad_max_install_names' and
+		# $ENV{LDFLAGS} = '-headerpad=0x40000' did not help at all (and also
+		# adding them to our final gcc invocation to make the bundle).
+		# Lucas noticed that I was lacking a Mono prefix, and having a long
+		# one would give us space, so here is this silly looong prefix.
+		# unshift(@autogenparams, "--prefix=/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890/1234567890");
 
-			print("\n\n\n\nCalling configure with these parameters: ");
-			system("echo", @autogenparams);
-			print("\n\n\n\n\n");
-			system("calling ./configure",@autogenparams);
-			system("./configure", @autogenparams) eq 0 or die ("failing configuring mono");
+		unshift(@autogenparams,"--enable-minimal=aot,logging,com,profiler,debug") if $minimal;
 
-			system("make clean") eq 0 or die ("failed make cleaning");
-			if ($iphone_simulator)
-			{
-				system("perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h");
-			}
-			system("make") eq 0 or die ("failing runnig make for mono");
-		}
+		print("\n\n\n\nCalling configure with these parameters: ");
+		system("echo", @autogenparams);
+		print("\n\n\n\n\n");
+		system("calling ./configure",@autogenparams);
+		system("./configure", @autogenparams) eq 0 or die ("failing configuring mono");
+
+		system("make clean") eq 0 or die ("failed make cleaning");
+		system("perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h") if $iphone_simulator;
+		system("make") eq 0 or die ("failing runnig make for mono");
+	}
 
 	chdir($root);
 
@@ -239,7 +208,7 @@ for $arch ('i386','x86_64') {
 		{
 			system("ln","-fs", "$monoroot/mono/mini/.libs/libmonosgen-2.0.0.dylib.dSYM","$libtarget/libmonosgen-2.0.0.dylib.dSYM") eq 0 or die ("failed symlinking libmonosgen-2.0.0.dylib.dSYM");
 		}
-
+	}
 
 	if ($ENV{"UNITY_THISISABUILDMACHINE"})
 	{
@@ -266,6 +235,4 @@ for $file ('mono','mono-sgen','pedump') {
 	system ('lipo', "$root/builds/monodistribution/bin-i386/$file", '-create', '-output', "$root/builds/monodistribution/bin/$file");
 	# Don't add 64bit executables for now...
 	# system ('lipo', "$root/builds/monodistribution/bin-i386/$file", "$root/builds/monodistribution/bin-x86_64/$file", '-create', '-output', "$root/builds/monodistribution/bin/$file");
-}
-}
 }
