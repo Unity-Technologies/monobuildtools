@@ -163,7 +163,7 @@ for $arch ('i386','x86_64') {
 
 		system("make clean") eq 0 or die ("failed make cleaning");
 		system("perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h") if $iphone_simulator;
-		system("make") eq 0 or die ("failing runnig make for mono");
+		system("make") eq 0 or die ("failing running make for mono");
 	}
 
 	chdir($root);
@@ -208,31 +208,33 @@ for $arch ('i386','x86_64') {
 		{
 			system("ln","-fs", "$monoroot/mono/mini/.libs/libmonosgen-2.0.0.dylib.dSYM","$libtarget/libmonosgen-2.0.0.dylib.dSYM") eq 0 or die ("failed symlinking libmonosgen-2.0.0.dylib.dSYM");
 		}
+
+		if ($ENV{"UNITY_THISISABUILDMACHINE"})
+		{
+		#	system("strip $libtarget/libmono.0.dylib") eq 0 or die("failed to strip libmono");
+		#	system("strip $libtarget/MonoBundleBinary") eq 0 or die ("failed to strip MonoBundleBinary");
+			system("echo \"mono-runtime-osx = $ENV{'BUILD_VCS_NUMBER_mono_unity_2_10_2'}\" > $root/builds/versions.txt");
+		}
+
+		InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmono.0.dylib");
+		InstallNameTool("$libtarget/libmonosgen-2.0.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.0.dylib");
+
+		system("ln","-f","$monoroot/mono/mini/mono","$bintarget/mono") eq 0 or die("failed symlinking mono executable");
+		system("ln","-f","$monoroot/mono/mini/mono-sgen","$bintarget/mono-sgen") eq 0 or die("failed symlinking mono-sgen executable");
+		system("ln","-f","$monoroot/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed symlinking pedump executable");
+
+		# Create universal binaries
+		mkpath ("$root/builds/embedruntimes/osx");
+		for $file ('MonoBundleBinary','libmono.0.dylib','libmono.a') {
+			system ('lipo', "$root/builds/embedruntimes/osx-i386/$file", "$root/builds/embedruntimes/osx-x86_64/$file", '-create', '-output', "$root/builds/embedruntimes/osx/$file");
+		}
+
+		mkpath ("$root/builds/monodistribution/bin");
+		for $file ('mono','mono-sgen','pedump') {
+			system ('lipo', "$root/builds/monodistribution/bin-i386/$file", '-create', '-output', "$root/builds/monodistribution/bin/$file");
+			# Don't add 64bit executables for now...
+			# system ('lipo', "$root/builds/monodistribution/bin-i386/$file", "$root/builds/monodistribution/bin-x86_64/$file", '-create', '-output', "$root/builds/monodistribution/bin/$file");
+		}
 	}
 
-	if ($ENV{"UNITY_THISISABUILDMACHINE"})
-	{
-	#	system("strip $libtarget/libmono.0.dylib") eq 0 or die("failed to strip libmono");
-	#	system("strip $libtarget/MonoBundleBinary") eq 0 or die ("failed to strip MonoBundleBinary");
-		system("echo \"mono-runtime-osx = $ENV{'BUILD_VCS_NUMBER_mono_unity_2_10_2'}\" > $root/builds/versions.txt");
-	}
-
-	InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmono.0.dylib");
-	InstallNameTool("$libtarget/libmonosgen-2.0.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.0.dylib");
-
-	system("ln","-f","$monoroot/mono/mini/mono","$bintarget/mono") eq 0 or die("failed symlinking mono executable");
-	system("ln","-f","$monoroot/mono/mini/mono-sgen","$bintarget/mono-sgen") eq 0 or die("failed symlinking mono-sgen executable");
-	system("ln","-f","$monoroot/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed symlinking pedump executable");
-}
-
-# Create universal binaries
-mkpath ("$root/builds/embedruntimes/osx");
-mkpath ("$root/builds/monodistribution/bin");
-for $file ('MonoBundleBinary','libmono.0.dylib','libmono.a') {
-	system ('lipo', "$root/builds/embedruntimes/osx-i386/$file", "$root/builds/embedruntimes/osx-x86_64/$file", '-create', '-output', "$root/builds/embedruntimes/osx/$file");
-}
-for $file ('mono','mono-sgen','pedump') {
-	system ('lipo', "$root/builds/monodistribution/bin-i386/$file", '-create', '-output', "$root/builds/monodistribution/bin/$file");
-	# Don't add 64bit executables for now...
-	# system ('lipo', "$root/builds/monodistribution/bin-i386/$file", "$root/builds/monodistribution/bin-x86_64/$file", '-create', '-output', "$root/builds/monodistribution/bin/$file");
 }
