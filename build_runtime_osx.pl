@@ -136,7 +136,7 @@ for $arch ('i386','x86_64') {
 				$ENV{LDFLAGS} = "-arch $arch";
 			}
 
-			$ENV{CFLAGS} = $ENV{CFLAGS}.$osx_gcc_arguments ;
+			$ENV{CFLAGS} = $ENV{CFLAGS}.$osx_gcc_arguments if !$iphone_simulator;
 
 			print "cflags = $ENV{CFLAGS}\n";
 
