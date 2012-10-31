@@ -93,10 +93,20 @@ for $arch ('i386','x86_64') {
 
 		if ($iphone_simulator)
 		{
-			$ENV{CFLAGS} = "-D_XOPEN_SOURCE=1 -DTARGET_IPHONE_SIMULATOR";
+			$ENV{CFLAGS} = "-D_XOPEN_SOURCE=1 -DTARGET_IPHONE_SIMULATOR -g -O0 -arch $arch";
+			$ENV{LDFLAGS} = "-arch $arch";
 			$macversion = "10.6";
 			$sdkversion = "10.6";
-			$debug = 1;
+		} else {
+			if ($debug)
+			{
+				$ENV{CFLAGS} = "-g -O0 -DMONO_DISABLE_SHM=1 -arch $arch";
+				$ENV{LDFLAGS} = "-arch $arch";
+			} else
+			{
+				$ENV{CFLAGS} = "-Os -DMONO_DISABLE_SHM=1 -arch $arch";  #optimize for size
+				$ENV{LDFLAGS} = "-arch $arch";
+			}
 		}
 
 		print "monoroot is $monoroot\n";	
@@ -117,16 +127,6 @@ for $arch ('i386','x86_64') {
 		system("autoreconf -i") eq 0 or die ("Failed autoreconfing mono");
 		my @autogenparams = ();
 		unshift(@autogenparams, "--cache-file=osx.cache");
-
-		if ($debug)
-		{
-			$ENV{CFLAGS} = "-g -O0 -DMONO_DISABLE_SHM=1 -arch $arch";
-			$ENV{LDFLAGS} = "-arch $arch";
-		} else
-		{
-			$ENV{CFLAGS} = "-Os -DMONO_DISABLE_SHM=1 -arch $arch";  #optimize for size
-			$ENV{LDFLAGS} = "-arch $arch";
-		}
 
 		$ENV{CFLAGS} = $ENV{CFLAGS}.$osx_gcc_arguments if !$iphone_simulator;
 
