@@ -53,6 +53,9 @@ if ($ENV{UNITY_THISISABUILDMACHINE})
 my $osx_gcc_arguments = " -isysroot /Developer/SDKs/MacOSX$sdkversion.sdk -mmacosx-version-min=$macversion ";
 
 for $arch ('i386','x86_64') {
+
+	next if ($arch eq 'x86_64' && $iphone_simulator);
+
 	my $bintarget = "$root/builds/monodistribution/bin-$arch";
 	my $libtarget = "$root/builds/embedruntimes/osx-$arch";
 
