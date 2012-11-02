@@ -6,17 +6,26 @@ use Getopt::Long;
 use Tools qw(InstallNameTool);
 
 my $root = getcwd();
+
 my $monoroot = abs_path($root."/../Mono");
+$monoroot = abs_path($root."/../mono") unless (-d $monoroot);
+
+die ("Cannot find mono checkout in ../Mono or ../mono") unless (-d $monoroot);
+
+print "Mono checkout found in $monoroot\n\n";
+
 my $skipbuild=0;
 my $debug = 0;
 my $minimal = 0;
 my $build64 = 0;
+my $jobs = 1;
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
    "debug=i"=>\$debug,
    "minimal=i"=>\$minimal,
    "build64=i"=>\$build64,
+   "jobs=i"=>\$jobs,
 ) or die ("illegal cmdline options");
 
 my $teamcity=0;
@@ -101,7 +110,7 @@ if (not $skipbuild)
 	system("./configure", @autogenparams) eq 0 or die ("failing configuring mono");
 
 	system("make clean") eq 0 or die ("failed make cleaning");
-	system("make") eq 0 or die ("failing running make for mono");
+	system("make -j$jobs") eq 0 or die ("failing running make for mono");
 }
 
 mkpath($bintarget);
@@ -119,6 +128,5 @@ if ($ENV{"UNITY_THISISABUILDMACHINE"})
 	system("echo \"mono-runtime-$platform = $ENV{'BUILD_VCS_NUMBER_mono_unity_2_10_2'}\" > $root/builds/versions.txt");
 }
 
-system("ln","-f","$monoroot/mono/mini/mono","$bintarget/mono") eq 0 or die("failed symlinking mono executable");
-system("ln","-f","$monoroot/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed symlinking pedump executable");
-system("chmod","-R","755",$bintarget);
+system("cp","-f","$monoroot/mono/mini/mono","$bintarget/mono") eq 0 or die("failed copying mono executable");
+system("cp","-f","$monoroot/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed copying pedump executable");
