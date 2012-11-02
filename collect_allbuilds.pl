@@ -30,7 +30,9 @@ closedir(DIR);
 #both the ppc and i386 runtime builds output their runtime in monodistribution/bin/osx/mono.  as we collect both, we want
 #to merge them into one file using the lipo tool.
 system("cp incomingbuilds/osx-i386/monodistribution/bin/mono collectedbuilds/monodistribution/bin/mono") && die ("failed copying mono binary");
-system("chmod +x collectedbuilds/monodistribution/bin/mono") eq 0 or die("Failed chmodding");
+system("find collectedbuilds -type f -name mono -exec chmod +x {} \\;") eq 0 or die("Failed chmodding");
+system("find collectedbuilds -type f -name mono-sgen -exec chmod +x {} \\;") eq 0 or die("Failed chmodding");
+system("find collectedbuilds -type f -name pedump -exec chmod +x {} \\;") eq 0 or die("Failed chmodding");
 
 #system("lipo -create incomingbuilds/osx-i386/embedruntimes/osx/MonoBundleBinary incomingbuilds/osx-ppc/embedruntimes/osx/MonoBundleBinary -output collectedbuilds/embedruntimes/osx/MonoBundleBinary") && die("failed running lipo on osx MonoBundleBinary");
 #system("lipo -create incomingbuilds/osx-i386/embedruntimes/osx/libmono.0.dylib incomingbuilds/osx-ppc/embedruntimes/osx/libmono.0.dylib -output collectedbuilds/embedruntimes/osx/libmono.0.dylib") && die("failed running lipo on libmono.0.dylib");
