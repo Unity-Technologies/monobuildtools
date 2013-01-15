@@ -278,7 +278,7 @@ sub BuildUnityScriptFor20
 	cp("$booCheckout/ide-build/booc.exe $monoprefix20/");
 	cp("$monoprefixUnity/booc $monoprefix20/");
 	cp("$monoprefixUnity/mono-env $monoprefix20/");
-	Booc("-out:$monoprefix20/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll");
+	Booc("-out:$monoprefix20/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll -r:Boo.Lang.Compiler.dll");
 	Booc("-out:$monoprefix20/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
 	Booc("-out:$monoprefix20/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
 	
@@ -325,7 +325,7 @@ sub BuildUnityScriptFor45
 	cp("$booCheckout/ide-build/booc.exe $monoprefix45/");
 	cp("$monoprefixUnity/booc $monoprefix45/");
 	cp("$monoprefixUnity/mono-env $monoprefix45/");
-	Booc("-out:$monoprefix45/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll");
+	Booc("-out:$monoprefix45/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll -r:Boo.Lang.Compiler.dll");
 	Booc("-out:$monoprefix45/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
 	Booc("-out:$monoprefix45/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
 	
