@@ -68,6 +68,7 @@ for $arch ('i386','x86_64') {
 	system("rm -rf $libtarget/libmono.dylib.dSYM");
 	system("rm $libtarget/libmonosgen-2.0.0.dylib");
 	system("rm -rf $libtarget/libmonosgen-2.0.0.dylib.dSYM");
+	system("rm $libtarget/libMonoPosixHelper.dylib");
 
 	print "Building for architecture: $arch\n";
 
@@ -206,6 +207,9 @@ for $arch ('i386','x86_64') {
 		print "Symlinking libmono.a\n";
 		system("ln", "-f", "$monoroot/mono/mini/.libs/libmono-2.0.a","$libtarget/libmono.a") eq 0 or die ("failed symlinking libmono-2.0.a");
 
+		print "Symlinking libMonoPosixHelper.dylib\n";
+		system("ln", "-f", "$root/support/.libs/libMonoPosixHelper.dylib","$libtarget/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking libMonoPosixHelper.dylib");
+
 		if (($arch eq 'i386') and (not $ENV{"UNITY_THISISABUILDMACHINE"}))
 		{
 			system("ln","-fs", "$monoroot/mono/mini/.libs/libmono-2.0.dylib.dSYM","$libtarget/libmono.0.dylib.dSYM") eq 0 or die ("failed symlinking libmono-2.0.dylib.dSYM");
@@ -231,6 +235,7 @@ for $arch ('i386','x86_64') {
 
 		InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmono.0.dylib");
 		InstallNameTool("$libtarget/libmonosgen-2.0.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.0.dylib");
+		InstallNameTool("$libtarget/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libMonoPosixHelper.dylib");
 
 		system("ln","-f","$monoroot/mono/mini/mono","$bintarget/mono") eq 0 or die("failed symlinking mono executable");
 		system("ln","-f","$monoroot/mono/mini/mono-sgen","$bintarget/mono-sgen") eq 0 or die("failed symlinking mono-sgen executable");
@@ -238,7 +243,7 @@ for $arch ('i386','x86_64') {
 
 		# Create universal binaries
 		mkpath ("$root/builds/embedruntimes/osx");
-		for $file ('MonoBundleBinary','libmono.0.dylib','libmono.a') {
+		for $file ('MonoBundleBinary','libmono.0.dylib','libmono.a','libMonoPosixHelper.dylib') {
 			system ('lipo', "$root/builds/embedruntimes/osx-i386/$file", "$root/builds/embedruntimes/osx-x86_64/$file", '-create', '-output', "$root/builds/embedruntimes/osx/$file");
 		}
 
