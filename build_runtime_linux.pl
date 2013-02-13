@@ -126,7 +126,7 @@ print "Copying libmono.a\n";
 system("cp", "$monoroot/mono/mini/.libs/libmono-2.0.a","$libtarget/libmono-static.a") eq 0 or die ("failed copying libmono.a");
 
 print "Copying libMonoPosixHelper.so\n";
-system("cp", "$root/support/.libs/libMonoPosixHelper.so","$libtarget/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so");
+system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$libtarget/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so");
 
 if ($ENV{"UNITY_THISISABUILDMACHINE"})
 {
