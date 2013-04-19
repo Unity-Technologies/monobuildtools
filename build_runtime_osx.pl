@@ -127,6 +127,8 @@ my $savedpkgconfig = $ENV{'PKG_CONFIG_PATH'};
 
 sub configure_mono
 {
+	$ENV{LIBTOOLIZE} = 'glibtoolize';
+
 	chdir("$monopath/eglib") eq 1 or die ("Failed chdir 1");
 
 	#this will fail on a fresh working copy, so don't die on it.
@@ -193,7 +195,6 @@ sub setenv
 	$ENV{CXXPP} = $envcxxpp if $envcxxpp;
 	$ENV{LD} = $envld if $envld;
 	$ENV{LDFLAGS} = $envldflags if $envldflags;
-	$ENV{LIBTOOLIZE} = 'glibtoolize';
 
 	print "\n";
 	print "Setting environment:\n";
