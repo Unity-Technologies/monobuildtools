@@ -1,18 +1,21 @@
-use File::Spec;
-use File::Basename;
-use File::Copy;
-use File::Path;
+use Cwd;
+use Getopt::Long;
 
-my $root = File::Spec->rel2abs( dirname($0) );
-my $monoroot = File::Spec->rel2abs( dirname($0) . "/../mono" );
+system("source","~/.profile");
+print "My Path: $ENV{PATH}\n";
+
+my $root = getcwd();
+my $monoroot = abs_path($root."/../Mono");
+$monoroot = abs_path($root."/../mono") unless (-d $monoroot);
+die ("Cannot find mono checkout in ../Mono or ../mono") unless (-d $monoroot);
+print "Mono checkout found in $monoroot\n\n";
+
 
 my $teamcity = 0;
 
 if ($ENV{UNITY_THISISABUILDMACHINE}) {
 	$teamcity = 1;
 }
-
-system("cp $root/test-driver $monoroot/mono/tests") eq 0 or die("failed copy test-driver");
 
 #do build
 chdir("$monoroot/mono/tests") eq 1 or die("failed to chdir tests");

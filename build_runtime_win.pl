@@ -1,21 +1,17 @@
 sub CompileVCProj;
+use Cwd 'abs_path';
 use File::Spec;
 use File::Basename;
 use File::Copy;
 use File::Path;
-use Getopt::Long;
 my $root = File::Spec->rel2abs( dirname($0) );
-my $monoroot = File::Spec->rel2abs( dirname($0) . "/../mono" );
+my $buildsroot = "$root/builds";
+my $buildir = "$buildsroot/src";
 
-my $skipbuild=0;
-my $debug = 0;
-my $build64 = 0;
-
-GetOptions(
-   "skipbuild=i"=>\$skipbuild,
-   "debug=i"=>\$debug,
-   "build64=i"=>\$build64,
-) or die ("illegal cmdline options");
+my $monoroot = abs_path($root."/../Mono");
+$monoroot = abs_path($root."/../mono") unless (-d $monoroot);
+die ("Cannot find mono checkout in ../Mono or ../mono") unless (-d $monoroot);
+print "Mono checkout found in $monoroot\n\n";
 
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
@@ -25,44 +21,31 @@ if ($ENV{UNITY_THISISABUILDMACHINE})
 	print "not rmtree-ing $root/builds, as we're not on a buildmachine";
 }
 
-my $config = "Release";
-my $platform = "Win32";
-my $embedDir = "win32";
-my $binDirectory = "bin";
+my $os = 'win';
+my $arch = 'i386' ;
+my $buildtarget = "$buildir/$os-$arch";
+my $buildtargetwin = "$root\\builds\\src\\$os-$arch";
 
-if ($debug)
+
+mkpath("$buildtarget");
+
+CompileVCProj("$monoroot/msvc/mono.sln","Release_eglib|Win32",0);
+dircopy('$monoroot/builds', '$buildtarget') or die $!;
+
+my $remove = "$buildtarget/embedruntimes/win32/libmono.bsc";
+if (-e $remove)
 {
-	$config = "Debug";
+	unlink($remove) or die("can't delete libmono.bsc");
 }
 
-if ($build64)
-{
-	$platform = "x64";
-	$embedDir = "win64";
-	$binDirectory = "bin-x64";
-}
 
-if (not $skipbuild)
-{
-	CompileVCProj("$monoroot/msvc/mono.sln","$config|$platform",0);
-	my $remove = "$root/builds/embedruntimes/$embedDir/libmono.bsc";
-	if (-e $remove)
-	{
-		unlink($remove) or die("can't delete libmono.bsc");
-	}
-}
-
-mkpath("$root/builds/embedruntimes/$embedDir");
-mkpath("$root/builds/monodistribution/$binDirectory");
-copy("$monoroot/msvc/$platform/bin/mono-2.0.dll","$root/builds/embedruntimes/$embedDir/mono.dll");
-copy("$monoroot/msvc/$platform/bin/mono-2.0.pdb","$root/builds/embedruntimes/$embedDir/mono.pdb");
-copy("$monoroot/msvc/$platform/bin/mono.exe","$root/builds/monodistribution/$binDirectory/mono.exe");
-copy("$monoroot/msvc/$platform/bin/mono-2.0.dll","$root/builds/monodistribution/$binDirectory/");
-copy("$monoroot/msvc/$platform/bin/mono-2.0.pdb","$root/builds/monodistribution/$binDirectory/");
+#have a duplicate for now...
+copy("$buildtarget/embedruntimes/win32/mono.dll","$buildtarget/monodistribution/bin/mono.dll");
+copy("$buildtarget/embedruntimes/win32/mono.pdb","$buildtarget/monodistribution/bin/mono.pdb");
 
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
-	system("echo mono-runtime-$embedDir = $ENV{'BUILD_VCS_NUMBER_mono_unity_2_10_2'} > $root\\builds\\versions.txt");
+	system("echo mono-runtime-win32 = $ENV{'BUILD_VCS_NUMBER'} > $buildtargetwin\\versions.txt");
 }
 
 sub CompileVCProj
