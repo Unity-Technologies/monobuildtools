@@ -193,21 +193,21 @@ sub setenv
 	$ENV{CXXPP} = $envcxxpp if $envcxxpp;
 	$ENV{LD} = $envld if $envld;
 	$ENV{LDFLAGS} = $envldflags if $envldflags;
-
+	$ENV{LIBTOOLIZE} = 'glibtoolize';
 
 	print "\n";
 	print "Setting environment:\n";
-	print "PATH = ".$ENV{PATH}."\n";;
-	print "C_INCLUDE_PATH = ".$ENV{C_INCLUDE_PATH}."\n";;
-	print "CPLUS_INCLUDE_PATH = ".$ENV{CPLUS_INCLUDE_PATH}."\n";;
-	print "CFLAGS = ".$ENV{CFLAGS}."\n";;
-	print "CXXFLAGS = ".$ENV{CXXFLAGS}."\n";;
-	print "CC = ".$ENV{CC}."\n";;
-	print "CXX = ".$ENV{CXX}."\n";;
-	print "CPP = ".$ENV{CPP}."\n";;
-	print "CXXPP = ".$ENV{CXXPP}."\n";;
-	print "LD = ".$ENV{LD}."\n";;
-	print "LDFLAGS = ".$ENV{LDFLAGS}."\n";;
+	print "PATH = ".$ENV{PATH}."\n";
+	print "C_INCLUDE_PATH = ".$ENV{C_INCLUDE_PATH}."\n";
+	print "CPLUS_INCLUDE_PATH = ".$ENV{CPLUS_INCLUDE_PATH}."\n";
+	print "CFLAGS = ".$ENV{CFLAGS}."\n";
+	print "CXXFLAGS = ".$ENV{CXXFLAGS}."\n";
+	print "CC = ".$ENV{CC}."\n";
+	print "CXX = ".$ENV{CXX}."\n";
+	print "CPP = ".$ENV{CPP}."\n";
+	print "CXXPP = ".$ENV{CXXPP}."\n";
+	print "LD = ".$ENV{LD}."\n";
+	print "LDFLAGS = ".$ENV{LDFLAGS}."\n";
 	print "\n";
 
 }
