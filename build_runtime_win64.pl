@@ -22,14 +22,14 @@ if ($ENV{UNITY_THISISABUILDMACHINE})
 }
 
 my $os = 'win';
-my $arch = 'i386' ;
+my $arch = 'x86_64' ;
 my $buildtarget = "$buildir/$os-$arch";
 my $buildtargetwin = "$root\\builds\\src\\$os-$arch";
 
 
 mkpath("$buildtarget");
 
-CompileVCProj("$monoroot/msvc/mono.sln","Release_eglib|Win32",0);
+CompileVCProj("$monoroot/msvc/mono.sln","Release_eglib|x64",0);
 dircopy('$monoroot/builds', '$buildtarget') or die $!;
 
 my $remove = "$buildtarget/embedruntimes/win32/libmono.bsc";
@@ -40,8 +40,8 @@ if (-e $remove)
 
 
 #have a duplicate for now...
-copy("$buildtarget/embedruntimes/win32/mono.dll","$buildtarget/monodistribution/bin/mono.dll");
-copy("$buildtarget/embedruntimes/win32/mono.pdb","$buildtarget/monodistribution/bin/mono.pdb");
+copy("$buildtarget/embedruntimes/win64/mono.dll","$buildtarget/monodistribution/bin-x64/mono.dll");
+copy("$buildtarget/embedruntimes/win64/mono.pdb","$buildtarget/monodistribution/bin-x64/mono.pdb");
 
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
