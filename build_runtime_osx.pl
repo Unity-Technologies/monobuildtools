@@ -629,7 +629,7 @@ sub build_osx
 	my $os = "osx";
 	my @arches = ('i386','x86_64');
 	for my $arch (@arches) {
-		print "Building $os for architecture: $arch\n";
+		print "\nBuilding $os for architecture: $arch\n";
 
 		my $macversion = '10.5';
 		$macversion = '10.6' if $arch eq 'x86_64';
@@ -734,7 +734,7 @@ sub build_classlibs
 {
 	my $os = "classlibs";
 	my $arch = 'any';
-	print "Building $os for architecture: $arch\n";
+	print "\nBuilding $os for architecture: $arch\n";
 
 	my $macversion = '10.5';
 	my ($sdkversion, $sdkroot, $sdkpath) = detect_osx_sdk ('10.6');
@@ -858,12 +858,12 @@ sub build_iphone_crosscompiler
 		my $buildtarget = "$buildir/$os-$arch";
 		my $cachefile = "$buildir/$os-$arch.cache";
 
-		print "Building $os for architecture: $arch\n";
+		print "\nBuilding $os for architecture: $arch\n";
 
 		my @configureparams = setenv_iphone_crosscompiler ($arch, $cachefile, $sdkversion, $sdkroot, $sdkpath);
 		build_mono ($arch, $buildtarget, $cachefile, $os, \@configureparams);
 
-		print "Copying mono runtime to final destination";
+		print "Copying mono runtime to final destination\n";
 		for my $file ('mono') {
 			system("ln","-f","$buildtarget/mono/mini/$file","$buildsroot/$os/iphone/$file-xcompiler") eq 0 or die("failed symlinking $buildtarget/mono/mini/$file to $buildsroot/$os/iphone/$file-xcompiler");
 		}
@@ -891,7 +891,7 @@ sub build_iphone_runtime
 			build_mono ($arch, $buildtarget, $cachefile, $os, \@configureparams);
 		}
 
-		print "Copying iPhone static lib to final destination";
+		print "Copying iPhone static lib to final destination\n";
 		system("ln","-f","$buildtarget/mono/mini/.libs/libmono.a","$embeddir/$os/libmono-$arch.a") eq 0 or die("failed symlinking libmono-$arch.a");
 
 	}
@@ -913,7 +913,7 @@ sub build_iphone_simulator
 		my $cachefile = "$buildir/$os-$arch.cache";
 
 
-		print "Building $os for architecture: $arch\n";
+		print "\nBuilding $os for architecture: $arch\n";
 
 		my $macversion = '10.6';
 		my ($sdkversion, $sdkroot, $sdkpath) = detect_iphonesim_sdk ('5.0');
@@ -926,7 +926,7 @@ sub build_iphone_simulator
 			build_mono ($arch, $buildtarget, $cachefile, $os, \@configureparams);
 		}
 
-		print "Copying iPhone static lib to final destination";
+		print "Copying iPhone static lib to final destination\n";
 		system("ln","-f","$buildtarget/mono/mini/.libs/libmono.a","$embeddir/$os/libmono-$arch.a") eq 0 or die("failed symlinking libmono-$arch.a");
 	}
 
@@ -949,8 +949,7 @@ $doiphonex = 1 if $dobuild eq 'cross';
 $doiphones = 1 if $dobuild eq 'simulator';
 $doiphone = $doiphones = $doiphonex = 1 if $dobuild eq 'iphone';
 $doclasslibs = 1 if $dobuild eq 'classlibs';
-
-$doosx = 1 if $dobuild eq 'osx' || (not $doiphone && not $doiphones && not $doiphonex && not $doclasslibs);
+$doosx = 1 if $dobuild eq 'osx';
 
 print "build type: osx:$doosx runtime:$doiphones simulator:$doiphones cross:$doiphonex classlibs:$doclasslibs\n";
 
