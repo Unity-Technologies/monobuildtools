@@ -52,13 +52,18 @@ if (not $skipbuild)
 {
 	my $target = "";
 
-	if($^O eq "darwin")
+	if ($^O eq 'darwin')
 	{
-		#we need to manually set the compiler to gcc4, because the 10.4 sdk only shipped with the gcc4 headers
-		#their setup is a bit broken as they dont autodetect this, but basically the gist is if you want to copmile
-		#against the 10.4 sdk, you better use gcc4, otherwise things go boink.
-		$ENV{CC} = "gcc-4.0";
-		$ENV{CXX} = "gcc-4.0";
+		my $xcodePath = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform';
+		my $macversion = '10.5';
+		my $sdkversion = '10.6';
+ 
+		$ENV{CFLAGS}  = "$ENV{CFLAGS} -arch i386";
+		$ENV{CXXFLAGS}  = "$ENV{CXXFLAGS} -arch i386";
+		$ENV{CFLAGS}  = "$ENV{CFLAGS} -arch i386 -D_XOPEN_SOURCE";
+		$ENV{CXXFLAGS}  = "$ENV{CXXFLAGS} $ENV{CFLAGS}";
+		$ENV{LDFLAGS}  = "$ENV{LDFLAGS} -arch i386";
+		$ENV{'MACSDKOPTIONS'} = "-mmacosx-version-min=$macversion -isysroot $xcodePath/Developer/SDKs/MacOSX$sdkversion.sdk";
 	}
 	elsif($^O eq "linux")
 	{
