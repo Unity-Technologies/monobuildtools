@@ -8,7 +8,6 @@ use File::Basename;
 use Tools qw(GitClone);
 
 system("source","~/.profile");
-print "My Path: $ENV{PATH}\n";
 
 my $root = getcwd();
 
@@ -23,9 +22,13 @@ my $dependencyBranchToUse = "unity3.0";
 if ($ENV{UNITY_THISISABUILDMACHINE}) {
 	print "rmtree-ing $root/builds because we're on a buildserver, and want to make sure we don't include old artifacts\n";
 	rmtree("$root/builds");
+
+	# We need tools in /usr/local/bin
+	$ENV{'PATH'}="/usr/local/bin:$ENV{'PATH'}";
 } else {
 	print "not rmtree-ing $root/builds, as we're not on a buildmachine\n";
 }
+print "My Path: $ENV{PATH}\n";
 
 my $unity=1;
 my $monotouch=0;
