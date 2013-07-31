@@ -223,7 +223,7 @@ sub Booc
 
 sub BuildUnityScriptForUnity
 {
-	my $booCheckout = "external/boo";
+	my $booCheckout = "$root/../external/boo";
 	
 	# TeamCity is handling this
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
@@ -241,7 +241,7 @@ sub BuildUnityScriptForUnity
 	#UnityXBuild("$booCheckout/src/Boo.Lang/Boo.Lang.csproj", "Micro-Release");
 	#cp("$booCheckout/src/Boo.Lang/bin/Micro-Release/Boo.Lang.dll $monodistroLibMono/micro/");
 	
-	my $usCheckout = "external/unityscript";
+	my $usCheckout = "$root/../external/unityscript";
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
 		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout, "unity-trunk");
 	}
@@ -274,7 +274,7 @@ sub BuildUnityScriptForUnity
 # TODO: Refactor with BuildUnityScriptForUnity
 sub BuildUnityScriptFor20
 {
-	my $booCheckout = "external/boo";
+	my $booCheckout = "$root/../external/boo";
 	
 	# TeamCity is handling this
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
@@ -290,7 +290,7 @@ sub BuildUnityScriptFor20
 	Booc("-out:$monoprefix20/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
 	Booc("-out:$monoprefix20/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
 	
-	my $usCheckout = "external/unityscript";
+	my $usCheckout = "$root/../external/unityscript";
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
 		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout, "unity-trunk");
 	}
@@ -321,7 +321,7 @@ sub BuildUnityScriptFor20
 # TODO: If you don't refactor, then neither am I...
 sub BuildUnityScriptFor45
 {
-	my $booCheckout = "external/boo";
+	my $booCheckout = "$root/../external/boo";
 	
 	# TeamCity is handling this
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
@@ -337,7 +337,7 @@ sub BuildUnityScriptFor45
 	Booc("-out:$monoprefix45/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
 	Booc("-out:$monoprefix45/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
 	
-	my $usCheckout = "external/unityscript";
+	my $usCheckout = "$root/../external/unityscript";
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
 		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout, "unity-trunk");
 	}
@@ -386,7 +386,7 @@ sub BuildCecilForUnity
 	
 	if ($useCecilLight) {
 		
-		$cecilCheckout = "external/cecil";
+		$cecilCheckout = "$root/../external/cecil";
 		if (!$ENV{UNITY_THISISABUILDMACHINE}) {
 			GitClone("http://github.com/Unity-Technologies/cecil", $cecilCheckout, $dependencyBranchToUse);
 		}
