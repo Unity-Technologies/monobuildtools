@@ -208,7 +208,7 @@ for $arch ('i386','x86_64') {
 		system("ln", "-f", "$monoroot/mono/mini/.libs/libmono-2.0.a","$libtarget/libmono.a") eq 0 or die ("failed symlinking libmono-2.0.a");
 
 		print "Symlinking libMonoPosixHelper.dylib\n";
-		system("ln", "-f", "$root/support/.libs/libMonoPosixHelper.dylib","$libtarget/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking libMonoPosixHelper.dylib");
+		system("ln", "-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$libtarget/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking libMonoPosixHelper.dylib");
 
 		if (($arch eq 'i386') and (not $ENV{"UNITY_THISISABUILDMACHINE"}))
 		{
