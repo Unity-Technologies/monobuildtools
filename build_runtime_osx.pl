@@ -15,7 +15,8 @@ my $skipclasslibs = 1;
 my $llvm=0;
 my $llvmstatic=0;
 my $macversion = "10.5";
-my $sdkversion = "10.5";
+my $sdkversion = "10.6";
+my $xcodePath = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform';
 
 my $llvmCheckout = "$root/external/llvm";
 my $llvmPrefix = "$root/tmp/llvmprefix";
@@ -38,6 +39,7 @@ if ($ENV{UNITY_THISISABUILDMACHINE})
 	print "rmtree-ing $root/builds because we're on a buildserver, and want to make sure we don't include old artifacts\n";
 	rmtree("$root/builds");
 	$teamcity=1;
+	$ENV{PATH}="/usr/local/bin:$ENV{PATH}";
 } else {
 	print "not rmtree-ing $root/builds, as we're not on a buildmachine";
 	if (($debug==0) && ($skipbuild==0))
@@ -79,9 +81,6 @@ for $arch ('i386','x86_64') {
 				GitClone("git://github.com/mono/llvm.git", $llvmCheckout, "mono-2-10");
 			}
 			
-			$ENV{CFLAGS} = "-mmacosx-version-min=10.5 -isysroot /Developer/SDKs/MacOSX10.5.sdk";
-			$ENV{CXXFLAGS} = "-mmacosx-version-min=10.5 -isysroot /Developer/SDKs/MacOSX10.5.sdk";
-
 			chdir("$llvmCheckout");
 			my @configureparams = ();
 			unshift(@configureparams, "--prefix=$llvmPrefix");
@@ -102,13 +101,14 @@ for $arch ('i386','x86_64') {
 			$macversion = "10.6";
 			$sdkversion = "10.6";
 		} else {
+			$ENV{'MACSDKOPTIONS'} = "-mmacosx-version-min=$macversion -isysroot $xcodePath/Developer/SDKs/MacOSX$sdkversion.sdk";
 			if ($debug)
 			{
-				$ENV{CFLAGS} = "-g -O0 -DMONO_DISABLE_SHM=1 -arch $arch";
+				$ENV{CFLAGS} = "-g -O0 -DMONO_DISABLE_SHM=1 -D_XOPEN_SOURCE=1 -arch $arch";
 				$ENV{LDFLAGS} = "-arch $arch";
 			} else
 			{
-				$ENV{CFLAGS} = "-Os -DMONO_DISABLE_SHM=1 -arch $arch";  #optimize for size
+				$ENV{CFLAGS} = "-Os -DMONO_DISABLE_SHM=1 -D_XOPEN_SOURCE=1 -arch $arch";  #optimize for size
 				$ENV{LDFLAGS} = "-arch $arch";
 			}
 		}
