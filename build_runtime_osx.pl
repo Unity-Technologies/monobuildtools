@@ -51,7 +51,8 @@ GetOptions(
    "unity=i"=>\$unity,
    "injectsecurityattributes=i"=>\$injectSecurityAttributes,
    "monotouch=i"=>\$monotouch,
-   "xcodepath=s"=>\$xcodePath
+   "xcodepath=s"=>\$xcodePath,
+   "reconfigure=i"=>\$reconfigure
 ) or die<<EOF
 illegal cmdline options.
 
@@ -216,6 +217,8 @@ sub setenv
 sub detect_sdk
 {
 	my $type = shift;
+	my $sdkversion = shift;
+	return ("/Developer", "/Developer/SDKs/$type") if (-d "/Developer/SDKs" and $sdkversion eq '10.6');
 	return ("$xcodePath/$type.platform/Developer", "$xcodePath/$type.platform/Developer/SDKs/$type");
 }
 
@@ -223,7 +226,7 @@ sub detect_iphone_sdk
 {
 	my $sdkversion = shift;
 	my $detectedsdk = $sdkversion;
-	my ($sdkroot, $sdkpath) = detect_sdk ("iPhoneOS");
+	my ($sdkroot, $sdkpath) = detect_sdk ("iPhoneOS", $sdkversion);
 
 	$detectedsdk = "5.1" unless (-d "$sdkpath$detectedsdk.sdk");
 	$detectedsdk = "6.0" unless (-d "$sdkpath$detectedsdk.sdk");
@@ -243,7 +246,7 @@ sub detect_iphonesim_sdk
 {
 	my $sdkversion = shift;
 	my $detectedsdk = $sdkversion;
-	my ($sdkroot, $sdkpath) = detect_sdk ("iPhoneSimulator");
+	my ($sdkroot, $sdkpath) = detect_sdk ("iPhoneSimulator", $sdkversion);
 
 	$detectedsdk = "5.1" unless (-d "$sdkpath$detectedsdk.sdk");
 	$detectedsdk = "6.0" unless (-d "$sdkpath$detectedsdk.sdk");
@@ -263,7 +266,7 @@ sub detect_osx_sdk
 {
 	my $sdkversion = shift;
 	my $detectedsdk = $sdkversion;
-	my ($sdkroot, $sdkpath) = detect_sdk ("MacOSX");
+	my ($sdkroot, $sdkpath) = detect_sdk ("MacOSX", $sdkversion);
 
 	$detectedsdk = "10.7" unless (-d "$sdkpath$detectedsdk.sdk");
 	$detectedsdk = "10.8" unless (-d "$sdkpath$detectedsdk.sdk");
@@ -400,12 +403,15 @@ sub setenv_osx
 
 	my $cxxflags = "$cflags";
 
-	my $cc;
-	my $cxx;
+	my $cc = 'gcc';
+	my $cxx = 'g++';
 	if ($ENV{"UNITY_THISISABUILDMACHINE"}) {
 		$cc = "gcc-4.0" unless ($ENV{CC});
 		$cxx = "gcc-4.0" unless ($ENV{CXX});
 	}
+
+	$cc = "$cc -arch $arch";
+	$cxx = "$cxx -arch $arch";
 
 	my $cpp;
 	my $cxxpp;
