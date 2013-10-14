@@ -71,11 +71,15 @@ Usage:
    -injectsecurityattributes[=1]
    -monotouch[=1]
    -xcodepath=... - path to xcode (default: /Applications/Xcode.app)
+   -reconfigure[=1] - reconfigures the source (default: 1/true)
 EOF
 ;
 
 $cleanbuild = 0 if ($cleanbuildopt ne 'full');
 $reconfigure = 0 if ($cleanbuildopt eq 'no');
+
+$monopath = abs_path($monopath) if (-d $monopath);
+die ("Cannot find mono checkout in $monopath") unless (-d $monopath);
 
 $xcodePath = "$xcodePath/Contents/Developer/Platforms";
 
@@ -385,15 +389,6 @@ sub setenv_osx
 
 	my $path;
 
-	if ($ENV{"UNITY_THISISABUILDMACHINE"}) {
-		#we need to manually set the compiler to gcc4, because the 10.4 sdk only shipped with the gcc4 headers
-		#their setup is a bit broken as they dont autodetect this, but basically the gist is if you want to copmile
-		#against the 10.4 sdk, you better use gcc4, otherwise things go boink.
-		$ENV{CC} = "gcc-4.0" unless ($ENV{CC});
-		$ENV{CXX} = "gcc-4.0" unless ($ENV{CXX});
-	}
-
-
 	my $cinclude;
 	my $cppinclude;
 
@@ -405,11 +400,6 @@ sub setenv_osx
 
 	my $cc = 'gcc';
 	my $cxx = 'g++';
-	if ($ENV{"UNITY_THISISABUILDMACHINE"}) {
-		$cc = "gcc-4.0" unless ($ENV{CC});
-		$cxx = "gcc-4.0" unless ($ENV{CXX});
-	}
-
 	$cc = "$cc -arch $arch";
 	$cxx = "$cxx -arch $arch";
 
@@ -445,18 +435,12 @@ sub setenv_classlibs
 	my $cachefile = shift;
 	my $macversion = shift;
 	my $sdkversion = shift;
+	my $sdkroot = shift;
+	my $sdkpath = shift;
 
 	my $installprefix = "$buildsroot/install/classlibs";
 
 	my $path;
-
-	if ($ENV{"UNITY_THISISABUILDMACHINE"}) {
-		#we need to manually set the compiler to gcc4, because the 10.4 sdk only shipped with the gcc4 headers
-		#their setup is a bit broken as they dont autodetect this, but basically the gist is if you want to copmile
-		#against the 10.4 sdk, you better use gcc4, otherwise things go boink.
-		$ENV{CC} = "gcc-4.0" unless ($ENV{CC});
-		$ENV{CXX} = "gcc-4.0" unless ($ENV{CXX});
-	}
 
 	my $cinclude;
 	my $cppinclude;
@@ -466,11 +450,6 @@ sub setenv_classlibs
 
 	my $cc;
 	my $cxx;
-	if ($ENV{"UNITY_THISISABUILDMACHINE"}) {
-		$cc = "gcc-4.0" unless ($ENV{CC});
-		$cxx = "gcc-4.0" unless ($ENV{CXX});
-	}
-
 	my $cpp;
 	my $cxxpp;
 	my $ld;
@@ -497,6 +476,7 @@ sub setenv_classlibs
 	$ENV{cv_mono_sizeof_sunpath} = "";
 	$ENV{ac_cv_func_posix_getpwuid_r} = "";
 	$ENV{ac_cv_func_backtrace_symbols} = "";
+	$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$macversion -isysroot $sdkpath";
 
 	if (-d $monobootstrap) {
 		# Force mono 2.6 for 1.1 profile bootstrapping
@@ -524,15 +504,6 @@ sub setenv_iphone_simulator
 	$debug = 1;
 
 	my $path;
-
-	if ($ENV{"UNITY_THISISABUILDMACHINE"}) {
-		#we need to manually set the compiler to gcc4, because the 10.4 sdk only shipped with the gcc4 headers
-		#their setup is a bit broken as they dont autodetect this, but basically the gist is if you want to copmile
-		#against the 10.4 sdk, you better use gcc4, otherwise things go boink.
-		$ENV{CC} = "gcc-4.0" unless ($ENV{CC});
-		$ENV{CXX} = "gcc-4.0" unless ($ENV{CXX});
-	}
-
 	my $macsysroot = "-isysroot $sdkpath";
 	my $macsdkoptions = "-miphoneos-version-min=3.0 $macsysroot";
 
@@ -806,6 +777,8 @@ sub build_classlibs
 	my $prefixUnityWeb = "$installprefix/lib/mono/unity_web";
 	my $libmonoUnityWeb = "$libmono/unity_web";
 
+	print "prefixUnity: $prefixUnity\n";
+	print "libmonoUnity: $libmonoUnity\n";
 
 	if ($unity)
 	{
