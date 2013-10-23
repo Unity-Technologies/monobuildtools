@@ -99,6 +99,9 @@ if (not $skipbuild)
 	# Couldn't get automake to Just Do The Right Thing
 	system('make', '-C', 'scripts');
 	system("cp -R scripts/*.bat $monoprefix/bin");
+	system("rm -f $monoprefix/bin-linux32 $monoprefix/bin-linux64");
+	system("ln -s bin $monoprefix/bin-linux32");
+	system("ln -s bin $monoprefix/bin-linux64");
 
 }
 chdir ($root);
