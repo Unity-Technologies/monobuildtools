@@ -1,4 +1,4 @@
-use lib ('.', "perl_lib");
+use lib ('.', 'perl_lib', 'external/buildscripts/perl_lib');
 use Cwd ;
 use Cwd 'abs_path';
 use File::Path;
@@ -12,11 +12,12 @@ print "My Path: $ENV{PATH}\n";
 
 my $root = getcwd();
 
-my $monoroot = abs_path($root."/../Mono");
+my $monoroot = $root;
 my $monodistro = "$root/builds/monodistribution";
 my $lib = "$monodistro/lib";
 my $libmono = "$lib/mono";
 my $monoprefix = "$root/tmp/monoprefix";
+my $buildscriptsdir = "$root/external/buildscripts";
 
 my $dependencyBranchToUse = "unity3.0";
 
@@ -27,18 +28,14 @@ if ($ENV{UNITY_THISISABUILDMACHINE}) {
 	print "not rmtree-ing $root/builds, as we're not on a buildmachine\n";
 }
 
-my $unity=1;
-my $monotouch=0;
-my $injectSecurityAttributes=0;
-
 my $skipbuild=0;
 my $cleanbuild=1;
+my $jobs=8;
+
 GetOptions(
-   "skipbuild=i"=>\$skipbuild,
-   "cleanbuild=i"=>\$cleanbuild,
-   "unity=i"=>\$unity,
-   "injectsecurityattributes=i"=>\$injectSecurityAttributes,
-   "monotouch=i"=>\$monotouch,
+   'skipbuild=i'=>\$skipbuild,
+   'cleanbuild=i'=>\$cleanbuild,
+   'jobs=i'=>\$jobs,
 ) or die ("illegal cmdline options");
 
 
@@ -52,15 +49,7 @@ if (not $skipbuild)
 {
 	my $target = "";
 
-	if($^O eq "darwin")
-	{
-		#we need to manually set the compiler to gcc4, because the 10.4 sdk only shipped with the gcc4 headers
-		#their setup is a bit broken as they dont autodetect this, but basically the gist is if you want to copmile
-		#against the 10.4 sdk, you better use gcc4, otherwise things go boink.
-		$ENV{CC} = "gcc-4.0";
-		$ENV{CXX} = "gcc-4.0";
-	}
-	elsif($^O eq "linux")
+	if($^O eq "linux")
 	{
 		$ENV{CFLAGS} = $ENV{CXXFLAGS} = $ENV{LDFLAGS} = "-m32";
 		$target = "--target=i686-pc-linux-gnu";
@@ -75,18 +64,19 @@ if (not $skipbuild)
 	chdir("$monoroot") eq 1 or die ("failed to chdir 2");
 	if ($cleanbuild)
 	{
-		my $withMonotouch = $monotouch ? "yes" : "no";
-		my $withUnity = $unity ? "yes" : "no";
-		
 		chdir("$monoroot") eq 1 or die("failed to chdir4");
-		print(">>>Calling autoreconf in mono\n");
-		system("autoreconf -i") eq 0 or die("failed to autoreconf mono");
-		print(">>>Calling configure in mono\n");
-		system("./configure","--prefix=$monoprefix",$host,"--with-monotouch=no", "--with-profile4=yes","--with-glib=embedded","--with-mcs-docs=no", "--disable-nls") eq 0 or die ("failing autogenning mono");
+		# print(">>>Calling autoreconf in mono\n");
+		# system("autoreconf -i") eq 0 or die("failed to autoreconf mono");
+
+		# Avoid "source directory already configured" ...
+		system('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status');
+
+		print(">>>Calling autogen in mono\n");
+		system('./autogen.sh',"--prefix=$monoprefix",$host,'--with-monotouch=no', '--with-profile2=no','--with-glib=embedded','--with-mcs-docs=no', '--disable-nls') eq 0 or die ('failing autogenning mono');
 		print("calling make clean in mono\n");
 		system("make","clean") eq 0 or die ("failed to make clean");
 	}
-	system("make") eq 0 or die ("Failed running make");
+	system('make', "-j$jobs") eq 0 or die ('Failed running make');
 	system("make install") eq 0 or die ("Failed running make install");
 }
 chdir ($root);
@@ -94,13 +84,12 @@ chdir ($root);
 $File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
 
 #my @profiles = ("2.0","3.5","4.0","4.5");
-my @profiles = ("2.0","3.5","4.0");
+my @profiles = ('4.0', '4.5');
 for my $profile (@profiles)
 {
 	mkpath("$libmono/$profile");
 	dircopy("$monoprefix/lib/mono/$profile","$libmono/$profile");
 	system("rm $libmono/$profile/*.mdb");
-	system("cp $monoprefix/lib/mono/gac/Mono.Cecil/*/Mono.Cecil.dll $libmono/$profile") eq 0 or die("failed to copy Mono.Cecil.dll");
 }
 system("cp -r $monoprefix/bin $monodistro/") eq 0 or die ("failed copying bin folder");
 system("cp -r $monoprefix/etc $monodistro/") eq 0 or die("failed copy 4");
@@ -115,7 +104,7 @@ sub CopyIgnoringHiddenFiles
 	system("rsync -a -v --exclude='.*' $sourceDir $targetDir") eq 0 or die("failed to rsync $sourceDir to $targetDir");
 }
 
-CopyIgnoringHiddenFiles("add_to_build_results/monodistribution/", "$monoprefix/");
+CopyIgnoringHiddenFiles("$buildscriptsdir/add_to_build_results/monodistribution/", "$monoprefix/");
 
 sub cp
 {
@@ -155,17 +144,6 @@ sub CopyProfileAssembliesToPrefix
 	CopyAssemblies("$monoroot/mcs/class/lib/$sourceName", $targetDir);
 }
 
-my $securityAttributesPath = "tuning/SecurityAttributes";
-
-sub InjectSecurityAttributesOnProfile
-{
-	if ($injectSecurityAttributes)
-	{
-		my $profile = shift;
-		RunXBuildTargetOnProfile("Install", $profile);
-	}
-}
-
 sub XBuild
 {
    system("$monoprefix/bin/xbuild", @_) eq 0 or die("Failed to xbuild @_");
@@ -179,25 +157,10 @@ sub RunXBuildTargetOnProfile
 	XBuild("$securityAttributesPath/SecurityAttributes.proj", "/p:Profile=$profile", "/p:ProfilePrefix=$monodistro", "/t:$target") eq 0 or die("failed to run target '$target' on $profile");
 }
 
-sub PackageSecurityAttributeInjectionTools
-{
-	if ($injectSecurityAttributes)
-	{
-		my $libSecAttrs = "$lib/SecurityAttributes";
-		CopyAssemblies("$securityAttributesPath/bin", $libSecAttrs);
-		cp("$root/mcs/tools/security/sn.exe $libSecAttrs/");
-	}
-}
-
 my $monoprefixUnity = "$monoprefix/lib/mono/unity";
-my $monoprefix20 = "$monoprefix/lib/mono/2.0";
 my $monoprefix45 = "$monoprefix/lib/mono/4.0";
 my $monodistroLibMono = "$monodistro/lib/mono";
-my $monodistro20 = "$monodistroLibMono/2.0";
 my $monodistro45 = "$monodistroLibMono/4.0";
-my $monodistroUnity = "$monodistroLibMono/unity";
-my $monoprefixUnityWeb = "$monoprefix/lib/mono/unity_web";
-my $monodistroUnityWeb = "$monodistro/lib/mono/unity_web";
 
 sub UnityBooc
 {
@@ -263,53 +226,6 @@ sub BuildUnityScriptForUnity
 	#system(<$monoprefix/bin/nunit-console2>, "-noshadow", "-exclude=FailsOnMono", $UnityScriptTestsDLL) eq 0 or die("UnityScript test suite failed");
 }
 	
-# TODO: Refactor with BuildUnityScriptForUnity
-sub BuildUnityScriptFor20
-{
-	my $booCheckout = "external/boo";
-	
-	# TeamCity is handling this
-	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
-		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout, "unity-trunk");
-	}
-	XBuild("$booCheckout/src/booc/booc.csproj", "/t:Rebuild");
-	
-	cp("$booCheckout/ide-build/Boo.Lang*.dll $monoprefix20/");
-	cp("$booCheckout/ide-build/booc.exe $monoprefix20/");
-	cp("$monoprefixUnity/booc $monoprefix20/");
-	cp("$monoprefixUnity/mono-env $monoprefix20/");
-	Booc("-out:$monoprefix20/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll -r:Boo.Lang.Compiler.dll");
-	Booc("-out:$monoprefix20/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
-	Booc("-out:$monoprefix20/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
-	
-	my $usCheckout = "external/unityscript";
-	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
-		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout, "unity-trunk");
-	}
-	
-	my $UnityScriptLangDLL = "$monoprefix20/UnityScript.Lang.dll";
-	Booc("-out:$UnityScriptLangDLL -srcdir:$usCheckout/src/UnityScript.Lang");
-	
-	my $UnityScriptDLL = "$monoprefix20/UnityScript.dll";
-	Booc("-out:$UnityScriptDLL -srcdir:$usCheckout/src/UnityScript -r:$UnityScriptLangDLL -r:Boo.Lang.Parser.dll -r:Boo.Lang.PatternMatching.dll");
-	Booc("-out:$monoprefix20/us.exe -srcdir:$usCheckout/src/us -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:Boo.Lang.Useful.dll");
-	
-	# unityscript test suite
-	my $UnityScriptTestsCSharpDLL = "$usCheckout/src/UnityScript.Tests.CSharp/bin/Debug/UnityScript.Tests.CSharp.dll";
-	XBuild("$usCheckout/src/UnityScript.Tests.CSharp/UnityScript.Tests.CSharp.csproj", "/t:Rebuild");
-	
-	my $usBuildDir = "$usCheckout/build";
-	mkdir($usBuildDir);
-	
-	my $UnityScriptTestsDLL = <$usBuildDir/UnityScript.Tests.dll>;
-	Booc("-out:$UnityScriptTestsDLL -srcdir:$usCheckout/src/UnityScript.Tests -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:$UnityScriptTestsCSharpDLL -r:Boo.Lang.Compiler.dll -r:Boo.Lang.Useful.dll");
-	
-	cp("$UnityScriptTestsCSharpDLL $usBuildDir/");
-	cp("$monoprefix20/Boo.* $usBuildDir/");
-	cp("$monoprefix20/UnityScript.* $usBuildDir/");
-	cp("$monoprefix20/us.exe $usBuildDir/");
-}
-
 # TODO: If you don't refactor, then neither am I...
 sub BuildUnityScriptFor45
 {
@@ -370,26 +286,6 @@ sub UnityXBuild
 	system($commandLine) eq 0 or die("Failed to xbuild '$projectFile' for unity");
 }
 
-sub BuildCecilForUnity
-{
-	my $useCecilLight = 0;
-	
-	my $cecilCheckout = "mcs/class/Mono.Cecil";
-	
-	if ($useCecilLight) {
-		
-		$cecilCheckout = "external/cecil";
-		if (!$ENV{UNITY_THISISABUILDMACHINE}) {
-			GitClone("http://github.com/Unity-Technologies/cecil", $cecilCheckout, $dependencyBranchToUse);
-		}
-		
-	}
-	
-	UnityXBuild("$cecilCheckout/Mono.Cecil.csproj");
-	cp("$cecilCheckout/bin/Release/Mono.Cecil.dll $monoprefixUnity/");
-		
-}
-
 sub AddRequiredExecutePermissionsToUnity
 {
 	for my $profile (@_) {
@@ -420,52 +316,8 @@ sub RunCSProj
 	$ret eq 0 or die("Failed running $exe");
 }
 
-sub RunLinker()
-{
-	RunCSProj("tuning/UnityProfileShaper/UnityProfileShaper");
-}
-
-sub RunSecurityInjection
-{
-	RunCSProj("tuning/SecurityAttributes/DetectMethodPrivileges/DetectMethodPrivileges");
-}
-
-sub CopyUnityScriptAndBooFromUnityProfileTo20
-{
-	my $twozeroprofile = "$monodistro/lib/mono/2.0";
-	system("cp $monodistroUnity/Boo* $twozeroprofile/") && die("failed copying");
-	system("cp $monodistroUnity/boo* $twozeroprofile/") && die("failed copying");
-	system("cp $monodistroUnity/us* $twozeroprofile/") && die("failed copying");
-	system("cp $monodistroUnity/UnityScript* $twozeroprofile/") && die("failed copying");
-
-}
-
-
-if ($unity)
-{
-	CopyProfileAssembliesToPrefix("unity", "unity", $monoprefix);
-	
-	AddRequiredExecutePermissionsToUnity($monoprefixUnity, $monoprefix20);
-	BuildUnityScriptForUnity();
-	#BuildUnityScriptFor20();
-	BuildUnityScriptFor45();
-	#BuildCecilForUnity();
-
-	CopyAssemblies($monoprefix20,$monodistro20);
-	CopyAssemblies($monoprefix45,$monodistro45);
-	CopyAssemblies($monoprefixUnity,$monodistroUnity);
-	CopyAssemblies($monoprefixUnity,$monodistroUnityWeb); # Just copy unity profile to unity_web for now
-	#now, we have a functioning, raw, unity profile in builds/monodistribution/lib/mono/unity
-	#we're now going to transform that into the unity_web profile by running it trough the linker, and decorating it with security attributes.	
-
-	# CopyUnityScriptAndBooFromUnityProfileTo20();
-
-	RunLinker();
-	RunSecurityInjection();
-}
-
 #Overlaying files
-CopyIgnoringHiddenFiles("add_to_build_results/", "$root/builds/");
+CopyIgnoringHiddenFiles("$buildscriptsdir/add_to_build_results/", "$root/builds/");
 
 if($ENV{UNITY_THISISABUILDMACHINE})
 {
@@ -483,8 +335,8 @@ if($ENV{UNITY_THISISABUILDMACHINE})
 }
 
 # now remove nunit
-system("rm -rf $monodistro/lib/mono/2.0/nunit*") eq 0 or die("failed to delete nunit from 2.0");
-system("rm -rf $monodistro/lib/mono/gac/nunit*") eq 0 or die("failed to delete nunit from gac");
+system("rm -rf $monodistro/lib/mono/2.0/nunit*");
+system("rm -rf $monodistro/lib/mono/gac/nunit*");
 
 #zip up the results for teamcity
 chdir("$root/builds");
