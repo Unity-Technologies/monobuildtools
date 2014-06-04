@@ -128,7 +128,6 @@ if (not $skipbuild)
 		system("rm $cachefile");
 		if (chdir("$buildtarget") eq 1) {
 			my $i;
-			my @subdirs = qw(eglib libgc mono ikvm-native);
 			foreach $i (qw(eglib libgc mono ikvm-native support))
 			{
 				print("make -C $i clean\n");
