@@ -6,6 +6,7 @@ use File::Copy::Recursive qw(dircopy);
 use Getopt::Long;
 use File::Basename;
 use Tools qw(GitClone);
+use strict;
 
 system("source","~/.profile");
 print "My Path: $ENV{PATH}\n";
@@ -18,6 +19,8 @@ my $lib = "$monodistro/lib";
 my $libmono = "$lib/mono";
 my $monoprefix = "$root/tmp/monoprefix";
 my $buildscriptsdir = "$root/external/buildscripts";
+my $unityPath = "$root/../unity";
+my $xcodePath = '/Applications/Xcode.app';
 
 my $dependencyBranchToUse = "unity3.0";
 
@@ -47,7 +50,10 @@ if (-d $libmono)
 
 if (not $skipbuild)
 {
-	my $target = "";
+	my $osxflags = '';
+	my $target = '';
+	my $host = '';
+	my $build = '';
 
 	if($^O eq "linux")
 	{
@@ -55,6 +61,28 @@ if (not $skipbuild)
 		$target = "--target=i686-pc-linux-gnu";
 		$host = "--host=i686-pc-linux-gnu";
 		$build = "--build=i686-pc-linux-gnu";
+	}
+	elsif($^O eq 'darwin')
+	{
+		my $sdkversion = '10.6';
+		my $sdkPath = "$xcodePath/Developer/SDKs/MacOSX$sdkversion.sdk";
+		if ($ENV{'UNITY_THISISABUILDMACHINE'})
+		{
+			# Set up clang toolchain
+			$sdkPath = "$unityPath/External/MacBuildEnvironment/builds/MacOSX$sdkversion.sdk";
+			if (! -d $sdkPath)
+			{
+				print("Unzipping mac build toolchain\n");
+				system('unzip', '-qfod', "$unityPath/External/MacBuildEnvironment/builds", "$unityPath/External/MacBuildEnvironment/builds.zip");
+			}
+			$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
+			$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
+			$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$unityPath/External/MacBuildEnvironment/builds/usr/include -mmacosx-version-min=$sdkversion -isysroot $sdkPath";
+		}
+		else
+		{
+			$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -mmacosx-version-min=$sdkversion -isysroot $sdkPath";
+		}
 	}
 
 	if ($cleanbuild)
@@ -72,11 +100,11 @@ if (not $skipbuild)
 		system('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status');
 
 		print(">>>Calling autogen in mono\n");
-		system('./autogen.sh',"--prefix=$monoprefix",$host,'--with-monotouch=no', '--with-profile2=no','--with-glib=embedded','--with-mcs-docs=no', '--disable-nls') eq 0 or die ('failing autogenning mono');
+		system('./autogen.sh',"--prefix=$monoprefix",$host,'--with-monotouch=no', '--with-profile2=no','--with-glib=embedded','--with-mcs-docs=no', '--disable-nls', $osxflags) eq 0 or die ('failing autogenning mono');
 		print("calling make clean in mono\n");
 		system("make","clean") eq 0 or die ("failed to make clean");
 	}
-	system('make', "-j$jobs") eq 0 or die ('Failed running make');
+	system("make -j$jobs") eq 0 or die ('Failed running make');
 	system("make install") eq 0 or die ("Failed running make install");
 }
 chdir ($root);
@@ -147,14 +175,6 @@ sub CopyProfileAssembliesToPrefix
 sub XBuild
 {
    system("$monoprefix/bin/xbuild", @_) eq 0 or die("Failed to xbuild @_");
-}
-
-sub RunXBuildTargetOnProfile
-{
-	my $target = shift;	
-	my $profile = shift;
-	
-	XBuild("$securityAttributesPath/SecurityAttributes.proj", "/p:Profile=$profile", "/p:ProfilePrefix=$monodistro", "/t:$target") eq 0 or die("failed to run target '$target' on $profile");
 }
 
 my $monoprefixUnity = "$monoprefix/lib/mono/unity";
@@ -310,7 +330,7 @@ sub RunCSProj
 	push(@args,"$monoprefix/bin/cli");
 	push(@args,$exe);
 
-	print("Starting $exer\n");
+	print("Starting $exe\n");
 	my $ret = system(@args);
 	print("$exe finished. exitcode: $ret\n");
 	$ret eq 0 or die("Failed running $exe");
