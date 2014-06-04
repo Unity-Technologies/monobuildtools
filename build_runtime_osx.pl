@@ -1,6 +1,6 @@
 use strict;
 
-use lib ('.', "../../Tools/perl_lib","perl_lib");
+use lib ('external/buildscripts', "../../Tools/perl_lib","perl_lib", 'external/buildscripts/perl_lib');
 use Cwd;
 use Cwd 'abs_path';
 use File::Path;
@@ -11,14 +11,10 @@ use File::Copy::Recursive qw(dircopy);
 require "build_classlibs.pm";
 
 my $root = getcwd();
-my $monopath = abs_path($root."/../Mono");
-$monopath = abs_path($root."/../mono") unless (-d $monopath);
-die ("Cannot find mono checkout in ../Mono or ../mono") unless (-d $monopath);
-print "Mono checkout found in $monopath\n\n";
+my $monopath = $root;
 
-my $extras = $monopath;
 my $buildsroot = "$root/builds";
-my $buildir = "$buildsroot/src";
+my $buildir = $root;
 my $embeddir = "$buildsroot/embedruntimes";
 my $distdir = "$buildsroot/monodistribution";
 my $skipbuild=0;
@@ -29,13 +25,9 @@ my $cleanbuild = 1;
 my $reconfigure = 1;
 my $dobuild = 'osx';
 my $jobs = 4;
-my $monobootstrap = '/Library/Frameworks/Mono.framework/Versions/2.6.7';
 my $xcodePath = '/Applications/Xcode.app';
 my $cleanbuildopt = 'full';
-
-my $unity=1;
-my $monotouch=1;
-my $injectSecurityAttributes=0;
+my $unityPath = "$root/../unity";
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
@@ -45,12 +37,6 @@ GetOptions(
    "cleanbuild=s"=>\$cleanbuildopt,
    "build=s"=>\$dobuild,
    "j=i"=>\$jobs,
-   "monobootstrap=s"=>\$monobootstrap,
-   "mono=s"=>\$monopath,
-   "extras=s"=>\$extras,
-   "unity=i"=>\$unity,
-   "injectsecurityattributes=i"=>\$injectSecurityAttributes,
-   "monotouch=i"=>\$monotouch,
    "xcodepath=s"=>\$xcodePath,
    "reconfigure=i"=>\$reconfigure
 ) or die<<EOF
@@ -64,12 +50,6 @@ Usage:
    -cleanbuild=[no/partial/full] - partial runs configure but not make clean, full cleans everything
    -build=... - build type: osx, runtime, cross, simulator, iphone, classlibs
    -j=# - number of jobs to pass to make -j
-   -monobootstrap=... - location of the bootstrapping mono for building the classlibs (default: /Library/Frameworks/Mono.framework/Versions/2.6.7)
-   -mono=... - location of the mono checkout (default: current directory)
-   -extras=... - location of add_to_build_results directory (default: current directory)
-   -unity[=1]
-   -injectsecurityattributes[=1]
-   -monotouch[=1]
    -xcodepath=... - path to xcode (default: /Applications/Xcode.app)
    -reconfigure[=1] - reconfigures the source (default: 1/true)
 EOF
@@ -129,25 +109,6 @@ my $savedacinclude = $ENV{'ACLOCAL_PATH'};
 my $savedpkgconfig = $ENV{'PKG_CONFIG_PATH'};
 
 
-
-sub configure_mono
-{
-	$ENV{LIBTOOLIZE} = 'glibtoolize';
-
-	chdir("$monopath/eglib") eq 1 or die ("Failed chdir 1");
-
-	#this will fail on a fresh working copy, so don't die on it.
-	#system("make distclean");
-
-	print "calling autoreconf -i on $monopath/eglib\n";
-	system("autoreconf -i") eq 0 or die ("Failed autoreconfing eglib");
-
-	chdir("$monopath") eq 1 or die ("failed to chdir 2");
-
-	print "calling autoreconf -i on $monopath\n";
-	system("autoreconf -i") eq 0 or die ("Failed autoreconfing mono");
-
-}
 
 sub setenv
 {
@@ -226,26 +187,6 @@ sub detect_sdk
 	return ("$xcodePath/$type.platform/Developer", "$xcodePath/$type.platform/Developer/SDKs/$type");
 }
 
-sub detect_iphone_sdk
-{
-	my $sdkversion = shift;
-	my $detectedsdk = $sdkversion;
-	my ($sdkroot, $sdkpath) = detect_sdk ("iPhoneOS", $sdkversion);
-
-	$detectedsdk = "5.1" unless (-d "$sdkpath$detectedsdk.sdk");
-	$detectedsdk = "6.0" unless (-d "$sdkpath$detectedsdk.sdk");
-	$detectedsdk = "NaN" unless (-d "$sdkpath$detectedsdk.sdk");
-
-	die ("Requested iPhone SDK version was $sdkversion but no SDK could be found in $sdkroot/SDKs") if ($detectedsdk eq 'NaN');
-	warn ("Requested iPhone SDK version was $sdkversion but detected SDK is $detectedsdk. Things might not work as intended.") if ($sdkversion != $detectedsdk);
-
-	$sdkversion = $detectedsdk;
-
-	print ("Detected iPhone SDK at $sdkpath$sdkversion.sdk\n");
-
-	return ($sdkversion, $sdkroot, "$sdkpath$sdkversion.sdk");
-}
-
 sub detect_iphonesim_sdk
 {
 	my $sdkversion = shift;
@@ -271,6 +212,10 @@ sub detect_osx_sdk
 	my $sdkversion = shift;
 	my $detectedsdk = $sdkversion;
 	my ($sdkroot, $sdkpath) = detect_sdk ("MacOSX", $sdkversion);
+	if($teamcity)
+	{
+		return ($sdkversion, "$unityPath/External/MacBuildEnvironment/builds", "$unityPath/External/MacBuildEnvironment/builds/MacOSX10.6.sdk");
+	}
 
 	$detectedsdk = "10.7" unless (-d "$sdkpath$detectedsdk.sdk");
 	$detectedsdk = "10.8" unless (-d "$sdkpath$detectedsdk.sdk");
@@ -284,98 +229,6 @@ sub detect_osx_sdk
 	print ("Detected MacOSX SDK at $sdkpath$sdkversion.sdk\n");
 
 	return ($sdkversion, $sdkroot, "$sdkpath$sdkversion.sdk");
-}
-
-sub setenv_iphone_runtime
-{
-	my $arch = shift;
-	my $cachefile = shift;
-	my $sdkversion = shift;
-	my $sdkroot = shift;
-	my $sdkpath = shift;
-
-	my $path = "$sdkroot/usr/bin";
-	my $cinclude = "$sdkpath/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$sdkpath/usr/include";
-	my $cppinclude = "$sdkpath/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$sdkpath/usr/include";
-	my $cflags = "-DHAVE_ARMV6=1 -DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden -Os";
-	my $cxxflags = "$cflags";
-	my $cc = "gcc -arch $arch";
-	my $cxx = "g++ -arch $arch";
-	my $cpp = "cpp -nostdinc -U__powerpc__ -U__i386__ -D__arm__";
-	my $cxxpp = "cpp -nostdinc -U__powerpc__ -U__i386__ -D__arm__";
-	my $ld = $cc;
-	my $ldflags = "-liconv -Wl,-syslibroot,$sdkpath";
-
-	my @configureparams = ();
-	unshift(@configureparams, "--cache-file=$cachefile");
-	unshift(@configureparams, "--disable-mcs-build");
-	unshift(@configureparams, "--host=arm-apple-darwin9");
-	unshift(@configureparams, "--disable-shared-handles");
-	unshift(@configureparams, "--with-tls=pthread");
-	unshift(@configureparams, "--with-sigaltstack=no");
-	unshift(@configureparams, "--with-glib=embedded");
-	unshift(@configureparams, "--enable-minimal=jit,profiler,com");
-	unshift(@configureparams, "--disable-nls");
-	unshift(@configureparams, "--with-sgen=yes");
-	unshift(@configureparams, "--prefix=$prefix");
-
-	setenv ($path, $cinclude, $cppinclude, $cflags, $cxxflags, $cc, $cxx, $cpp, $cxxpp, $ld, $ldflags);
-
-	$ENV{mono_cv_uscore} = "yes";
-	$ENV{mono_cv_clang} = "no";
-	$ENV{cv_mono_sizeof_sunpath} = "104";
-	$ENV{ac_cv_func_posix_getpwuid_r} = "yes";
-	$ENV{ac_cv_func_backtrace_symbols} = "no";
-
-	return (@configureparams);
-}
-
-sub setenv_iphone_crosscompiler
-{
-	my $arch = shift;
-	my $cachefile = shift;
-	my $sdkversion = shift;
-	my $sdkroot = shift;
-	my $sdkpath = shift;
-
-	my $path;
-	my $cinclude;
-	my $cppinclude;
-	my $cflags = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP";
-	my $cxxflags;
-	my $cc = "gcc -arch $arch";
-	my $cxx = "g++ -arch $arch";
-	my $cpp = "$cc -E";
-	my $cxxpp;
-	my $ld = $cc;
-	my $ldflags;
-
-	my @configureparams = ();
-	unshift(@configureparams, "--cache-file=$cachefile");
-	unshift(@configureparams, "--disable-mcs-build");
-	unshift(@configureparams, "--disable-shared-handles");
-	unshift(@configureparams, "--with-tls=pthread");
-	unshift(@configureparams, "--with-sigaltstack=no");
-	unshift(@configureparams, "--with-glib=embedded");
-	unshift(@configureparams, "--disable-nls");
-
-	unshift(@configureparams, "--with-macversion=$sdkversion");
-	unshift(@configureparams, "--target=arm-darwin");
-
-	unshift(@configureparams, "--prefix=$prefix");
-
-	setenv ($path, $cinclude, $cppinclude, $cflags, $cxxflags, $cc, $cxx, $cpp, $cxxpp, $ld, $ldflags);
-
-	$ENV{mono_cv_uscore} = "yes";
-	$ENV{mono_cv_clang} = "no";
-	$ENV{cv_mono_sizeof_sunpath} = "104";
-	$ENV{ac_cv_func_posix_getpwuid_r} = "yes";
-	$ENV{ac_cv_func_backtrace_symbols} = "no";
-
-	$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -mmacosx-version-min=$sdkversion -isysroot $sdkpath";
-	$ENV{PLATFORM_IPHONE_XCOMP} = 1;
-
-	return (@configureparams);
 }
 
 sub setenv_osx
@@ -393,13 +246,17 @@ sub setenv_osx
 	my $cppinclude;
 
 	my $cflags = "-D_XOPEN_SOURCE=1 -arch $arch -DMONO_DISABLE_SHM=1 -DDISABLE_SHARED_HANDLES=1";
+	if($teamcity)
+	{
+		$cflags = "$cflags -I$unityPath/External/MacBuildEnvironment/builds/usr/include";
+	}
 	$cflags = "$cflags -g -O0" if $debug;
 	$cflags = "$cflags -Os" if not $debug; #optimize for size
 
 	my $cxxflags = "$cflags";
 
-	my $cc = 'gcc';
-	my $cxx = 'g++';
+	my $cc = "$unityPath/External/MacBuildEnvironment/builds/usr/bin/clang";
+	my $cxx = "$unityPath/External/MacBuildEnvironment/builds/usr/bin/clang++";
 	$cc = "$cc -arch $arch";
 	$cxx = "$cxx -arch $arch";
 
@@ -425,70 +282,6 @@ sub setenv_osx
 	$ENV{ac_cv_func_backtrace_symbols} = "";
 
 	$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$macversion -isysroot $sdkpath";
-
-	return (@configureparams);
-}
-
-sub setenv_classlibs
-{
-	my $arch = shift;
-	my $cachefile = shift;
-	my $macversion = shift;
-	my $sdkversion = shift;
-	my $sdkroot = shift;
-	my $sdkpath = shift;
-
-	my $installprefix = "$buildsroot/install/classlibs";
-
-	my $path;
-
-	my $cinclude;
-	my $cppinclude;
-
-	my $cflags;
-	my $cxxflags;
-
-	my $cc;
-	my $cxx;
-	my $cpp;
-	my $cxxpp;
-	my $ld;
-	my $ldflags;
-
-	my $withMonotouch = $monotouch ? "yes" : "no";
-	my $withUnity = $unity ? "yes" : "no";
-
-
-	my @configureparams = ();
-	unshift(@configureparams, "--cache-file=$cachefile");
-	unshift(@configureparams, "--with-glib=embedded");
-	unshift(@configureparams, "--with-macversion=$macversion");
-	unshift(@configureparams, "--disable-nls");  #this removes the dependency on gettext package
-	unshift(@configureparams, "--with-monotouch=$withMonotouch");
-	unshift(@configureparams, "--with-unity=$withUnity");
-	unshift(@configureparams, "--with-mcs-docs=no");
-	unshift(@configureparams, "--prefix=$installprefix");
-
-	setenv ($path, $cinclude, $cppinclude, $cflags, $cxxflags, $cc, $cxx, $cpp, $cxxpp, $ld, $ldflags);
-
-	$ENV{mono_cv_uscore} = "";
-	$ENV{mono_cv_clang} = "";
-	$ENV{cv_mono_sizeof_sunpath} = "";
-	$ENV{ac_cv_func_posix_getpwuid_r} = "";
-	$ENV{ac_cv_func_backtrace_symbols} = "";
-	$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$macversion -isysroot $sdkpath";
-
-	if (-d $monobootstrap) {
-		# Force mono 2.6 for 1.1 profile bootstrapping
-		my $external_MONO_PREFIX=$monobootstrap;
-		my $external_GNOME_PREFIX=$external_MONO_PREFIX;
-		$ENV{'DYLD_FALLBACK_LIBRARY_PATH'} = "$external_MONO_PREFIX/lib:/lib:/usr/lib";
-		$ENV{'LD_LIBRARY_PATH'} = "$external_MONO_PREFIX/lib";
-		$ENV{'C_INCLUDE_PATH'} = "$external_MONO_PREFIX/include:$external_GNOME_PREFIX/include";
-		$ENV{'ACLOCAL_PATH'} = "$external_MONO_PREFIX/share/aclocal";
-		$ENV{'PKG_CONFIG_PATH'} = "$external_MONO_PREFIX/lib/pkgconfig:$external_GNOME_PREFIX/lib/pkgconfig";
-		$ENV{'PATH'} = "$external_MONO_PREFIX/bin:$ENV{'PATH'}";
-	}
 
 	return (@configureparams);
 }
@@ -558,34 +351,28 @@ sub build_mono
 
 	print("buildtarget: $buildtarget\n");
 
-	my $exists = 0;
-	$exists = 1 if (chdir("$buildtarget") eq 1);
-
 	my $saved_skipbuild = $skipbuild;
 	my $saved_cleanbuild = $cleanbuild;
 
-	if ($cleanbuild == 0 && $skipbuild == 0 && $exists == 0) {
-		$cleanbuild = 1;
-		$skipbuild = 0;
-	}
-
 	if ($cleanbuild == 1) {
 		system("rm $cachefile");
-		if (chdir("$buildtarget") eq 1) {
-			system("make clean");
+		my $i;
+		foreach $i (qw(eglib libgc mono ikvm-native support))
+		{
+			system('make', '-C', $i, 'clean');
 		}
 	}
 
-	mkpath($buildtarget);
-	chdir("$buildtarget") eq 1 or die ("failed to chdir to $buildtarget");
-
 	if ($cleanbuild == 1 || $reconfigure == 1) {
-		print("\n\nCalling configure with these parameters: ");
+		# Avoid "source directory already configured" ...
+		system('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status');
+
+		print("\n\nCalling autogen with these parameters: ");
 		system("echo", @configureparams);
 		print("\n\n");
-		system("calling ./configure on $buildtarget",@configureparams);
+		system("calling ./autogen.sh on $buildtarget",@configureparams);
 
-		system("$monopath/configure", @configureparams) eq 0 or die ("failing configuring mono");
+		system("$monopath/autogen.sh", @configureparams) eq 0 or die ("failing configuring mono");
 
 		system("perl -pi -e 's/MONO_SIZEOF_SUNPATH 0/MONO_SIZEOF_SUNPATH 104/' config.h") if ($arch eq 'armv6' || $arch eq 'armv7');
 		system("perl -pi -e 's/#define HAVE_FINITE 1//' config.h") if ($arch eq 'armv6' || $arch eq 'armv7');
@@ -610,6 +397,9 @@ sub build_osx
 
 		my $macversion = '10.5';
 		$macversion = '10.6' if $arch eq 'x86_64';
+		if($teamcity)
+		{
+		}
 		my ($sdkversion, $sdkroot, $sdkpath) = detect_osx_sdk ('10.6');
 
 		# Make architecture-specific targets and lipo at the end
@@ -634,8 +424,6 @@ sub build_osx
 			build_mono ($arch, $buildtarget, $cachefile, $os, \@configureparams)
 		}
 
-		chdir("$buildtarget") eq 1 or die ("failed to chdir to $buildtarget");
-
 		mkpath($bintarget);
 		mkpath($libtarget);
 
@@ -646,24 +434,24 @@ sub build_osx
 			system("echo \"mono-runtime-osx = $ENV{'BUILD_VCS_NUMBER'}\" > $buildsroot/versions.txt");
 		}
 
-		my $cmdline = "gcc -arch $arch -bundle -reexport_library $buildtarget/mono/mini/.libs/libmono.a -isysroot $sdkpath -mmacosx-version-min=$macversion -all_load -liconv -o $libtarget/MonoBundleBinary";
+		my $cmdline = "clang -arch $arch -bundle -Wl,-reexport_library $root/mono/mini/.libs/libmonoboehm-2.0.a -isysroot $sdkpath -mmacosx-version-min=$macversion -all_load -liconv -o $libtarget/MonoBundleBinary";
 		print "About to call this cmdline to make a bundle:\n$cmdline\n";
-		system($cmdline) eq 0 or die("failed to link libmono.a into mono bundle");
+		#system($cmdline) eq 0 or die("failed to link libmonoboehm-2.0.a into mono bundle");
 
-		print "Symlinking libmono.dylib\n";
-		system("ln","-f", "$buildtarget/mono/mini/.libs/libmono.0.dylib","$libtarget/libmono.0.dylib") eq 0 or die ("failed symlinking libmono.0.dylib");
+		print "Hardlinking libmono.dylib\n";
+		system("ln","-f", "$root/mono/mini/.libs/libmonoboehm-2.0.1.dylib","$libtarget/libmono.0.dylib") eq 0 or die ("failed symlinking libmono.0.dylib");
 
-		print "Symlinking libmono.a\n";
-		system("ln", "-f", "$buildtarget/mono/mini/.libs/libmono.a","$libtarget/libmono.a") eq 0 or die ("failed symlinking libmono.a");
+		print "Hardlinking libmono.a\n";
+		system("ln", "-f", "$root/mono/mini/.libs/libmonoboehm-2.0.a","$libtarget/libmono.a") eq 0 or die ("failed symlinking libmono.a");
 
-		print "Symlinking libMonoPosixHelper.dylib\n";
-		system("ln","-f", "$buildtarget/support/.libs/libMonoPosixHelper.dylib","$libtarget/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib");
+		print "Hardlinking libMonoPosixHelper.dylib\n";
+		system("ln","-f", "$root/support/.libs/libMonoPosixHelper.dylib","$libtarget/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib");
 
 		InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libmono.0.dylib");
 		InstallNameTool("$libtarget/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libMonoPosixHelper.dylib");
 
-		system("ln","-f","$buildtarget/mono/mini/mono","$bintarget/mono") eq 0 or die("failed symlinking mono executable");
-		system("ln","-f","$buildtarget/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed symlinking pedump executable");
+		system("ln","-f","$root/mono/mini/mono","$bintarget/mono") eq 0 or die("failed hardlinking mono executable");
+		system("ln","-f","$root/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed hardlinking pedump executable");
 	}
 
 
@@ -683,7 +471,7 @@ sub build_osx
 		}
 	}
 
-	system('cp', "$embeddir/$os-i386/MonoBundleBinary", "$embeddir/$os/MonoBundleBinary");
+	#system('cp', "$embeddir/$os-i386/MonoBundleBinary", "$embeddir/$os/MonoBundleBinary");
 
 	mkpath ("$distdir/bin");
 	for my $file ('mono','pedump') {
@@ -704,180 +492,6 @@ sub build_osx
 			rmtree("$embeddir/$os-$arch");
 			rmtree("$distdir/bin-$arch");
 		}
-	}
-}
-
-sub build_classlibs
-{
-	my $os = "classlibs";
-	my $arch = 'any';
-	print "\nBuilding $os for architecture: $arch\n";
-
-	my $macversion = '10.5';
-	my ($sdkversion, $sdkroot, $sdkpath) = detect_osx_sdk ('10.6');
-
-	# Make architecture-specific targets and lipo at the end
-	my $bintarget = "$distdir/bin";
-	my $libtarget = "$distdir/lib";
-	my $buildtarget = "$buildir/$os-$arch";
-	my $cachefile = "$buildir/$os-$arch.cache";
-	my $installprefix = "$buildsroot/install/classlibs";
-	my $libmono = "$libtarget/mono";
-
-	print("bintarget: $bintarget\n");
-	print("libtarget: $libtarget\n");
-	print("buildtarget: $buildtarget\n");
-
-	if (not $skipbuild)
-	{
-		my @configureparams = setenv_classlibs ($arch, $cachefile, $macversion, $sdkversion, $sdkroot, $sdkpath);
-
-		print("DYLD_FALLBACK_LIBRARY_PATH: ".$ENV{'DYLD_FALLBACK_LIBRARY_PATH'}."\n");
-		print("LD_LIBRARY_PATH: ".$ENV{'LD_LIBRARY_PATH'}."\n");
-		print("C_INCLUDE_PATH: ".$ENV{'C_INCLUDE_PATH'}."\n");
-		print("ACLOCAL_PATH: ".$ENV{'ACLOCAL_PATH'}."\n");
-		print("PKG_CONFIG_PATH: ".$ENV{'PKG_CONFIG_PATH'}."\n");
-		print("PATH: ".$ENV{'PATH'}."\n");
-
-		build_mono ($arch, $buildtarget, $cachefile, $os, \@configureparams);
-
-		system("make install") eq 0 or die ("Failed running make install");
-		print(">>>Making micro lib\n");
-		chdir("$buildtarget") eq 1 or die("failed to chdir to $buildtarget");
-		system("make PROFILE=monotouch_bootstrap") eq 0 or die ("Failed making monotouch bootstrap");
-		#system("make PROFILE=monotouch MICRO=1 clean") eq 0 or die ("Failed cleaning micro corlib");
-		system("make PROFILE=monotouch MICRO=1") eq 0 or die ("Failed making micro corlib");
-
-	}
-
-	chdir("$buildtarget") eq 1 or die ("failed to chdir to $buildtarget");
-
-	$File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
-
-	mkpath("$libmono/2.0");
-	dircopy("$installprefix/lib/mono/2.0","$libmono/2.0");
-	# system("rm $libmono/2.0/*.mdb");
-	mkpath("$libmono/micro");
-	system("cp $monopath/mcs/class/lib/monotouch/mscorlib.dll $libmono/micro") eq 0 or die("Failed to copy micro corlib");
-	system("cp $installprefix/lib/mono/gac/Mono.Cecil/*/Mono.Cecil.dll $libmono/2.0") eq 0 or die("failed to copy Mono.Cecil.dll");
-	system("cp -r $installprefix/bin $distdir/") eq 0 or die ("failed copying bin folder");
-
-	system("cp -r $installprefix/etc $distdir/") eq 0 or die("failed copy 4");
-	mkpath("$buildir/headers/mono");
-	system("cp -r $installprefix/include/mono-1.0/mono $buildir/headers/") eq 0 or die("failed copy 5");
-	system("cp $monopath/eglib/src/glib.h $buildir/headers/") eq 0 or die("failed copying glib.h");
-	system("cp $monopath/eglib/src/eglib-config.hw $buildir/headers/") eq 0 or die ("failed copying eglib-config.hw");
-
-	system("perl -e \"s/\\bmono_/mangledmono_/g;\" -pi \$(find $buildir/headers -type f)");
-
-	CopyIgnoringHiddenFiles ("$extras/add_to_build_results/monodistribution/", "$installprefix/");
-
-	my $prefixUnity = "$installprefix/lib/mono/unity";
-	my $libmonoUnity = "$libmono/unity";
-	my $prefixUnityWeb = "$installprefix/lib/mono/unity_web";
-	my $libmonoUnityWeb = "$libmono/unity_web";
-
-	print "prefixUnity: $prefixUnity\n";
-	print "libmonoUnity: $libmonoUnity\n";
-
-	if ($unity)
-	{
-		CopyProfileAssembliesToPrefix ($monopath, $installprefix, "unity", "unity");
-
-		AddRequiredExecutePermissionsToUnity ($prefixUnity);
-		BuildUnityScriptForUnity ($installprefix, $prefixUnity, $libmono, $libmonoUnity, $prefixUnityWeb, $libmonoUnityWeb);
-
-		chdir("$monopath") eq 1 or die ("failed to chdir to $monopath");
-		BuildCecilForUnity ($installprefix, $prefixUnity);
-
-		chdir("$buildtarget") eq 1 or die ("failed to chdir to $buildtarget");
-		CopyAssemblies ($prefixUnity, $libmonoUnity);
-
-		#now, we have a functioning, raw, unity profile in builds/monodistribution/lib/mono/unity
-		#we're now going to transform that into the unity_web profile by running it trough the linker, and decorating it with security attributes.
-		CopyUnityScriptAndBooFromUnityProfileTo20 ($distdir, $libmonoUnity);
-
-		chdir("$monopath") eq 1 or die ("failed to chdir to $monopath");
-		RunLinker ($installprefix, $prefixUnity, $buildtarget);
-		RunSecurityInjection ($installprefix, $prefixUnityWeb, $buildtarget);
-	}
-
-	chdir("$buildtarget") eq 1 or die ("failed to chdir to $buildtarget");
-	#Overlaying files
-	CopyIgnoringHiddenFiles("$extras/add_to_build_results/", "$buildtarget");
-
-	if($ENV{UNITY_THISISABUILDMACHINE})
-	{
-		my %checkouts = (
-			'mono-classlibs' => 'BUILD_VCS_NUMBER_Mono____Mono2_6_x_Unity3_x',
-			'boo' => 'BUILD_VCS_NUMBER_Boo',
-			'unityscript' => 'BUILD_VCS_NUMBER_UnityScript',
-			'cecil' => 'BUILD_VCS_NUMBER_Cecil'
-		);
-
-		system("echo '' > $buildtarget/versions.txt");
-		for my $key (keys %checkouts) {
-			system("echo \"$key = $ENV{$checkouts{$key}}\" >> $buildtarget/versions.txt");
-		}
-	}
-
-	#zip up the results for teamcity
-	chdir("$buildtarget");
-	system("tar -hpczf ../ZippedClasslibs.tar.gz *") && die("Failed to zip up classlibs for teamcity");
-}
-
-sub build_iphone_crosscompiler
-{
-	my $os = "crosscompiler";
-	mkpath ("$buildsroot/$os/iphone");
-
-	my ($sdkversion, $sdkroot, $sdkpath) = detect_osx_sdk ('10.6');
-
-	for my $arch ('i386') {
-		my $buildtarget = "$buildir/$os-$arch";
-		my $cachefile = "$buildir/$os-$arch.cache";
-
-		print "\nBuilding $os for architecture: $arch\n";
-
-		my @configureparams = setenv_iphone_crosscompiler ($arch, $cachefile, $sdkversion, $sdkroot, $sdkpath);
-		build_mono ($arch, $buildtarget, $cachefile, $os, \@configureparams);
-
-		print "Copying mono runtime to final destination\n";
-		for my $file ('mono') {
-			system("ln","-f","$buildtarget/mono/mini/$file","$buildsroot/$os/iphone/$file-xcompiler") eq 0 or die("failed symlinking $buildtarget/mono/mini/$file to $buildsroot/$os/iphone/$file-xcompiler");
-		}
-	}
-}
-
-sub build_iphone_runtime
-{
-	my $os = "iphone";
-	mkpath ("$embeddir/$os");
-
-	my $macversion = '10.6';
-	my ($sdkversion, $sdkroot, $sdkpath) = detect_iphone_sdk ('5.0');
-
-
-	for my $arch ('armv7') {
-		my $buildtarget = "$buildir/$os-$arch";
-		my $cachefile = "$buildir/$os-$arch.cache";
-
-		print "Building $os for architecture: $arch\n";
-
-		if (not $skipbuild)
-		{
-			my @configureparams = setenv_iphone_runtime ($arch, $cachefile, $sdkversion, $sdkroot, $sdkpath);
-			build_mono ($arch, $buildtarget, $cachefile, $os, \@configureparams);
-		}
-
-		print "Copying iPhone static lib to final destination\n";
-		system("ln","-f","$buildtarget/mono/mini/.libs/libmono.a","$embeddir/$os/libmono-$arch.a") eq 0 or die("failed symlinking libmono-$arch.a");
-
-	}
-
-	for my $file ('libmono') {
-		system("libtool", "-static", "-o", "$embeddir/$os/$file.a", "$embeddir/$os/$file-armv7.a") eq 0 or dir("failed libtool");
-		system("rm", "$embeddir/$os/$file-armv7.a");
 	}
 }
 
@@ -911,29 +525,13 @@ sub build_iphone_simulator
 
 }
 
-if (($cleanbuild || $reconfigure) && not $skipbuild)
-{
-	configure_mono;
-	mkpath("$buildir");
-}
-
-my $doiphone;
-my $doiphonex;
 my $doiphones;
 my $doosx;
-my $doclasslibs;
 
-$doiphone = 1 if $dobuild eq 'runtime';
-$doiphonex = 1 if $dobuild eq 'cross';
 $doiphones = 1 if $dobuild eq 'simulator';
-$doiphone = $doiphones = $doiphonex = 1 if $dobuild eq 'iphone';
-$doclasslibs = 1 if $dobuild eq 'classlibs';
 $doosx = 1 if $dobuild eq 'osx';
 
-print "build type: osx:$doosx runtime:$doiphones simulator:$doiphones cross:$doiphonex classlibs:$doclasslibs\n";
+print "build type: osx:$doosx simulator:$doiphones\n";
 
 build_iphone_simulator if $doiphones;
-build_iphone_runtime if $doiphone;
-build_iphone_crosscompiler if $doiphonex;
 build_osx if $doosx;
-build_classlibs if $doclasslibs;
