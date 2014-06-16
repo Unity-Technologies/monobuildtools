@@ -4,14 +4,10 @@ use File::Spec;
 use File::Basename;
 use File::Copy;
 use File::Path;
-my $root = File::Spec->rel2abs( dirname($0) );
+my $root = File::Spec->rel2abs(dirname($0) . '/../..');
+my $monoroot = $root;
 my $buildsroot = "$root/builds";
-my $buildir = "$buildsroot/src";
-
-my $monoroot = abs_path($root."/../Mono");
-$monoroot = abs_path($root."/../mono") unless (-d $monoroot);
-die ("Cannot find mono checkout in ../Mono or ../mono") unless (-d $monoroot);
-print "Mono checkout found in $monoroot\n\n";
+my $buildir = $root;
 
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
@@ -21,16 +17,7 @@ if ($ENV{UNITY_THISISABUILDMACHINE})
 	print "not rmtree-ing $root/builds, as we're not on a buildmachine";
 }
 
-my $os = 'win';
-my $arch = 'x86_64' ;
-my $buildtarget = "$buildir/$os-$arch";
-my $buildtargetwin = "$root\\builds\\src\\$os-$arch";
-
-
-mkpath("$buildtarget");
-
-CompileVCProj("$monoroot/msvc/mono.sln","Release_eglib|x64",0);
-dircopy('$monoroot/builds', '$buildtarget') or die $!;
+CompileVCProj("$monoroot/msvc/mono.sln","Release|x64",0);
 
 my $remove = "$buildtarget/embedruntimes/win32/libmono.bsc";
 if (-e $remove)
