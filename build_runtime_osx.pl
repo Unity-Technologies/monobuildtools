@@ -363,6 +363,29 @@ sub build_mono
 		}
 	}
 
+	my $libtoolize = $ENV{'LIBTOOLIZE'};
+	my $libtool = $ENV{'LIBTOOL'};
+	if($teamcity)
+	{
+	        $libtoolize = `which glibtoolize`;
+		chomp($libtoolize);
+		if(!-e $libtoolize)
+		{
+			$libtoolize = `which libtoolize`;
+			chomp($libtoolize);
+		}
+	}
+	if(!-e $libtoolize)
+	{
+		$libtoolize = 'libtoolize';
+	}
+	if(!-e $libtool)
+	{
+		$libtool = $libtoolize;
+		$libtool =~ s/ize$//;
+	}
+	print("Libtool: using $libtoolize and $libtool\n");
+
 	if ($cleanbuild == 1 || $reconfigure == 1) {
 		# Avoid "source directory already configured" ...
 		system('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status');
@@ -370,9 +393,9 @@ sub build_mono
 		print("\n\nCalling autogen with these parameters: ");
 		system("echo", @configureparams);
 		print("\n\n");
-		system("calling ./autogen.sh on $buildtarget",@configureparams);
+		system("echo calling ./autogen.sh on $buildtarget",@configureparams);
 
-		system("$monopath/autogen.sh", @configureparams) eq 0 or die ("failing configuring mono");
+		system("LIBTOOLIZE=$libtoolize LIBTOOL=$libtool $monopath/autogen.sh @configureparams") eq 0 or die ("failing configuring mono");
 
 		system("perl -pi -e 's/MONO_SIZEOF_SUNPATH 0/MONO_SIZEOF_SUNPATH 104/' config.h") if ($arch eq 'armv6' || $arch eq 'armv7');
 		system("perl -pi -e 's/#define HAVE_FINITE 1//' config.h") if ($arch eq 'armv6' || $arch eq 'armv7');
@@ -397,9 +420,6 @@ sub build_osx
 
 		my $macversion = '10.5';
 		$macversion = '10.6' if $arch eq 'x86_64';
-		if($teamcity)
-		{
-		}
 		my ($sdkversion, $sdkroot, $sdkpath) = detect_osx_sdk ('10.6');
 
 		# Make architecture-specific targets and lipo at the end
