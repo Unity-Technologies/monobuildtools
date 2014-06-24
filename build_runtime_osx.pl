@@ -272,6 +272,7 @@ sub setenv_osx
 	unshift(@configureparams, "--disable-nls");  #this removes the dependency on gettext package
 	unshift(@configureparams, "--prefix=$prefix");
 	unshift(@configureparams, "--enable-minimal=aot,logging,com,profiler,debug") if $minimal;
+	unshift(@configureparams, "--host=$arch-apple-darwin12.2.0");
 
 	setenv ($path, $cinclude, $cppinclude, $cflags, $cxxflags, $cc, $cxx, $cpp, $cxxpp, $ld, $ldflags);
 
