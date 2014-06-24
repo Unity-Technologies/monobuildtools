@@ -214,6 +214,7 @@ sub detect_osx_sdk
 	my ($sdkroot, $sdkpath) = detect_sdk ("MacOSX", $sdkversion);
 	if($teamcity)
 	{
+		system("cd $unityPath; ./jam EditorZips; cd $root");
 		return ($sdkversion, "$unityPath/External/MacBuildEnvironment/builds", "$unityPath/External/MacBuildEnvironment/builds/MacOSX10.6.sdk");
 	}
 
