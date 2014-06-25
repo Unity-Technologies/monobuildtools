@@ -19,7 +19,7 @@ my $lib = "$monodistro/lib";
 my $libmono = "$lib/mono";
 my $monoprefix = "$root/tmp/monoprefix";
 my $buildscriptsdir = "$root/external/buildscripts";
-my $unityPath = "$root/../unity";
+my $unityPath = "$root/../../unity/build";
 my $xcodePath = '/Applications/Xcode.app';
 
 my $dependencyBranchToUse = "unity3.0";
@@ -54,6 +54,7 @@ if (not $skipbuild)
 	my $target = '';
 	my $host = '';
 	my $build = '';
+	my $mcs = '';
 
 	if($^O eq "linux")
 	{
@@ -66,6 +67,10 @@ if (not $skipbuild)
 	{
 		my $sdkversion = '10.6';
 		my $sdkPath = "$xcodePath/Developer/SDKs/MacOSX$sdkversion.sdk";
+		my $libtoolize = $ENV{'LIBTOOLIZE'};
+		my $libtool = $ENV{'LIBTOOL'};
+		$mcs = 'EXTERNAL_MCS=/Library/Frameworks/Mono.framework/Versions/2.10.2/bin/mcs';
+
 		if ($ENV{'UNITY_THISISABUILDMACHINE'})
 		{
 			# Set up clang toolchain
@@ -73,16 +78,36 @@ if (not $skipbuild)
 			if (! -d $sdkPath)
 			{
 				print("Unzipping mac build toolchain\n");
-				system('unzip', '-qfod', "$unityPath/External/MacBuildEnvironment/builds", "$unityPath/External/MacBuildEnvironment/builds.zip");
+				system("cd $unityPath; ./jam EditorZips; cd $root");
 			}
 			$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
 			$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
 			$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$unityPath/External/MacBuildEnvironment/builds/usr/include -mmacosx-version-min=$sdkversion -isysroot $sdkPath";
+			$libtoolize = `which glibtoolize`;
+			chomp($libtoolize);
+			if(!-e $libtoolize)
+			{
+				$libtoolize = `which libtoolize`;
+				chomp($libtoolize);
+			}
 		}
 		else
 		{
 			$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -mmacosx-version-min=$sdkversion -isysroot $sdkPath";
 		}
+
+		if(!-e $libtoolize)
+		{
+			$libtoolize = 'libtoolize';
+		}
+		if(!-e $libtool)
+		{
+			$libtool = $libtoolize;
+			$libtool =~ s/ize$//;
+		}
+		print("Libtool: using $libtoolize and $libtool\n");
+		$ENV{'LIBTOOLIZE'} = $libtoolize;
+		$ENV{'LIBTOOL'} = $libtool;
 	}
 
 	if ($cleanbuild)
@@ -104,7 +129,7 @@ if (not $skipbuild)
 		print("calling make clean in mono\n");
 		system("make","clean") eq 0 or die ("failed to make clean");
 	}
-	system("make -j$jobs") eq 0 or die ('Failed running make');
+	system("make $mcs -j$jobs") eq 0 or die ('Failed running make');
 	system("make install") eq 0 or die ("Failed running make install");
 }
 chdir ($root);
