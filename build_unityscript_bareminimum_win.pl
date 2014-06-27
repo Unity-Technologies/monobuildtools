@@ -1,4 +1,4 @@
-use lib ('.', "perl_lib");
+use lib ('.', 'perl_lib', 'external/buildscripts/perl_lib');
 use Cwd;
 use File::Path;
 
