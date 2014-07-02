@@ -246,18 +246,19 @@ sub setenv_osx
 	my $cinclude;
 	my $cppinclude;
 
+	my $cc = 'clang';
+	my $cxx = 'clang++';
 	my $cflags = "-D_XOPEN_SOURCE=1 -arch $arch -DMONO_DISABLE_SHM=1 -DDISABLE_SHARED_HANDLES=1";
 	if($teamcity)
 	{
+		$cc = "$unityPath/External/MacBuildEnvironment/builds/usr/bin/clang";
+		$cxx = "$unityPath/External/MacBuildEnvironment/builds/usr/bin/clang++";
 		$cflags = "$cflags -I$unityPath/External/MacBuildEnvironment/builds/usr/include";
 	}
 	$cflags = "$cflags -g -O0" if $debug;
 	$cflags = "$cflags -Os" if not $debug; #optimize for size
 
 	my $cxxflags = "$cflags";
-
-	my $cc = "$unityPath/External/MacBuildEnvironment/builds/usr/bin/clang";
-	my $cxx = "$unityPath/External/MacBuildEnvironment/builds/usr/bin/clang++";
 	$cc = "$cc -arch $arch";
 	$cxx = "$cxx -arch $arch";
 
