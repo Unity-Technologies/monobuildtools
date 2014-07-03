@@ -20,7 +20,7 @@ my $libmono = "$lib/mono";
 my $monoprefix = "$root/tmp/monoprefix";
 my $buildscriptsdir = "$root/external/buildscripts";
 my $unityPath = "$root/../../unity/build";
-my $xcodePath = '/Applications/Xcode.app';
+my $xcodePath = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform';
 
 my $monoprefixUnity = "$monoprefix/lib/mono/unity";
 my $monoprefix45 = "$monoprefix/lib/mono/4.0";
@@ -38,11 +38,13 @@ if ($ENV{UNITY_THISISABUILDMACHINE}) {
 my $skipbuild=0;
 my $cleanbuild=1;
 my $jobs=8;
+my $sdk='10.6';
 
 GetOptions(
    'skipbuild=i'=>\$skipbuild,
    'cleanbuild=i'=>\$cleanbuild,
    'jobs=i'=>\$jobs,
+   'sdk=s'=>\$sdk,
 ) or die ("illegal cmdline options");
 
 
@@ -69,7 +71,7 @@ if (not $skipbuild)
 	}
 	elsif($^O eq 'darwin')
 	{
-		my $sdkversion = '10.6';
+		my $sdkversion = $sdk;
 		my $sdkPath = "$xcodePath/Developer/SDKs/MacOSX$sdkversion.sdk";
 		my $libtoolize = $ENV{'LIBTOOLIZE'};
 		my $libtool = $ENV{'LIBTOOL'};
