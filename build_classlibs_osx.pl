@@ -22,6 +22,10 @@ my $buildscriptsdir = "$root/external/buildscripts";
 my $unityPath = "$root/../../unity/build";
 my $xcodePath = '/Applications/Xcode.app';
 
+my $monoprefixUnity = "$monoprefix/lib/mono/unity";
+my $monoprefix45 = "$monoprefix/lib/mono/4.0";
+my $monodistroLibMono = "$monodistro/lib/mono";
+my $monodistro45 = "$monodistroLibMono/4.0";
 my $dependencyBranchToUse = "unity3.0";
 
 if ($ENV{UNITY_THISISABUILDMACHINE}) {
@@ -69,10 +73,11 @@ if (not $skipbuild)
 		my $sdkPath = "$xcodePath/Developer/SDKs/MacOSX$sdkversion.sdk";
 		my $libtoolize = $ENV{'LIBTOOLIZE'};
 		my $libtool = $ENV{'LIBTOOL'};
-		$mcs = 'EXTERNAL_MCS=/Library/Frameworks/Mono.framework/Versions/2.10.2/bin/mcs';
 
 		if ($ENV{'UNITY_THISISABUILDMACHINE'})
 		{
+			# Set up mono for bootstrapping
+			$mcs = 'EXTERNAL_MCS=/Library/Frameworks/Mono.framework/Versions/2.10.2/bin/mcs';
 			# Set up clang toolchain
 			$sdkPath = "$unityPath/External/MacBuildEnvironment/builds/MacOSX$sdkversion.sdk";
 			if (! -d $sdkPath)
@@ -131,6 +136,8 @@ if (not $skipbuild)
 	}
 	system("make $mcs -j$jobs") eq 0 or die ('Failed running make');
 	system("make install") eq 0 or die ("Failed running make install");
+
+	BuildUnityScriptFor45();
 }
 chdir ($root);
 
@@ -201,11 +208,6 @@ sub XBuild
 {
    system("$monoprefix/bin/xbuild", @_) eq 0 or die("Failed to xbuild @_");
 }
-
-my $monoprefixUnity = "$monoprefix/lib/mono/unity";
-my $monoprefix45 = "$monoprefix/lib/mono/4.0";
-my $monodistroLibMono = "$monodistro/lib/mono";
-my $monodistro45 = "$monodistroLibMono/4.0";
 
 sub UnityBooc
 {
@@ -302,17 +304,17 @@ sub BuildUnityScriptFor45
 	Booc("-out:$UnityScriptDLL -srcdir:$usCheckout/src/UnityScript -r:$UnityScriptLangDLL -r:Boo.Lang.Parser.dll -r:Boo.Lang.PatternMatching.dll");
 	Booc("-out:$monoprefix45/us.exe -srcdir:$usCheckout/src/us -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:Boo.Lang.Useful.dll");
 	
-	# unityscript test suite
-	my $UnityScriptTestsCSharpDLL = "$usCheckout/src/UnityScript.Tests.CSharp/bin/Debug/UnityScript.Tests.CSharp.dll";
-	XBuild("$usCheckout/src/UnityScript.Tests.CSharp/UnityScript.Tests.CSharp.csproj", "/t:Rebuild");
+	# # unityscript test suite
+	# my $UnityScriptTestsCSharpDLL = "$usCheckout/src/UnityScript.Tests.CSharp/bin/Debug/UnityScript.Tests.CSharp.dll";
+	# XBuild("$usCheckout/src/UnityScript.Tests.CSharp/UnityScript.Tests.CSharp.csproj", "/t:Rebuild");
 	
 	my $usBuildDir = "$usCheckout/build";
 	mkdir($usBuildDir);
 	
-	my $UnityScriptTestsDLL = <$usBuildDir/UnityScript.Tests.dll>;
-	Booc("-out:$UnityScriptTestsDLL -srcdir:$usCheckout/src/UnityScript.Tests -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:$UnityScriptTestsCSharpDLL -r:Boo.Lang.Compiler.dll -r:Boo.Lang.Useful.dll");
+	# my $UnityScriptTestsDLL = <$usBuildDir/UnityScript.Tests.dll>;
+	# Booc("-out:$UnityScriptTestsDLL -srcdir:$usCheckout/src/UnityScript.Tests -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:$UnityScriptTestsCSharpDLL -r:Boo.Lang.Compiler.dll -r:Boo.Lang.Useful.dll");
 	
-	cp("$UnityScriptTestsCSharpDLL $usBuildDir/");
+	# cp("$UnityScriptTestsCSharpDLL $usBuildDir/");
 	cp("$monoprefix45/Boo.* $usBuildDir/");
 	cp("$monoprefix45/UnityScript.* $usBuildDir/");
 	cp("$monoprefix45/us.exe $usBuildDir/");
