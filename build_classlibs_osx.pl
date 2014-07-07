@@ -22,7 +22,6 @@ my $buildscriptsdir = "$root/external/buildscripts";
 my $unityPath = "$root/../../unity/build";
 my $xcodePath = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform';
 
-my $monoprefixUnity = "$monoprefix/lib/mono/unity";
 my $monoprefix45 = "$monoprefix/lib/mono/4.0";
 my $monodistroLibMono = "$monodistro/lib/mono";
 my $monodistro45 = "$monodistroLibMono/4.0";
@@ -139,6 +138,7 @@ if (not $skipbuild)
 	system("make $mcs -j$jobs") eq 0 or die ('Failed running make');
 	system("make install") eq 0 or die ("Failed running make install");
 
+	CopyIgnoringHiddenFiles("$buildscriptsdir/add_to_build_results/monodistribution/", "$monoprefix/");
 	BuildUnityScriptFor45();
 }
 chdir ($root);
@@ -151,7 +151,7 @@ for my $profile (@profiles)
 {
 	mkpath("$libmono/$profile");
 	dircopy("$monoprefix/lib/mono/$profile","$libmono/$profile");
-	system("rm $libmono/$profile/*.mdb");
+	system("rm -f $libmono/$profile/*.mdb");
 }
 system("cp -r $monoprefix/bin $monodistro/") eq 0 or die ("failed copying bin folder");
 system("cp -r $monoprefix/etc $monodistro/") eq 0 or die("failed copy 4");
@@ -161,12 +161,8 @@ sub CopyIgnoringHiddenFiles
 {
 	my $sourceDir = shift;
 	my $targetDir = shift;
-
-	#really need to find a better way to copy a dir, ignoring .svn's than rsync.	
-	system("rsync -a -v --exclude='.*' $sourceDir $targetDir") eq 0 or die("failed to rsync $sourceDir to $targetDir");
+	system("cp -R $sourceDir $targetDir");
 }
-
-CopyIgnoringHiddenFiles("$buildscriptsdir/add_to_build_results/monodistribution/", "$monoprefix/");
 
 sub cp
 {
@@ -211,74 +207,17 @@ sub XBuild
    system("$monoprefix/bin/xbuild", @_) eq 0 or die("Failed to xbuild @_");
 }
 
-sub UnityBooc
-{
-	my $commandLine = shift;
-	
-	system("$monoprefixUnity/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $commandLine");
-}
-
 sub Booc
 {
 	my $commandLine = shift;
 	
-	system("$monoprefix45/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $commandLine");
+	system("$monoprefix45/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $monoprefix45/booc -debug- $commandLine");
 }
 
-sub BuildUnityScriptForUnity
-{
-	my $booCheckout = "external/boo";
-	
-	# TeamCity is handling this
-	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
-		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout, "unity-trunk");
-	}
-	UnityXBuild("$booCheckout/src/booc/booc.csproj");
-	
-	cp("$booCheckout/ide-build/Boo.Lang*.dll $monoprefixUnity/");
-	cp("$booCheckout/ide-build/booc.exe $monoprefixUnity/");
-	UnityBooc("-out:$monoprefixUnity/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll -r:Boo.Lang.Compiler.dll");
-	UnityBooc("-out:$monoprefixUnity/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
-	UnityBooc("-out:$monoprefixUnity/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
-	
-	# micro profile version
-	#UnityXBuild("$booCheckout/src/Boo.Lang/Boo.Lang.csproj", "Micro-Release");
-	#cp("$booCheckout/src/Boo.Lang/bin/Micro-Release/Boo.Lang.dll $monodistroLibMono/micro/");
-	
-	my $usCheckout = "external/unityscript";
-	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
-		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout, "unity-trunk");
-	}
-	
-	my $UnityScriptLangDLL = "$monoprefixUnity/UnityScript.Lang.dll";
-	UnityBooc("-out:$UnityScriptLangDLL -srcdir:$usCheckout/src/UnityScript.Lang");
-	
-	my $UnityScriptDLL = "$monoprefixUnity/UnityScript.dll";
-	UnityBooc("-out:$UnityScriptDLL -srcdir:$usCheckout/src/UnityScript -r:$UnityScriptLangDLL -r:Boo.Lang.Parser.dll -r:Boo.Lang.PatternMatching.dll");
-	UnityBooc("-out:$monoprefixUnity/us.exe -srcdir:$usCheckout/src/us -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:Boo.Lang.Useful.dll");
-	
-	# unityscript test suite
-	my $UnityScriptTestsCSharpDLL = "$usCheckout/src/UnityScript.Tests.CSharp/bin/Debug/UnityScript.Tests.CSharp.dll";
-	UnityXBuild("$usCheckout/src/UnityScript.Tests.CSharp/UnityScript.Tests.CSharp.csproj", "Debug");
-	
-	my $usBuildDir = "$usCheckout/build";
-	mkdir($usBuildDir);
-	
-	my $UnityScriptTestsDLL = <$usBuildDir/UnityScript.Tests.dll>;
-	UnityBooc("-out:$UnityScriptTestsDLL -srcdir:$usCheckout/src/UnityScript.Tests -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:$UnityScriptTestsCSharpDLL -r:Boo.Lang.Compiler.dll -r:Boo.Lang.Useful.dll");
-	
-	cp("$UnityScriptTestsCSharpDLL $usBuildDir/");
-	cp("$monoprefixUnity/Boo.* $usBuildDir/");
-	cp("$monoprefixUnity/UnityScript.* $usBuildDir/");
-	cp("$monoprefixUnity/us.exe $usBuildDir/");
-	
-	#system(<$monoprefix/bin/nunit-console2>, "-noshadow", "-exclude=FailsOnMono", $UnityScriptTestsDLL) eq 0 or die("UnityScript test suite failed");
-}
-	
-# TODO: If you don't refactor, then neither am I...
 sub BuildUnityScriptFor45
 {
 	my $booCheckout = "external/boo";
+	print("Using mono prefix $monoprefix45\n");
 	
 	# TeamCity is handling this
 	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
@@ -288,8 +227,6 @@ sub BuildUnityScriptFor45
 	
 	cp("$booCheckout/ide-build/Boo.Lang*.dll $monoprefix45/");
 	cp("$booCheckout/ide-build/booc.exe $monoprefix45/");
-	cp("$monoprefixUnity/booc $monoprefix45/");
-	cp("$monoprefixUnity/mono-env $monoprefix45/");
 	Booc("-out:$monoprefix45/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll -r:Boo.Lang.Compiler.dll");
 	Booc("-out:$monoprefix45/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
 	Booc("-out:$monoprefix45/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
@@ -322,19 +259,6 @@ sub BuildUnityScriptFor45
 	cp("$monoprefix45/us.exe $usBuildDir/");
 }
 	
-sub UnityXBuild
-{
-	my $projectFile = shift;
-	
-	my $optionalConfiguration = shift; 
-	my $configuration = defined($optionalConfiguration) ? $optionalConfiguration : "Release";
-	
-	my $target = "Rebuild";
-	my $commandLine = "$monoprefix/bin/xbuild $projectFile /p:CscToolExe=smcs /p:CscToolPath=$monoprefixUnity /p:MonoTouch=True /t:$target /p:Configuration=$configuration /p:AssemblySearchPaths=$monoprefixUnity";
-	
-	system($commandLine) eq 0 or die("Failed to xbuild '$projectFile' for unity");
-}
-
 sub AddRequiredExecutePermissionsToUnity
 {
 	for my $profile (@_) {

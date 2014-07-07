@@ -28,6 +28,7 @@ my $jobs = 4;
 my $xcodePath = '/Applications/Xcode.app';
 my $cleanbuildopt = 'full';
 my $unityPath = "$root/../../unity/build";
+my $sdk = '10.6';
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
@@ -38,7 +39,8 @@ GetOptions(
    "build=s"=>\$dobuild,
    "j=i"=>\$jobs,
    "xcodepath=s"=>\$xcodePath,
-   "reconfigure=i"=>\$reconfigure
+   "reconfigure=i"=>\$reconfigure,
+   "sdk=s"=>\$sdk
 ) or die<<EOF
 illegal cmdline options.
 
@@ -183,7 +185,7 @@ sub detect_sdk
 {
 	my $type = shift;
 	my $sdkversion = shift;
-	return ("/Developer", "/Developer/SDKs/$type") if (-d "/Developer/SDKs" and $sdkversion eq '10.6');
+	return ("/Developer", "/Developer/SDKs/$type") if (-d "/Developer/SDKs" and $sdkversion eq $sdk);
 	return ("$xcodePath/$type.platform/Developer", "$xcodePath/$type.platform/Developer/SDKs/$type");
 }
 
@@ -215,7 +217,7 @@ sub detect_osx_sdk
 	if($teamcity)
 	{
 		system("cd $unityPath; ./jam EditorZips; cd $root");
-		return ($sdkversion, "$unityPath/External/MacBuildEnvironment/builds", "$unityPath/External/MacBuildEnvironment/builds/MacOSX10.6.sdk");
+		return ($sdkversion, "$unityPath/External/MacBuildEnvironment/builds", "$unityPath/External/MacBuildEnvironment/builds/MacOSX$sdk.sdk");
 	}
 
 	$detectedsdk = "10.7" unless (-d "$sdkpath$detectedsdk.sdk");
@@ -423,7 +425,7 @@ sub build_osx
 
 		my $macversion = '10.5';
 		$macversion = '10.6' if $arch eq 'x86_64';
-		my ($sdkversion, $sdkroot, $sdkpath) = detect_osx_sdk ('10.6');
+		my ($sdkversion, $sdkroot, $sdkpath) = detect_osx_sdk ($sdk);
 
 		# Make architecture-specific targets and lipo at the end
 		my $bintarget = "$distdir/bin-$arch";
