@@ -1,5 +1,0 @@
-#!/bin/sh
-. $(dirname $0)/mono-env4
-
-$MONO $MONO_PREFIX/lib/mono/4.0/dmcs.exe "$@"
-
