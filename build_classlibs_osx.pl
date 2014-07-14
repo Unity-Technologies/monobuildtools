@@ -22,9 +22,9 @@ my $buildscriptsdir = "$root/external/buildscripts";
 my $unityPath = "$root/../../unity/build";
 my $xcodePath = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform';
 
-my $monoprefix45 = "$monoprefix/lib/mono/4.0";
+my $monoprefix45 = "$monoprefix/lib/mono/4.5";
 my $monodistroLibMono = "$monodistro/lib/mono";
-my $monodistro45 = "$monodistroLibMono/4.0";
+my $monodistro45 = "$monodistroLibMono/4.5";
 my $dependencyBranchToUse = "unity3.0";
 
 if ($ENV{UNITY_THISISABUILDMACHINE}) {
@@ -149,8 +149,7 @@ $File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not
 my @profiles = ('4.0', '4.5');
 for my $profile (@profiles)
 {
-	mkpath("$libmono/$profile");
-	dircopy("$monoprefix/lib/mono/$profile","$libmono/$profile");
+	system("cp -r $monoprefix/lib/mono/$profile $libmono");
 	system("rm -f $libmono/$profile/*.mdb");
 }
 system("cp -r $monoprefix/bin $monodistro/") eq 0 or die ("failed copying bin folder");
