@@ -1,5 +1,5 @@
 #!/bin/sh
-. $(dirname $0)/mono-env4
+. $(dirname $0)/mono-env
 
 BOOC=$(dirname $0)/booc.exe
 

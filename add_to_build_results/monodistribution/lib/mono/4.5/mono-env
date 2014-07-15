@@ -1,0 +1,8 @@
+. $(dirname $0)/monobin-env
+
+export MONO_PREFIX=$(dirname $0)/../../..
+MONO=$MONO_PREFIX/$MONOBINDIR/mono
+
+export MONO_PATH=$MONO_PREFIX/lib/mono/4.5:$MONO_PREFIX/lib/mono/4.0
+export MONO_CFG_DIR=$MONO_PREFIX/etc
+export LD_LIBRARY_PATH=$MONO_PREFIX/lib
