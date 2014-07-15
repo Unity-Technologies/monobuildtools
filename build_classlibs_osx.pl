@@ -148,6 +148,7 @@ $File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not
 
 #my @profiles = ("2.0","3.5","4.0","4.5");
 my @profiles = ('4.0', '4.5');
+system("mkdir -p $libmono");
 for my $profile (@profiles)
 {
 	system("cp -r $monoprefix/lib/mono/$profile $libmono");
