@@ -26,8 +26,9 @@ my $monoprefix45 = "$monoprefix/lib/mono/4.5";
 my $monodistroLibMono = "$monodistro/lib/mono";
 my $monodistro45 = "$monodistroLibMono/4.5";
 my $dependencyBranchToUse = "unity3.0";
+my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
-if ($ENV{UNITY_THISISABUILDMACHINE}) {
+if ($buildMachine) {
 	print "rmtree-ing $root/builds because we're on a buildserver, and want to make sure we don't include old artifacts\n";
 	rmtree("$root/builds");
 } else {
@@ -75,7 +76,7 @@ if (not $skipbuild)
 		my $libtoolize = $ENV{'LIBTOOLIZE'};
 		my $libtool = $ENV{'LIBTOOL'};
 
-		if ($ENV{'UNITY_THISISABUILDMACHINE'})
+		if ($buildMachine)
 		{
 			# Set up mono for bootstrapping
 			$mcs = 'EXTERNAL_MCS=/Library/Frameworks/Mono.framework/Versions/2.10.2/bin/mcs';
@@ -150,7 +151,10 @@ my @profiles = ('4.0', '4.5');
 for my $profile (@profiles)
 {
 	system("cp -r $monoprefix/lib/mono/$profile $libmono");
-	system("rm -f $libmono/$profile/*.mdb");
+	if ($buildMachine)
+	{
+		system("rm -f $libmono/$profile/*.mdb");
+	}
 }
 system("cp -r $monoprefix/bin $monodistro/") eq 0 or die ("failed copying bin folder");
 system("cp -r $monoprefix/etc $monodistro/") eq 0 or die("failed copy 4");
@@ -218,8 +222,8 @@ sub BuildUnityScriptFor45
 	my $booCheckout = "external/boo";
 	print("Using mono prefix $monoprefix45\n");
 	
-	# TeamCity is handling this
-	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
+	# Build host is handling this
+	if (!$buildMachine) {
 		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout, "unity-trunk");
 	}
 	XBuild("$booCheckout/src/booc/booc.csproj", "/t:Rebuild");
@@ -231,7 +235,7 @@ sub BuildUnityScriptFor45
 	Booc("-out:$monoprefix45/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
 	
 	my $usCheckout = "external/unityscript";
-	if (!$ENV{UNITY_THISISABUILDMACHINE}) {
+	if (!$buildMachine) {
 		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout, "unity-trunk");
 	}
 	
@@ -291,7 +295,7 @@ sub RunCSProj
 #Overlaying files
 CopyIgnoringHiddenFiles("$buildscriptsdir/add_to_build_results/", "$root/builds/");
 
-if($ENV{UNITY_THISISABUILDMACHINE})
+if($buildMachine)
 {
 	my %checkouts = (
 		'mono-classlibs' => 'BUILD_VCS_NUMBER_mono_unity_2_10_2',
