@@ -132,7 +132,7 @@ if (not $skipbuild)
 		system('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status');
 
 		print(">>>Calling autogen in mono\n");
-		system('./autogen.sh',"--prefix=$monoprefix",$host,'--with-monotouch=no', '--with-profile2=no','--with-glib=embedded','--with-mcs-docs=no', '--disable-nls', $osxflags) eq 0 or die ('failing autogenning mono');
+		system('./autogen.sh',"--prefix=$monoprefix",$host,'--with-monotouch=no', '--with-glib=embedded','--with-mcs-docs=no', '--disable-nls', $osxflags) eq 0 or die ('failing autogenning mono');
 		print("calling make clean in mono\n");
 		system("make","clean") eq 0 or die ("failed to make clean");
 	}
@@ -146,8 +146,7 @@ chdir ($root);
 
 $File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
 
-#my @profiles = ("2.0","3.5","4.0","4.5");
-my @profiles = ('4.0', '4.5');
+my @profiles = ("2.0","3.5","4.0","4.5");
 system("mkdir -p $libmono");
 for my $profile (@profiles)
 {
