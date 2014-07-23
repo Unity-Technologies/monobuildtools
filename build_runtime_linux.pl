@@ -159,7 +159,7 @@ if ($ENV{"UNITY_THISISABUILDMACHINE"})
 	system("echo \"mono-runtime-$platform = $ENV{'BUILD_VCS_NUMBER_mono_unity_2_10_2'}\" > $buildsroot/versions.txt");
 }
 
-system("ln","-f","$buildtarget/mono/mini/mono","$bintarget/mono") eq 0 or die("failed symlinking mono executable");
+system("ln","-f","$buildtarget/mono/mini/mono-boehm","$bintarget/mono") eq 0 or die("failed symlinking mono executable");
 system("ln","-f","$buildtarget/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed symlinking pedump executable");
 system('cp',"$buildtarget/data/config","$etctarget/mono/config");
 system("chmod","-R","755",$bintarget);
