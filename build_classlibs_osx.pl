@@ -157,8 +157,9 @@ for my $profile (@profiles)
 	}
 }
 system("cp -r $monoprefix/bin $monodistro/") eq 0 or die ("failed copying bin folder");
-system("cp -r $monoprefix/etc $monodistro/") eq 0 or die("failed copy 4");
-system("cp -r $monoprefix/lib/mono/gac $monodistro/lib/mono") eq 0 or die("failed copy gac");
+system("cp -r $monoprefix/etc $monodistro/") eq 0 or die("failed copying etc folder");
+system("cp -r $monoprefix/lib/mono/gac $monodistro/lib/mono") eq 0 or die("failed copying gac");
+system("cp -r $monoprefix/lib/mono/xbuild-frameworks $monodistro/lib/mono") eq 0 or die("failed copying xbuild-frameworks");
 
 sub CopyIgnoringHiddenFiles
 {
