@@ -19,7 +19,7 @@ if ($ENV{UNITY_THISISABUILDMACHINE})
 
 CompileVCProj("$monoroot/msvc/mono.sln","Release|x64",0);
 
-my $remove = "$buildtarget/embedruntimes/win32/libmono.bsc";
+my $remove = "$buildsroot/embedruntimes/win32/libmono.bsc";
 if (-e $remove)
 {
 	unlink($remove) or die("can't delete libmono.bsc");
@@ -27,12 +27,12 @@ if (-e $remove)
 
 
 #have a duplicate for now...
-copy("$buildtarget/embedruntimes/win64/mono.dll","$buildtarget/monodistribution/bin-x64/mono.dll");
-copy("$buildtarget/embedruntimes/win64/mono.pdb","$buildtarget/monodistribution/bin-x64/mono.pdb");
+copy("$buildsroot/embedruntimes/win64/mono.dll","$buildsroot/monodistribution/bin-x64/mono.dll");
+copy("$buildsroot/embedruntimes/win64/mono.pdb","$buildsroot/monodistribution/bin-x64/mono.pdb");
 
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
-	system("echo mono-runtime-win32 = $ENV{'BUILD_VCS_NUMBER'} > $buildtargetwin\\versions.txt");
+	system("echo mono-runtime-win32 = $ENV{'BUILD_VCS_NUMBER'} > $buildsrootwin\\versions.txt");
 }
 
 sub CompileVCProj
