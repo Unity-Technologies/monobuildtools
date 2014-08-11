@@ -22,8 +22,10 @@ my $buildscriptsdir = "$root/external/buildscripts";
 my $unityPath = "$root/../../unity/build";
 my $xcodePath = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform';
 
+my $monoprefix20 = "$monoprefix/lib/mono/2.0";
 my $monoprefix45 = "$monoprefix/lib/mono/4.5";
 my $monodistroLibMono = "$monodistro/lib/mono";
+my $monodistro20 = "$monodistroLibMono/2.0";
 my $monodistro45 = "$monodistroLibMono/4.5";
 my $dependencyBranchToUse = "unity3.0";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
@@ -140,6 +142,7 @@ if (not $skipbuild)
 	system("make install") eq 0 or die ("Failed running make install");
 
 	CopyIgnoringHiddenFiles("$buildscriptsdir/add_to_build_results/monodistribution/", "$monoprefix/");
+	BuildUnityScriptFor20();
 	BuildUnityScriptFor45();
 }
 chdir ($root);
@@ -160,6 +163,11 @@ system("cp -r $monoprefix/bin $monodistro/") eq 0 or die ("failed copying bin fo
 system("cp -r $monoprefix/etc $monodistro/") eq 0 or die("failed copying etc folder");
 system("cp -r $monoprefix/lib/mono/gac $monodistro/lib/mono") eq 0 or die("failed copying gac");
 system("cp -r $monoprefix/lib/mono/xbuild-frameworks $monodistro/lib/mono") eq 0 or die("failed copying xbuild-frameworks");
+
+# Fake support for unity and unity_web until we move completely to 4.0
+system("rm -rf $monodistro/lib/mono/unity $monodistro/lib/mono/unity_web");
+system("cp -R $monodistro/lib/mono/2.0 $monodistro/lib/mono/unity");
+system("cp -R $monodistro/lib/mono/2.0 $monodistro/lib/mono/unity_web");
 
 sub CopyIgnoringHiddenFiles
 {
@@ -211,13 +219,65 @@ sub XBuild
    system("$monoprefix/bin/xbuild", @_) eq 0 or die("Failed to xbuild @_");
 }
 
-sub Booc
+sub Booc20
+{
+	my $commandLine = shift;
+	
+	system("$monoprefix20/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $monoprefix20/booc -debug- $commandLine");
+}
+
+sub Booc45
 {
 	my $commandLine = shift;
 	
 	system("$monoprefix45/booc -debug- $commandLine") eq 0 or die("booc failed to execute: $monoprefix45/booc -debug- $commandLine");
 }
 
+sub BuildUnityScriptFor20
+{
+	my $booCheckout = "external/boo";
+	print("Using mono prefix $monoprefix20\n");
+	
+	# Build host is handling this
+	if (!$buildMachine) {
+		GitClone("git://github.com/Unity-Technologies/boo.git", $booCheckout, "unity-trunk");
+	}
+	XBuild("$booCheckout/src/booc/booc.csproj", "/t:Rebuild");
+	
+	cp("$booCheckout/ide-build/Boo.Lang*.dll $monoprefix20/");
+	cp("$booCheckout/ide-build/booc.exe $monoprefix20/");
+	Booc20("-out:$monoprefix20/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll -r:Boo.Lang.Compiler.dll");
+	Booc20("-out:$monoprefix20/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
+	Booc20("-out:$monoprefix20/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
+	
+	my $usCheckout = "external/unityscript";
+	if (!$buildMachine) {
+		GitClone("git://github.com/Unity-Technologies/unityscript.git", $usCheckout, "unity-trunk");
+	}
+	
+	my $UnityScriptLangDLL = "$monoprefix20/UnityScript.Lang.dll";
+	Booc20("-out:$UnityScriptLangDLL -srcdir:$usCheckout/src/UnityScript.Lang");
+	
+	my $UnityScriptDLL = "$monoprefix20/UnityScript.dll";
+	Booc20("-out:$UnityScriptDLL -srcdir:$usCheckout/src/UnityScript -r:$UnityScriptLangDLL -r:Boo.Lang.Parser.dll -r:Boo.Lang.PatternMatching.dll");
+	Booc20("-out:$monoprefix20/us.exe -srcdir:$usCheckout/src/us -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:Boo.Lang.Useful.dll");
+	
+	# # unityscript test suite
+	# my $UnityScriptTestsCSharpDLL = "$usCheckout/src/UnityScript.Tests.CSharp/bin/Debug/UnityScript.Tests.CSharp.dll";
+	# XBuild("$usCheckout/src/UnityScript.Tests.CSharp/UnityScript.Tests.CSharp.csproj", "/t:Rebuild");
+	
+	my $usBuildDir = "$usCheckout/build";
+	mkdir($usBuildDir);
+	
+	# my $UnityScriptTestsDLL = <$usBuildDir/UnityScript.Tests.dll>;
+	# Booc("-out:$UnityScriptTestsDLL -srcdir:$usCheckout/src/UnityScript.Tests -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:$UnityScriptTestsCSharpDLL -r:Boo.Lang.Compiler.dll -r:Boo.Lang.Useful.dll");
+	
+	# cp("$UnityScriptTestsCSharpDLL $usBuildDir/");
+	cp("$monoprefix20/Boo.* $usBuildDir/");
+	cp("$monoprefix20/UnityScript.* $usBuildDir/");
+	cp("$monoprefix20/us.exe $usBuildDir/");
+}
+	
 sub BuildUnityScriptFor45
 {
 	my $booCheckout = "external/boo";
@@ -231,9 +291,9 @@ sub BuildUnityScriptFor45
 	
 	cp("$booCheckout/ide-build/Boo.Lang*.dll $monoprefix45/");
 	cp("$booCheckout/ide-build/booc.exe $monoprefix45/");
-	Booc("-out:$monoprefix45/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll -r:Boo.Lang.Compiler.dll");
-	Booc("-out:$monoprefix45/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
-	Booc("-out:$monoprefix45/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
+	Booc45("-out:$monoprefix45/Boo.Lang.Extensions.dll -noconfig -nostdlib -srcdir:$booCheckout/src/Boo.Lang.Extensions -r:System.dll -r:System.Core.dll -r:mscorlib.dll -r:Boo.Lang.dll -r:Boo.Lang.Compiler.dll");
+	Booc45("-out:$monoprefix45/Boo.Lang.Useful.dll -srcdir:$booCheckout/src/Boo.Lang.Useful -r:Boo.Lang.Parser");
+	Booc45("-out:$monoprefix45/Boo.Lang.PatternMatching.dll -srcdir:$booCheckout/src/Boo.Lang.PatternMatching");
 	
 	my $usCheckout = "external/unityscript";
 	if (!$buildMachine) {
@@ -241,11 +301,11 @@ sub BuildUnityScriptFor45
 	}
 	
 	my $UnityScriptLangDLL = "$monoprefix45/UnityScript.Lang.dll";
-	Booc("-out:$UnityScriptLangDLL -srcdir:$usCheckout/src/UnityScript.Lang");
+	Booc45("-out:$UnityScriptLangDLL -srcdir:$usCheckout/src/UnityScript.Lang");
 	
 	my $UnityScriptDLL = "$monoprefix45/UnityScript.dll";
-	Booc("-out:$UnityScriptDLL -srcdir:$usCheckout/src/UnityScript -r:$UnityScriptLangDLL -r:Boo.Lang.Parser.dll -r:Boo.Lang.PatternMatching.dll");
-	Booc("-out:$monoprefix45/us.exe -srcdir:$usCheckout/src/us -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:Boo.Lang.Useful.dll");
+	Booc45("-out:$UnityScriptDLL -srcdir:$usCheckout/src/UnityScript -r:$UnityScriptLangDLL -r:Boo.Lang.Parser.dll -r:Boo.Lang.PatternMatching.dll");
+	Booc45("-out:$monoprefix45/us.exe -srcdir:$usCheckout/src/us -r:$UnityScriptLangDLL -r:$UnityScriptDLL -r:Boo.Lang.Useful.dll");
 	
 	# # unityscript test suite
 	# my $UnityScriptTestsCSharpDLL = "$usCheckout/src/UnityScript.Tests.CSharp/bin/Debug/UnityScript.Tests.CSharp.dll";
