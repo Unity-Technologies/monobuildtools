@@ -3,4 +3,4 @@
 
 US=$MONO_PATH/us.exe
 
-exec $MONO $MONO_OPTIONS --runtime=moonlight --security=temporary-smcs-hack $US "$@"
+exec $MONO $MONO_OPTIONS --runtime=v2.0.50727 $US "$@"

@@ -3,4 +3,4 @@
 
 SMCS=$MONO_PATH/smcs.exe
 
-exec $MONO $MONO_OPTIONS --runtime=moonlight --security=temporary-smcs-hack $SMCS "$@"
+exec $MONO $MONO_OPTIONS --runtime=v2.0.50727 $SMCS "$@"
