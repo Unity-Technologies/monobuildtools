@@ -4,14 +4,11 @@ use File::Spec;
 use File::Basename;
 use File::Copy;
 use File::Path;
-my $root = File::Spec->rel2abs( dirname($0) );
+my $root = File::Spec->rel2abs (dirname($0) . '/../..');
 my $buildsroot = "$root/builds";
-my $buildir = "$buildsroot/src";
+my $buildir = $root;
 
-my $monoroot = abs_path($root."/../Mono");
-$monoroot = abs_path($root."/../mono") unless (-d $monoroot);
-die ("Cannot find mono checkout in ../Mono or ../mono") unless (-d $monoroot);
-print "Mono checkout found in $monoroot\n\n";
+my $monoroot = $root;
 
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
@@ -21,18 +18,9 @@ if ($ENV{UNITY_THISISABUILDMACHINE})
 	print "not rmtree-ing $root/builds, as we're not on a buildmachine";
 }
 
-my $os = 'win';
-my $arch = 'i386' ;
-my $buildtarget = "$buildir/$os-$arch";
-my $buildtargetwin = "$root\\builds\\src\\$os-$arch";
+CompileVCProj("$monoroot/msvc/mono.sln","Release|Win32",0);
 
-
-mkpath("$buildtarget");
-
-CompileVCProj("$monoroot/msvc/mono.sln","Release_eglib|Win32",0);
-dircopy('$monoroot/builds', '$buildtarget') or die $!;
-
-my $remove = "$buildtarget/embedruntimes/win32/libmono.bsc";
+my $remove = "$buildsroot/embedruntimes/win32/libmono.bsc";
 if (-e $remove)
 {
 	unlink($remove) or die("can't delete libmono.bsc");
@@ -40,12 +28,13 @@ if (-e $remove)
 
 
 #have a duplicate for now...
-copy("$buildtarget/embedruntimes/win32/mono.dll","$buildtarget/monodistribution/bin/mono.dll");
-copy("$buildtarget/embedruntimes/win32/mono.pdb","$buildtarget/monodistribution/bin/mono.pdb");
+print("Copying $buildsroot/embedruntimes/win32/mono.dll to $buildsroot/monodistribution/bin/mono.dll\n");
+copy("$buildsroot/embedruntimes/win32/mono.dll","$buildsroot/monodistribution/bin/mono.dll");
+copy("$buildsroot/embedruntimes/win32/mono.pdb","$buildsroot/monodistribution/bin/mono.pdb");
 
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
-	system("echo mono-runtime-win32 = $ENV{'BUILD_VCS_NUMBER'} > $buildtargetwin\\versions.txt");
+	system("echo mono-runtime-win32 = $ENV{'BUILD_VCS_NUMBER'} > $buildsrootwin\\versions.txt");
 }
 
 sub CompileVCProj

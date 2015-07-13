@@ -1,4 +1,4 @@
-use lib ('./perl_lib');
+use lib ('external/buildscripts/perl_lib');
 use File::Copy::Recursive qw(dircopy rmove);
 use File::Path;
 use Tools qw(InstallNameTool);

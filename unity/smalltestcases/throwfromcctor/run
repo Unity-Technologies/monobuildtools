@@ -1,2 +1,0 @@
-export MONO_PATH=../../../builds/monodistribution/lib/mono/2.0
-gdb ./a.out
