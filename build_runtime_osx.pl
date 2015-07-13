@@ -500,9 +500,7 @@ sub build_osx
 
 	mkpath ("$distdir/bin");
 	for my $file ('mono','pedump') {
-		system ('lipo', "$distdir/bin-i386/$file", '-create', '-output', "$distdir/bin/$file");
-		# Don't add 64bit executables for now...
-		# system ('lipo', "$buildsroot/monodistribution/bin-i386/$file", "$buildsroot/monodistribution/bin-x86_64/$file", '-create', '-output', "$buildsroot/monodistribution/bin/$file");
+		system ('lipo', "$buildsroot/monodistribution/bin-i386/$file", "$buildsroot/monodistribution/bin-x86_64/$file", '-create', '-output', "$buildsroot/monodistribution/bin/$file");
 	}
 
 	mkpath ("$distdir/lib");
