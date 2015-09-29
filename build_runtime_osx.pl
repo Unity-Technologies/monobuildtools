@@ -221,6 +221,9 @@ sub detect_osx_sdk
 	}
 
 	$detectedsdk = "10.8" unless (-d "$sdkpath$detectedsdk.sdk");
+	$detectedsdk = "10.9" unless (-d "$sdkpath$detectedsdk.sdk");
+	$detectedsdk = "10.10" unless (-d "$sdkpath$detectedsdk.sdk");
+	$detectedsdk = "10.11" unless (-d "$sdkpath$detectedsdk.sdk");
 	$detectedsdk = "NaN" unless (-d "$sdkpath$detectedsdk.sdk");
 
 	die ("Requested MacOSX SDK version was $sdkversion but no SDK could be found in $sdkroot/SDKs/") if ($detectedsdk eq 'NaN');
