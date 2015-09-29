@@ -40,7 +40,7 @@ if ($buildMachine) {
 my $skipbuild=0;
 my $cleanbuild=1;
 my $jobs=8;
-my $sdk='10.6';
+my $sdk='10.8';
 
 GetOptions(
    'skipbuild=i'=>\$skipbuild,
