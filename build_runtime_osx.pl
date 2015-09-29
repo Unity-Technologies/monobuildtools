@@ -27,8 +27,8 @@ my $dobuild = 'osx';
 my $jobs = 4;
 my $xcodePath = '/Applications/Xcode.app';
 my $cleanbuildopt = 'full';
-my $unityPath = "$root/../../unity/build";
-my $sdk = '10.8';
+my $unityPath = "$root/../unity";
+my $sdk = '10.11';
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
