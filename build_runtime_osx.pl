@@ -532,7 +532,7 @@ sub build_iphone_simulator
 
 		print "\nBuilding $os for architecture: $arch\n";
 
-		my $macversion = '10.6';
+		my $macversion = '10.8';
 		my ($sdkversion, $sdkroot, $sdkpath) = detect_iphonesim_sdk ('5.0');
 
 		print("buildtarget: $buildtarget\n");
