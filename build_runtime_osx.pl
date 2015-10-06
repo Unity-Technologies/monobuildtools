@@ -426,7 +426,6 @@ sub build_osx
 		print "\nBuilding $os for architecture: $arch\n";
 
 		my $macversion = '10.8';
-		$macversion = '10.8' if $arch eq 'x86_64';
 		my ($sdkversion, $sdkroot, $sdkpath) = detect_osx_sdk ($sdk);
 
 		# Make architecture-specific targets and lipo at the end
