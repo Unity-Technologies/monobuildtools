@@ -40,7 +40,8 @@ if ($buildMachine) {
 my $skipbuild=0;
 my $cleanbuild=1;
 my $jobs=8;
-my $sdk='10.6';
+my $sdk='10.11';
+my $macversion = '10.8';
 
 GetOptions(
    'skipbuild=i'=>\$skipbuild,
@@ -91,7 +92,7 @@ if (not $skipbuild)
 			}
 			$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
 			$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
-			$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$unityPath/External/MacBuildEnvironment/builds/usr/include -mmacosx-version-min=$sdkversion -isysroot $sdkPath";
+			$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$unityPath/External/MacBuildEnvironment/builds/usr/include -mmacosx-version-min=$macversion -isysroot $sdkPath";
 			$libtoolize = `which glibtoolize`;
 			chomp($libtoolize);
 			if(!-e $libtoolize)
@@ -102,7 +103,7 @@ if (not $skipbuild)
 		}
 		else
 		{
-			$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -mmacosx-version-min=$sdkversion -isysroot $sdkPath";
+			$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -mmacosx-version-min=$macversion -isysroot $sdkPath";
 		}
 
 		if(!-e $libtoolize)

@@ -28,7 +28,7 @@ my $jobs = 4;
 my $xcodePath = '/Applications/Xcode.app';
 my $cleanbuildopt = 'full';
 my $unityPath = "$root/../../unity/build";
-my $sdk = '10.6';
+my $sdk = '10.11';
 
 GetOptions(
    "skipbuild=i"=>\$skipbuild,
@@ -220,8 +220,10 @@ sub detect_osx_sdk
 		return ($sdkversion, "$unityPath/External/MacBuildEnvironment/builds", "$unityPath/External/MacBuildEnvironment/builds/MacOSX$sdk.sdk");
 	}
 
-	$detectedsdk = "10.7" unless (-d "$sdkpath$detectedsdk.sdk");
 	$detectedsdk = "10.8" unless (-d "$sdkpath$detectedsdk.sdk");
+	$detectedsdk = "10.9" unless (-d "$sdkpath$detectedsdk.sdk");
+	$detectedsdk = "10.10" unless (-d "$sdkpath$detectedsdk.sdk");
+	$detectedsdk = "10.11" unless (-d "$sdkpath$detectedsdk.sdk");
 	$detectedsdk = "NaN" unless (-d "$sdkpath$detectedsdk.sdk");
 
 	die ("Requested MacOSX SDK version was $sdkversion but no SDK could be found in $sdkroot/SDKs/") if ($detectedsdk eq 'NaN');
@@ -423,8 +425,7 @@ sub build_osx
 	for my $arch (@arches) {
 		print "\nBuilding $os for architecture: $arch\n";
 
-		my $macversion = '10.5';
-		$macversion = '10.6' if $arch eq 'x86_64';
+		my $macversion = '10.8';
 		my ($sdkversion, $sdkroot, $sdkpath) = detect_osx_sdk ($sdk);
 
 		# Make architecture-specific targets and lipo at the end
@@ -531,7 +532,7 @@ sub build_iphone_simulator
 
 		print "\nBuilding $os for architecture: $arch\n";
 
-		my $macversion = '10.6';
+		my $macversion = '10.8';
 		my ($sdkversion, $sdkroot, $sdkpath) = detect_iphonesim_sdk ('5.0');
 
 		print("buildtarget: $buildtarget\n");
