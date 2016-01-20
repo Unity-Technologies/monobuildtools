@@ -252,12 +252,11 @@ sub setenv_osx
 
 	my $cc = 'clang';
 	my $cxx = 'clang++';
-	my $cflags = "-D_XOPEN_SOURCE=1 -arch $arch -DMONO_DISABLE_SHM=1 -DDISABLE_SHARED_HANDLES=1";
+	my $cflags = "-D_XOPEN_SOURCE=1 -arch $arch -mmacosx-version-min=$macversion -isysroot $sdkpath";
 	if($teamcity)
 	{
 		$cc = "$unityPath/External/MacBuildEnvironment/builds/usr/bin/clang";
 		$cxx = "$unityPath/External/MacBuildEnvironment/builds/usr/bin/clang++";
-		$cflags = "$cflags -I$unityPath/External/MacBuildEnvironment/builds/usr/include";
 	}
 	$cflags = "$cflags -g -O0" if $debug;
 	$cflags = "$cflags -Os" if not $debug; #optimize for size
@@ -287,8 +286,6 @@ sub setenv_osx
 	$ENV{cv_mono_sizeof_sunpath} = "";
 	$ENV{ac_cv_func_posix_getpwuid_r} = "";
 	$ENV{ac_cv_func_backtrace_symbols} = "";
-
-	$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$macversion -isysroot $sdkpath";
 
 	return (@configureparams);
 }
@@ -372,25 +369,32 @@ sub build_mono
 
 	my $libtoolize = $ENV{'LIBTOOLIZE'};
 	my $libtool = $ENV{'LIBTOOL'};
-	if($teamcity)
+
+	if(!-e $libtoolize)
 	{
-	        $libtoolize = `which glibtoolize`;
+		$libtoolize = `which glibtoolize`;
 		chomp($libtoolize);
 		if(!-e $libtoolize)
 		{
 			$libtoolize = `which libtoolize`;
 			chomp($libtoolize);
+			if(!-e $libtoolize)
+			{
+				die ("Failed to find glibtoolize or libtoolize")
+			}
 		}
 	}
-	if(!-e $libtoolize)
-	{
-		$libtoolize = 'libtoolize';
-	}
+
 	if(!-e $libtool)
 	{
 		$libtool = $libtoolize;
 		$libtool =~ s/ize$//;
+		if(!-e $libtool)
+		{
+			die ("Failed to find glibtool or libtool")
+		}
 	}
+
 	print("Libtool: using $libtoolize and $libtool\n");
 
 	if ($cleanbuild == 1 || $reconfigure == 1) {
