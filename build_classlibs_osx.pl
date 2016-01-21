@@ -82,7 +82,7 @@ if (not $skipbuild)
 		if ($buildMachine)
 		{
 			# Set up mono for bootstrapping
-			$mcs = 'EXTERNAL_MCS=/Library/Frameworks/Mono.framework/Versions/2.10.2/bin/mcs';
+			$mcs = 'EXTERNAL_MCS=/Library/Frameworks/Mono.framework/Versions/4.0.2/bin/mcs';
 			# Set up clang toolchain
 			$sdkPath = "$unityPath/External/MacBuildEnvironment/builds/MacOSX$sdkversion.sdk";
 			if (! -d $sdkPath)
