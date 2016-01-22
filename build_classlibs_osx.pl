@@ -82,7 +82,23 @@ if (not $skipbuild)
 		if ($buildMachine)
 		{
 			# Set up mono for bootstrapping
-			$mcs = 'EXTERNAL_MCS=/Library/Frameworks/Mono.framework/Versions/4.0.2/bin/mcs';
+			# Find the latest mono version and use that for boostrapping
+			my $monoInstalls = '/Library/Frameworks/Mono.framework/Versions';
+			my @monoVersions = ();
+			
+			opendir( my $DIR, $monoInstalls );
+			while ( my $entry = readdir $DIR )
+			{
+				next unless -d $monoInstalls . '/' . $entry;
+				next if $entry eq '.' or $entry eq '..' or $entry eq 'Current';
+				push @monoVersions, $entry;
+			}
+			closedir $DIR;
+			@monoVersions = sort @monoVersions;
+			my $monoVersionToUse = pop @monoVersions;
+			my $monoToUse = "$monoInstalls/$monoVersionToUse";
+			$mcs = "EXTERNAL_MCS=$monoToUse/bin/mcs";
+			$ENV{'PATH'} = "$monoToUse/bin:$ENV{'PATH'}";
 			# Set up clang toolchain
 			$sdkPath = "$unityPath/External/MacBuildEnvironment/builds/MacOSX$sdkversion.sdk";
 			if (! -d $sdkPath)
@@ -143,7 +159,6 @@ if (not $skipbuild)
 	system("make install") eq 0 or die ("Failed running make install");
 
 	CopyIgnoringHiddenFiles("$buildscriptsdir/add_to_build_results/monodistribution/", "$monoprefix/");
-	BuildUnityScriptFor20();
 	BuildUnityScriptFor45();
 }
 chdir ($root);
