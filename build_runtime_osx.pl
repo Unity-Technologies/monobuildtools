@@ -50,7 +50,7 @@ Usage:
    -minimal[=1] - do a minimal build (default: 0/false)
    -cleanpath[=1] - cleans the PATH env var so other things don't conflict with the build (default: 0/false)
    -cleanbuild=[no/partial/full] - partial runs configure but not make clean, full cleans everything
-   -build=... - build type: osx, runtime, cross, simulator, iphone, classlibs
+   -build=... - build type: osx, runtime, cross, iphone, classlibs
    -j=# - number of jobs to pass to make -j
    -xcodepath=... - path to xcode (default: /Applications/Xcode.app)
    -reconfigure[=1] - reconfigures the source (default: 1/true)
@@ -65,12 +65,10 @@ die ("Cannot find mono checkout in $monopath") unless (-d $monopath);
 
 $xcodePath = "$xcodePath/Contents/Developer/Platforms";
 
-my $teamcity=0;
 if ($ENV{UNITY_THISISABUILDMACHINE})
 {
 	print "rmtree-ing $buildsroot because we're on a buildserver, and want to make sure we don't include old artifacts\n";
 	rmtree("$buildsroot");
-	$teamcity=1;
 	$jobs = "";
 } else {
 	print "not rmtree-ing $buildsroot, as we're not on a buildmachine\n";
@@ -189,26 +187,6 @@ sub detect_sdk
 	return ("$xcodePath/$type.platform/Developer", "$xcodePath/$type.platform/Developer/SDKs/$type");
 }
 
-sub detect_iphonesim_sdk
-{
-	my $sdkversion = shift;
-	my $detectedsdk = $sdkversion;
-	my ($sdkroot, $sdkpath) = detect_sdk ("iPhoneSimulator", $sdkversion);
-
-	$detectedsdk = "5.1" unless (-d "$sdkpath$detectedsdk.sdk");
-	$detectedsdk = "6.0" unless (-d "$sdkpath$detectedsdk.sdk");
-	$detectedsdk = "NaN" unless (-d "$sdkpath$detectedsdk.sdk");
-
-	die ("Requested iPhone Simulator SDK version was $sdkversion but no SDK could be found in $sdkroot/SDKs") if ($detectedsdk eq 'NaN');
-	warn ("Requested iPhone Simulator SDK version was $sdkversion but detected SDK is $detectedsdk. Things might not work as intended.") if ($sdkversion != $detectedsdk);
-
-	$sdkversion = $detectedsdk;
-
-	print ("Detected iPhoneSimulator SDK at $sdkpath$sdkversion.sdk\n");
-
-	return ($sdkversion, $sdkroot, "$sdkpath$sdkversion.sdk");
-}
-
 sub detect_osx_sdk
 {
 	my $sdkversion = shift;
@@ -289,60 +267,6 @@ sub setenv_osx
 
 	return (@configureparams);
 }
-
-sub setenv_iphone_simulator
-{
-	my $arch = shift;
-	my $cachefile = shift;
-	my $sdkversion = shift;
-	my $sdkroot = shift;
-	my $sdkpath = shift;
-
-	$debug = 1;
-
-	my $path;
-	my $macsysroot = "-isysroot $sdkpath";
-	my $macsdkoptions = "-miphoneos-version-min=3.0 $macsysroot";
-
-	my $cinclude;
-	my $cppinclude;
-
-	my $cflags = "-D_XOPEN_SOURCE=1 -DTARGET_IPHONE_SIMULATOR";
-	$cflags = "$cflags -g -O0" if $debug;
-	$cflags = "$cflags -Os" if not $debug; #optimize for size
-
-	my $cxxflags = "$cflags";
-
-	my $cc = "$sdkroot/usr/bin/gcc -arch $arch";
-	my $cxx = "$sdkroot/usr/bin/g++ -arch $arch";
-
-	my $cpp = "$cc -E";
-	my $cxxpp;
-	my $ld;
-	my $ldflags;
-
-
-	my @configureparams = ();
-	unshift(@configureparams, "--cache-file=$cachefile");
-	unshift(@configureparams, "--disable-mcs-build");
-	unshift(@configureparams, "--with-glib=embedded");
-	unshift(@configureparams, "--disable-nls");  #this removes the dependency on gettext package
-	unshift(@configureparams, "--prefix=$prefix");
-
-	setenv ($path, $cinclude, $cppinclude, $cflags, $cxxflags, $cc, $cxx, $cpp, $cxxpp, $ld, $ldflags);
-
-	$ENV{mono_cv_uscore} = "yes";
-	$ENV{mono_cv_clang} = "no";
-	$ENV{cv_mono_sizeof_sunpath} = "104";
-	$ENV{ac_cv_func_posix_getpwuid_r} = "yes";
-	$ENV{ac_cv_func_backtrace_symbols} = "no";
-
-	$ENV{MACSDKOPTIONS} = $macsdkoptions;
-	$ENV{MACSYSROOT} = $macsysroot;
-
-	return (@configureparams);
-}
-
 
 sub build_mono
 {
@@ -523,43 +447,10 @@ sub build_osx
 	}
 }
 
-sub build_iphone_simulator
-{
-	my $os = "iphone";
-	mkpath ("$embeddir/$os");
-
-
-	for my $arch ('i386') {
-		my $buildtarget = "$buildir/$os-$arch";
-		my $cachefile = "$buildir/$os-$arch.cache";
-
-
-		print "\nBuilding $os for architecture: $arch\n";
-
-		my $macversion = '10.8';
-		my ($sdkversion, $sdkroot, $sdkpath) = detect_iphonesim_sdk ('5.0');
-
-		print("buildtarget: $buildtarget\n");
-
-		if (not $skipbuild)
-		{
-			my @configureparams = setenv_iphone_simulator ($arch, $cachefile, $sdkversion, $sdkroot, $sdkpath);
-			build_mono ($arch, $buildtarget, $cachefile, $os, \@configureparams);
-		}
-
-		print "Copying iPhone static lib to final destination\n";
-		system("ln","-f","$buildtarget/mono/mini/.libs/libmono.a","$embeddir/$os/libmono-$arch.a") eq 0 or die("failed symlinking libmono-$arch.a");
-	}
-
-}
-
-my $doiphones;
 my $doosx;
 
-$doiphones = 1 if $dobuild eq 'simulator';
 $doosx = 1 if $dobuild eq 'osx';
 
-print "build type: osx:$doosx simulator:$doiphones\n";
+print "build type: osx:$doosx";
 
-build_iphone_simulator if $doiphones;
 build_osx if $doosx;
