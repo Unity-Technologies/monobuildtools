@@ -15,6 +15,7 @@ my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
 my $build = 0;
 my $arch32 = 0;
+my $debug = 0;
 my $vsVersion = "";
 
 GetOptions(
@@ -29,20 +30,8 @@ my $archNameForBinDir = $arch32 ? 'bin' : 'bin-x64';
 
 if ($build)
 {
-	CompileVCProj("$monoroot/msvc/mono.sln","Release|$archNameForBuild", 0, $vsVersion);
+	CompileVCProj("$monoroot/msvc/mono.sln","Release|$archNameForBuild", 0);
 }
-
-my $remove = "$buildsroot/embedruntimes/$archNameForDir/libmono.bsc";
-if (-e $remove)
-{
-	unlink($remove) or die("can't delete libmono.bsc");
-}
-
-
-#have a duplicate for now...
-print("Copying $buildsroot/embedruntimes/$archNameForDir/mono.dll to $buildsroot/monodistribution/$archNameForBinDir/mono.dll\n");
-copy("$buildsroot/embedruntimes/$archNameForDir/mono.dll","$buildsroot/monodistribution/$archNameForBinDir/mono.dll");
-copy("$buildsroot/embedruntimes/$archNameForDir/mono.pdb","$buildsroot/monodistribution/$archNameForBinDir/mono.pdb");
 
 if ($buildMachine)
 {
@@ -54,38 +43,18 @@ sub CompileVCProj
 	my $sln = shift(@_);
 	my $slnconfig = shift(@_);
 	my $incremental = shift(@_);
-	my $version = shift(@_);
-	my $projectname = shift(@_);
 	my @optional = @_;
 	
+	my $msbuild = $ENV{"ProgramFiles(x86)"}."/MSBuild/$vsVersion/Bin/MSBuild.exe";
 	
-	my @devenvlocations = ($ENV{"ProgramFiles(x86)"}."/Microsoft Visual Studio $version/Common7/IDE/devenv.com",
-			"$ENV{ProgramFiles}/Microsoft Visual Studio $version/Common7/IDE/devenv.com",
-			"$ENV{REALVSPATH}/Common7/IDE/devenv.com");
+	my $config = $debug ? "Debug" : "Release";
+	my $arch = $arch32 ? "Win32" : "x64";
+	my $target = "/t:Clean,Build";
+	my $properties = "/p:Configuration=$config;Platform=$arch";
 	
-	my $devenv;
-	foreach my $devenvoption (@devenvlocations)
-	{
-		print ("$devenvoption\n");
-		if (-e $devenvoption) {
-			$devenv = $devenvoption;
-		}
-	}
-	
-	my $buildcmd = $incremental ? "/build" : "/rebuild";
-	
-	if (defined $projectname)
-	{
-		print ">>> $devenv $sln $buildcmd $slnconfig /project $projectname @optional \n\n";
-		system($devenv, $sln, $buildcmd, $slnconfig, '/project', $projectname, @optional) eq 0
-				or die("VisualStudio failed to build $sln\n");
-	}
-	else
-	{
-		print ">>> $devenv $sln $buildcmd $slnconfig\n\n";
-		system($devenv, $sln, $buildcmd, $slnconfig) eq 0
-				or die("VisualStudio failed to build $sln\n");
-	}
+	print ">>> $devenv $properties $target $sln\n\n";
+	system($msbuild, $properties, $target, $sln) eq 0
+			or die("VisualStudio failed to build $sln\n");
 }
 
 

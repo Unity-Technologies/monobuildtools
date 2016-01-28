@@ -24,6 +24,7 @@ my $clean=0;
 my $jobs=8;
 my $test=0;
 my $artifact=0;
+my $debug=0;
 my $runRuntimeTests=1;
 my $runClasslibTests=1;
 my $existingMonoRootPath = '';
@@ -44,6 +45,7 @@ GetOptions(
 	'clean=i'=>\$clean,
 	'test=i'=>\$test,
 	'artifact=i'=>\$artifact,
+	'debug=i'=>\$artifact,
 	'runtimetests=i'=>\$runRuntimeTests,
 	'classlibtests=i'=>\$runClasslibTests,
 	'arch32=i'=>\$arch32,
@@ -98,13 +100,14 @@ if ($build)
 	
 	my @configureparams = ();
 	#push @configureparams, "--cache-file=$cachefile";
-	push @configureparams, "--disable-mcs-build";
+	
+	# TODO by Mike: Should there be an option to turn this on?  Controls building of class libraries
+	#push @configureparams, "--disable-mcs-build";
 	push @configureparams, "--with-glib=embedded";
 	push @configureparams, "--disable-nls";  #this removes the dependency on gettext package
 	push @configureparams, "--prefix=$monoprefix";
 	push @configureparams, "--with-monotouch=no";
 	push @configureparams, "--with-mcs-docs=no";
-	#unshift(@configureparams, "--enable-minimal=aot,logging,com,profiler,debug") if $minimal;
 	
 	if($^O eq "linux")
 	{
@@ -161,18 +164,48 @@ if ($build)
 			}
 			$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
 			$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
+
 			$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$unityRoot/External/MacBuildEnvironment/builds/usr/include -mmacosx-version-min=$macversion -isysroot $sdkPath";
 		}
 		else
 		{
+			$ENV{'CC'} = "clang";
+			$ENV{'CXX'} = "clang++";
+			
 			$sdkPath = "$xcodePath/Developer/SDKs/MacOSX$sdkversion.sdk";
 			$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -mmacosx-version-min=$macversion -isysroot $sdkPath";
 		}
 		
+		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
+		$ENV{CFLAGS} = "$ENV{CFLAGS} -Os" if not $debug; #optimize for size
+		
+		$ENV{CC} = "$ENV{CC} -arch $monoHostArch";
+		$ENV{CXX} = "$ENV{CXX} -arch $monoHostArch";
+		
+		# TODO by Mike : Copied from old implementation.  What's the purpose of clearing these?
+		$ENV{mono_cv_uscore} = '';
+		$ENV{mono_cv_clang} = '';
+		$ENV{cv_mono_sizeof_sunpath} = '';
+		$ENV{ac_cv_func_posix_getpwuid_r} = '';
+		$ENV{ac_cv_func_backtrace_symbols} = '';
+		
 		# Add OSX specific autogen args
 		push @configureparams, "--host=$monoHostArch-apple-darwin12.2.0";
 		
-		die ('OSX not implemented');
+		print "\n";
+		print ">>> Setting environment:\n";
+		print ">>> PATH = ".$ENV{PATH}."\n";
+		print ">>> C_INCLUDE_PATH = ".$ENV{C_INCLUDE_PATH}."\n";
+		print ">>> CPLUS_INCLUDE_PATH = ".$ENV{CPLUS_INCLUDE_PATH}."\n";
+		print ">>> CFLAGS = ".$ENV{CFLAGS}."\n";
+		print ">>> CXXFLAGS = ".$ENV{CXXFLAGS}."\n";
+		print ">>> CC = ".$ENV{CC}."\n";
+		print ">>> CXX = ".$ENV{CXX}."\n";
+		print ">>> CPP = ".$ENV{CPP}."\n";
+		print ">>> CXXPP = ".$ENV{CXXPP}."\n";
+		print ">>> LD = ".$ENV{LD}."\n";
+		print ">>> LDFLAGS = ".$ENV{LDFLAGS}."\n";
+		print "\n";
 	}
 	else
 	{
@@ -210,6 +243,10 @@ if ($build)
 	if ($^O eq "cygwin")
 	{
 		system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--vsversion=$vsVersion") eq 0 or die ('failing building mono with VS');
+		my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
+		system("cp $monoroot/msvc/$archNameForBuild/bin/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe");
+		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono.dll");
+		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono.pdb");
 	}
 	
 	print("\n>>> Calling make install\n");
@@ -242,6 +279,9 @@ if ($artifact)
 			system("rm -f $tmpdest/*.mdb");
 		}
 	}
+	
+	#TODO by Mike : Deal with copying to expected structure
+	
 	system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder");
 	system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder");
 	system("cp -r $monoprefix/lib/mono/gac $distdirlibmono") eq 0 or die("failed copying gac");
@@ -254,6 +294,21 @@ if ($artifact)
 	}
 	
 	system("rm -rf $distdirlibmono/gac/nunit*");
+	
+	if($^O eq "linux")
+	{
+		die("TODO");
+	}
+	elsif($^O eq 'darwin')
+	{
+		die("TODO");
+	}
+	else
+	{
+		my $archDirName = $arch32 ? "win32" : "win64";
+		copy("$monoprefix/bin/mono.dll", "$embeddir/$archDirName/mono.dll");
+		copy("$monoprefix/bin/mono.pdb", "$embeddir/$archDirName/mono.pdb");
+	}
 }
 
 if ($test)
@@ -265,6 +320,10 @@ if ($test)
 	elsif($^O eq 'darwin')
 	{
 		# TODO sym link in libgdi to required locations
+		# Need to symlink in libgdi into a few places so that the unit tests can pass
+		my $libgdiSource = "";
+		system("ln", "-s", "$libgdiSource", "$monoroot/mcs/class/Microsoft.Build.Tasks/libgdiplus.dylib");
+		system("ln", "-s", "$libgdiSource", "$monoroot/mcs/class/System.Drawing/libgdiplus.dylib");
 	}
 	else
 	{
