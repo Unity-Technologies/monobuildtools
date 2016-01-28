@@ -34,9 +34,6 @@ my $winPerl = "";
 my $winMonoRoot = "";
 my $vsVersion = "10.0";
 
-# TODO by Mike : Figure out how we want to handle building the different archs
-my @arches = ('i386','x86_64', 'i686');
-
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
 
@@ -49,6 +46,7 @@ GetOptions(
 	'artifact=i'=>\$artifact,
 	'runtimetests=i'=>\$runRuntimeTests,
 	'classlibtests=i'=>\$runClasslibTests,
+	'arch32=i'=>\$arch32,
 	'jobs=i'=>\$jobs,
 	'sdk=s'=>\$sdk,
 	'existingmono=s'=>\$existingMonoRootPath,
@@ -94,6 +92,10 @@ if ($build)
 	my $host = '';
 	my $mcs = '';
 	
+	my $monoHostArch = $arch32 ? "i386" : "x86_64";
+	
+	print(">>> Mono Arch = $monoHostArch\n");
+	
 	my @configureparams = ();
 	#push @configureparams, "--cache-file=$cachefile";
 	push @configureparams, "--disable-mcs-build";
@@ -106,7 +108,7 @@ if ($build)
 	
 	if($^O eq "linux")
 	{
-		push @configureparams, "--host=i686-pc-linux-gnu";
+		push @configureparams, "--host=$monoHostArch-pc-linux-gnu";
 	}
 	elsif($^O eq 'darwin')
 	{
@@ -168,13 +170,13 @@ if ($build)
 		}
 		
 		# Add OSX specific autogen args
-		push @configureparams, "--host=$arch-apple-darwin12.2.0";
+		push @configureparams, "--host=$monoHostArch-apple-darwin12.2.0";
 		
 		die ('OSX not implemented');
 	}
 	else
 	{
-		push @configureparams, "--host=i686-pc-mingw32";
+		push @configureparams, "--host=$monoHostArch-pc-mingw32";
 	}
 
 	print ">>> Existing Mono : $existingMonoRootPath\n\n";
@@ -188,6 +190,7 @@ if ($build)
 	{
 		if ($clean)
 		{
+			print(">>> Cleaning $monoprefix\n");
 			rmtree($monoprefix);
 			
 			# Avoid "source directory already configured" ...
@@ -195,7 +198,7 @@ if ($build)
 
 			print("\n>>> Calling autogen in mono\n");
 			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');
-			#system('./autogen.sh',"--prefix=$monoprefix", $host, '--with-monotouch=no', '--with-glib=embedded','--with-mcs-docs=no', '--disable-nls', $platformflags) eq 0 or die ('failing autogenning mono');
+			
 			print("\n>>> Calling make clean in mono\n");
 			system("make","clean") eq 0 or die ("failed to make clean");
 		}
@@ -219,7 +222,7 @@ else
 
 if ($artifact)
 {
-	print ">>> rmtree-ing $buildsroot because we're on a buildserver, and want to make sure we don't include old artifacts\n";
+	print ">>> rmtree-ing $buildsroot because want to make sure we don't include old artifacts\n";
 	
 	# CopyIgnoringHiddenFiles
 	system("cp -R $buildscriptsdir/add_to_build_results/monodistribution/. $distdir/");
@@ -244,12 +247,6 @@ if ($artifact)
 	system("cp -r $monoprefix/lib/mono/gac $distdirlibmono") eq 0 or die("failed copying gac");
 	system("cp -r $monoprefix/lib/mono/xbuild-frameworks $distdirlibmono") eq 0 or die("failed copying xbuild-frameworks");
 
-	# TODO by Mike : Is this stuff needed anymore?
-	# Fake support for unity and unity_web until we move completely to 4.0
-	# system("rm -rf $monodistro/lib/mono/unity $monodistro/lib/mono/unity_web");
-	# system("cp -R $monodistro/lib/mono/2.0 $monodistro/lib/mono/unity");
-	# system("cp -R $monodistro/lib/mono/2.0 $monodistro/lib/mono/unity_web");
-
 	# now remove nunit
 	for my $profile (@profiles)
 	{
@@ -257,15 +254,8 @@ if ($artifact)
 	}
 	
 	system("rm -rf $distdirlibmono/gac/nunit*");
-
-	#zip up the results for teamcity
-	chdir("$buildsroot");
-	
-	# TODO : DOes this make sense anymore?
-	#system("tar -hpczf ../ZippedClasslibs.tar.gz *") && die("Failed to zip up classlibs for teamcity");
 }
 
-	
 if ($test)
 {
 	# Do platform specific stuff to prepare for the tests to run

@@ -74,9 +74,9 @@ if ($monoInstallLinux eq "")
 {
 	if (-d "C:\\Program Files (x86)\\Mono")
 	{
-		# /cygdrive/c/Program\ Files\ \(x86\)/Mono
+		# Pass over the cygwin format since I already have it escaped correctly to survive
+		# crossing over the shell
 		$monoInstallLinux = "/cygdrive/c/Program\\ Files\\ \\(x86\\)/Mono";
-		#$monoInstallLinux = "C:/Program Files (x86)/Mono";
 		print(">>> Found Mono at : $monoInstallLinux\n");
 	}
 	else
