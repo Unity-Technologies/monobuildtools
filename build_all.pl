@@ -117,6 +117,23 @@ if ($build)
 	if($^O eq "linux")
 	{
 		push @configureparams, "--host=$monoHostArch-pc-linux-gnu";
+		
+		unshift(@autogenparams, "--disable-parallel-mark");  #this causes crashes
+		
+		my $archflags = '';
+		if ($arch32)
+		{
+			$archflags = '-m32';
+		}
+		
+		if ($debug)
+		{
+			$ENV{CFLAGS} = "$archflags -g -O0";
+		}
+		else
+		{
+			$ENV{CFLAGS} = "$archflags -Os";  #optimize for size
+		}
 	}
 	elsif($^O eq 'darwin')
 	{
@@ -196,6 +213,9 @@ if ($build)
 		
 		# Add OSX specific autogen args
 		push @configureparams, "--host=$monoHostArch-apple-darwin12.2.0";
+		
+		# Need to define because Apple's SIP gets in the way of us telling mono where to find this
+		push @configureparams, "--with-libgdiplus=$addtoresultsdistdir/lib/libgdiplus.dylib";
 		
 		print "\n";
 		print ">>> Setting environment:\n";
@@ -399,10 +419,11 @@ if ($artifact)
 		
 		system("mkdir -p $distDirArchBin");
 		system("mkdir -p $distDirArchEtc");
+		system("mkdir -p $distDirArchEtc/mono");
 		
 		system("ln", "-f", "$monoroot/mono/mini/mono-boehm","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable\n");
 		system("ln", "-f", "$monoroot/mono/metadata/pedump","$distDirArchBin/pedump") eq 0 or die("failed symlinking pedump executable\n");
-		system('cp', "$monoroot/data/config","$distDirArchEtc/mono/config");
+		system('cp', "$monoroot/data/config","$distDirArchEtc/mono/config") eq 0 or die("failed to copy config\n");
 		system("chmod", "-R", "755", $distDirArchBin);
 	}
 	elsif($^O eq 'darwin')
@@ -432,10 +453,11 @@ if ($test)
 	}
 	elsif($^O eq 'darwin')
 	{
+		# TODO by Mike : Remove if the --with-libgdiplus argument works
 		# Need to copy in libgdi into a few places so that the unit tests can pass because of Apple's SIP
-		my $libgdiSource = "$addtoresultsdistdir/lib/libgdiplus.dylib";
-		copy("$libgdiSource", "$monoroot/mcs/class/Microsoft.Build.Tasks/libgdiplus.dylib");
-		copy("$libgdiSource", "$monoroot/mcs/class/System.Drawing/libgdiplus.dylib");
+		# my $libgdiSource = "$addtoresultsdistdir/lib/libgdiplus.dylib";
+		# copy("$libgdiSource", "$monoroot/mcs/class/Microsoft.Build.Tasks/libgdiplus.dylib");
+		# copy("$libgdiSource", "$monoroot/mcs/class/System.Drawing/libgdiplus.dylib");
 	}
 	else
 	{
