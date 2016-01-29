@@ -318,7 +318,7 @@ if ($artifact)
 	{
 		# Note these tmp directories will get merged into a single 'osx' directory later by a parent script
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/osx-tmp-i386" : "$embedDirRoot/osx-tmp-x86_64";
-		$distDirArchBin = $arch32 ? "$distdir/bin-tmp-i386" : "$embedDirRoot/bin-tmp-x86_64";
+		$distDirArchBin = $arch32 ? "$distdir/bin-osx-tmp-i386" : "$embedDirRoot/bin-osx-tmp-x86_64";
 	}
 	else
 	{
