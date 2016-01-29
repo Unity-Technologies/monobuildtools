@@ -18,7 +18,6 @@ my $buildscriptsdir = "$monoroot/external/buildscripts";
 my $addtoresultsdistdir = "$buildscriptsdir/add_to_build_results/monodistribution";
 my $monoprefix = "$monoroot/tmp/monoprefix";
 my $buildsroot = "$monoroot/builds";
-my $embeddir = "$buildsroot/embedruntimes";
 my $distdir = "$buildsroot/monodistribution";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
@@ -250,10 +249,13 @@ if ($build)
 	if ($^O eq "cygwin")
 	{
 		system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS');
+		
+		# Copy over the VS built stuff that we want to use instead into the prefix directory
 		my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
 		system("cp $monoroot/msvc/$archNameForBuild/bin/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe");
 		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono.dll");
 		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono.pdb");
+		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.ilk $monoprefix/bin/.") eq 0 or die ("failed copying mono.ilk");
 	}
 }
 else
@@ -263,8 +265,6 @@ else
 
 if ($artifact)
 {
-	print ">>> rmtree-ing $buildsroot because want to make sure we don't include old artifacts\n";
-	
 	# CopyIgnoringHiddenFiles
 	system("cp -R $addtoresultsdistdir/. $distdir/");
 	
@@ -299,34 +299,88 @@ if ($artifact)
 	
 	system("rm -rf $distdirlibmono/gac/nunit*");
 	
+	# Do the platform specific logic to create the builds output structure that we want
+	
+	my $embedDirRoot = "$buildsroot/embedruntimes";
+	my $embedDirArchDestination = "";
+	if($^O eq "linux")
+	{
+		$embedDirArchDestination = $arch32 ? "$embedDirRoot/linux32" : "$embedDirRoot/linux64";
+	}
+	elsif($^O eq 'darwin')
+	{
+		# Note these tmp directories will get merged into a single 'osx' directory later by a parent script
+		$embedDirArchDestination = $arch32 ? "$embedDirRoot/osx-tmp-i386" : "$embedDirRoot/osx-tmp-x86_64";
+	}
+	else
+	{
+		$embedDirArchDestination = $arch32 ? "$embedDirRoot/win32" : "$embedDirRoot/win64";
+	}
+	
+	# Make sure the directory for our architecture is clean before we copy stuff into it
+	if (-d "$embedDirArchDestination")
+	{
+		print(">>> Cleaning $embedDirArchDestination\n");
+		rmtree($embedDirArchDestination);
+	}
+	
+	system("mkdir -p $embedDirArchDestination");
+	
+	# embedruntimes directory setup
+	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
+	if($^O eq "linux")
+	{
+		print ">>> Copying libmono.so\n";
+		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmono.so") eq 0 or die ("failed copying libmonoboehm-2.0.so");
+
+		print ">>> Copying libmono-static.a\n";
+		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.a","$embedDirArchDestination/libmono-static.a") eq 0 or die ("failed copying libmonoboehm-2.0.a");
+
+		print ">>> Copying libMonoPosixHelper.so\n";
+		system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so");
+
+		die("TODO");
+	}
+	elsif($^O eq 'darwin')
+	{
+		# embedruntimes directory setup
+ 		print ">>> Hardlinking libmono.dylib\n";
+ 		system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.1.dylib","$embedDirArchDestination/libmono.0.dylib") eq 0 or die ("failed symlinking libmono.0.dylib");
+
+ 		print ">>> Hardlinking libmono.a\n";
+ 		system("ln", "-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.a","$embedDirArchDestination/libmono.a") eq 0 or die ("failed symlinking libmono.a");
+		 
+		print "Hardlinking libMonoPosixHelper.dylib\n";
+		system("ln","-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$embedDirArchDestination/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib");
+	
+		# TODO : Jon thinking about these two
+		# InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libmono.0.dylib");
+		# InstallNameTool("$libtarget/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libMonoPosixHelper.dylib");
+	}
+	else
+	{
+		# embedruntimes directory setup
+		copy("$monoprefix/bin/mono.dll", "$embedDirArchDestination/mono.dll");
+		copy("$monoprefix/bin/mono.pdb", "$embedDirArchDestination/mono.pdb");
+		copy("$monoprefix/bin/mono.ilk", "$embedDirArchDestination/mono.ilk");
+	}
+	
+	# monodistribution directory setup
+	print(">>> Creating monodistribution directory : TODO dir name here\n");
 	if($^O eq "linux")
 	{
 		die("TODO");
 	}
 	elsif($^O eq 'darwin')
 	{
-# 		print "Hardlinking libmono.dylib\n";
-# 		system("ln","-f", "$root/mono/mini/.libs/libmonoboehm-2.0.1.dylib","$libtarget/libmono.0.dylib") eq 0 or die ("failed symlinking libmono.0.dylib");
-# 
-# 		print "Hardlinking libmono.a\n";
-# 		system("ln", "-f", "$root/mono/mini/.libs/libmonoboehm-2.0.a","$libtarget/libmono.a") eq 0 or die ("failed symlinking libmono.a");
-	# print "Hardlinking libMonoPosixHelper.dylib\n";
-	# system("ln","-f", "$root/support/.libs/libMonoPosixHelper.dylib","$libtarget/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib");
-	
-	# TODO : Jon thinking about these two
-	# InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libmono.0.dylib");
-	# InstallNameTool("$libtarget/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libMonoPosixHelper.dylib");
-	
-	# TODO
-	# system("ln","-f","$root/mono/mini/mono","$bintarget/mono") eq 0 or die("failed hardlinking mono executable");
-	# system("ln","-f","$root/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed hardlinking pedump executable");
+		# TODO
+		# system("ln","-f","$root/mono/mini/mono","$bintarget/mono") eq 0 or die("failed hardlinking mono executable");
+		# system("ln","-f","$root/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed hardlinking pedump executable");
 		die("TODO");
 	}
 	else
 	{
-		my $archDirName = $arch32 ? "win32" : "win64";
-		copy("$monoprefix/bin/mono.dll", "$embeddir/$archDirName/mono.dll");
-		copy("$monoprefix/bin/mono.pdb", "$embeddir/$archDirName/mono.pdb");
+		die("TODO");
 	}
 }
 
