@@ -11,6 +11,7 @@ my $monoroot = File::Spec->rel2abs(dirname(__FILE__) . "/../..");
 my $monoroot = abs_path($monoroot);
 my $buildscriptsdir = "$monoroot/external/buildscripts";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
+my $buildsroot = "$monoroot/builds";
 
 my @passAlongArgs = ();
 foreach my $arg (@ARGV)
