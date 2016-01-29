@@ -67,7 +67,7 @@ if ($cygwinRootWindows eq "")
 }
 else
 {
-	print(">>>Cygwin Path = $cygwinRootWindows\n");
+	print(">>> Cygwin Path = $cygwinRootWindows\n");
 }
 
 if ($monoInstallLinux eq "")
