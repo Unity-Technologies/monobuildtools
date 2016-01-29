@@ -25,7 +25,7 @@ foreach my $arg (@ARGV)
 		push @passAlongArgs, $arg;
 	}
 	
-	if($arg =~ /^--artifact=/)
+	if ($arg =~ /^--artifact=/)
 	{
 		push @thisScriptArgs, $arg;
 	}
@@ -43,7 +43,7 @@ print(">>> Building i386\n");
 system("perl", "$buildscriptsdir/build_all.pl", "--arch32=1", "--clean=1", @passAlongArgs) eq 0 or die ('failing building i386');
 
 print(">>> Building x86_64\n");
-system("perl", "$buildscriptsdir/build_all.pl", "--clean=1", @passAlongArgs) eq 0 or die ('failing building x86_64');
+system("perl", "$buildscriptsdir/build_all.pl", "--clean=1", "--artifactsCommon=1", @passAlongArgs) eq 0 or die ('failing building x86_64');
 
 if ($artifact)
 {
