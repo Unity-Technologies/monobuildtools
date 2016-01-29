@@ -12,11 +12,21 @@ my $monoroot = abs_path($monoroot);
 my $buildscriptsdir = "$monoroot/external/buildscripts";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
+my @passAlongArgs = ();
+foreach my $arg (@ARGV)
+{
+	# Filter out --clean if someone uses it.  We have to clean since we are doing two builds
+	if (not $arg =~ /^--clean=/)
+	{
+		push @passAlongArgs, $arg;
+	}
+}
+
 print(">>> Building i386\n");
-system("perl", "$buildscriptsdir/build_all.pl", "--arch32=1", @ARGV) eq 0 or die ('failing building i386');
+system("perl", "$buildscriptsdir/build_all.pl", "--arch32=1", "--clean=1", @passAlongArgs) eq 0 or die ('failing building i386');
 
 print(">>> Building x86_64\n");
-system("perl", "$buildscriptsdir/build_all.pl", @ARGV) eq 0 or die ('failing building x86_64');
+system("perl", "$buildscriptsdir/build_all.pl", "--clean=1", @passAlongArgs) eq 0 or die ('failing building x86_64');
 
 # Merge stuff in the embedruntimes directory
 my $embedDirRoot = "$buildsroot/embedruntimes";
@@ -34,10 +44,14 @@ if (-d "$embedDirDestination")
 system("mkdir -p $embedDirDestination");
 
 if (!(-d $embedDirSource32))
-	die("Expected source directory not found : $embedDirSource32\n")
+{
+	die("Expected source directory not found : $embedDirSource32\n");
+}
 
 if (!(-d $embedDirSource64))
-	die("Expected source directory not found : $embedDirSource64\n")
+{
+	die("Expected source directory not found : $embedDirSource64\n");
+}
 
 # Create universal binaries
 for my $file ('libmono.0.dylib','libmono.a','libMonoPosixHelper.dylib')
@@ -76,10 +90,14 @@ if (!(-d $distDirDestinationLib))
 }
 
 if (!(-d $distDirSourceBin32))
-	die("Expected source directory not found : $distDirSourceBin32\n")
+{
+	die("Expected source directory not found : $distDirSourceBin32\n");
+}
 
 if (!(-d $distDirSourceBin64))
-	die("Expected source directory not found : $distDirSourceBin64\n")
+{
+	die("Expected source directory not found : $distDirSourceBin64\n");
+}
  
 for my $file ('mono','pedump')
 {
