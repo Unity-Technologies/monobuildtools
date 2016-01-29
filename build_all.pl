@@ -28,6 +28,7 @@ my $test=0;
 my $artifact=0;
 my $debug=0;
 my $disableMsc=0;
+my $artifactsCommon=0;
 my $runRuntimeTests=1;
 my $runClasslibTests=1;
 my $existingMonoRootPath = '';
@@ -48,6 +49,7 @@ GetOptions(
 	'clean=i'=>\$clean,
 	'test=i'=>\$test,
 	'artifact=i'=>\$artifact,
+	'artifactscommon=i'=>\$artifactsCommon,
 	'debug=i'=>\$debug,
 	'disablemsc=i'=>\$disableMsc,
 	'runtimetests=i'=>\$runRuntimeTests,
@@ -266,55 +268,62 @@ else
 if ($artifact)
 {
 	# CopyIgnoringHiddenFiles
-	system("cp -R $addtoresultsdistdir/. $distdir/");
-	
-	$File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
-
-	my $distdirlibmono = "$distdir/lib/mono";
-	my @profiles = ("2.0","3.5","4.0","4.5");
-	system("mkdir -p $distdirlibmono");
-	for my $profile (@profiles)
+	if ($artifactsCommon)
 	{
-		my $tmpdest = "$distdirlibmono/$profile";
-		system("mkdir -p $tmpdest");
-		system("cp -r $monoprefix/lib/mono/$profile $tmpdest");
-		if ($buildMachine)
+		system("cp -R $addtoresultsdistdir/. $distdir/");
+		
+		$File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
+
+		my $distdirlibmono = "$distdir/lib/mono";
+		my @profiles = ("2.0","3.5","4.0","4.5");
+		system("mkdir -p $distdirlibmono");
+		for my $profile (@profiles)
 		{
-			system("rm -f $tmpdest/*.mdb");
+			my $tmpdest = "$distdirlibmono/$profile";
+			system("mkdir -p $tmpdest");
+			system("cp -r $monoprefix/lib/mono/$profile $tmpdest");
+			if ($buildMachine)
+			{
+				system("rm -f $tmpdest/*.mdb");
+			}
 		}
-	}
-	
-	#TODO by Mike : Deal with copying to expected structure
-	
-	system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder");
-	system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder");
-	system("cp -r $monoprefix/lib/mono/gac $distdirlibmono") eq 0 or die("failed copying gac");
-	system("cp -r $monoprefix/lib/mono/xbuild-frameworks $distdirlibmono") eq 0 or die("failed copying xbuild-frameworks");
+		
+		#TODO by Mike : Deal with copying to expected structure
+		
+		system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder");
+		system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder");
+		system("cp -r $monoprefix/lib/mono/gac $distdirlibmono") eq 0 or die("failed copying gac");
+		system("cp -r $monoprefix/lib/mono/xbuild-frameworks $distdirlibmono") eq 0 or die("failed copying xbuild-frameworks");
 
-	# now remove nunit
-	for my $profile (@profiles)
-	{
-		system("rm -rf $distdirlibmono/$profile/nunit*");
+		# now remove nunit
+		for my $profile (@profiles)
+		{
+			system("rm -rf $distdirlibmono/$profile/nunit*");
+		}
+		
+		system("rm -rf $distdirlibmono/gac/nunit*");
 	}
-	
-	system("rm -rf $distdirlibmono/gac/nunit*");
 	
 	# Do the platform specific logic to create the builds output structure that we want
 	
 	my $embedDirRoot = "$buildsroot/embedruntimes";
 	my $embedDirArchDestination = "";
+	my $distDirArchBin = "";
 	if($^O eq "linux")
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/linux32" : "$embedDirRoot/linux64";
+		$distDirArchBin = $arch32 ? "$distdir/bin-linux32" : "$distdir/bin-linux64";
 	}
 	elsif($^O eq 'darwin')
 	{
 		# Note these tmp directories will get merged into a single 'osx' directory later by a parent script
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/osx-tmp-i386" : "$embedDirRoot/osx-tmp-x86_64";
+		$distDirArchBin = $arch32 ? "$distdir/bin-tmp-i386" : "$embedDirRoot/bin-tmp-x86_64";
 	}
 	else
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/win32" : "$embedDirRoot/win64";
+		$distDirArchBin = $arch32 ? "$distdir/bin" : "$distdir/bin-x64";
 	}
 	
 	# Make sure the directory for our architecture is clean before we copy stuff into it
@@ -323,8 +332,15 @@ if ($artifact)
 		print(">>> Cleaning $embedDirArchDestination\n");
 		rmtree($embedDirArchDestination);
 	}
+
+	if (-d "$distDirArchBin")
+	{
+		print(">>> Cleaning $distDirArchBin\n");
+		rmtree($distDirArchBin);
+	}
 	
 	system("mkdir -p $embedDirArchDestination");
+	system("mkdir -p $distDirArchBin");
 	
 	# embedruntimes directory setup
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
@@ -338,8 +354,12 @@ if ($artifact)
 
 		print ">>> Copying libMonoPosixHelper.so\n";
 		system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so");
-
-		die("TODO");
+		
+		if ($buildMachine)
+		{
+			system("strip $embedDirArchDestination/libmono.so") eq 0 or die("failed to strip libmono (shared)");
+			system("strip $embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die("failed to strip libMonoPosixHelper (shared)");
+		}
 	}
 	elsif($^O eq 'darwin')
 	{
@@ -366,22 +386,42 @@ if ($artifact)
 	}
 	
 	# monodistribution directory setup
-	print(">>> Creating monodistribution directory : TODO dir name here\n");
+	print(">>> Creating monodistribution directory\n");
 	if($^O eq "linux")
 	{
-		die("TODO");
+		my $distDirArchEtc = $arch32 ? "$distdir/etc-linux32" : "$distdir/etc-linux64";
+
+		if (-d "$distDirArchEtc")
+		{
+			print(">>> Cleaning $distDirArchEtc\n");
+			rmtree($distDirArchEtc);
+		}
+		
+		system("mkdir -p $distDirArchBin");
+		system("mkdir -p $distDirArchEtc");
+		
+		system("ln", "-f", "$monoroot/mono/mini/mono-boehm","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable");
+		system("ln", "-f", "$monoroot/mono/metadata/pedump","$distDirArchBin/pedump") eq 0 or die("failed symlinking pedump executable");
+		system('cp', "$monoroot/data/config","$distDirArchEtc/mono/config");
+		system("chmod", "-R", "755", $distDirArchBin);
 	}
 	elsif($^O eq 'darwin')
 	{
-		# TODO
-		# system("ln","-f","$root/mono/mini/mono","$bintarget/mono") eq 0 or die("failed hardlinking mono executable");
-		# system("ln","-f","$root/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed hardlinking pedump executable");
-		die("TODO");
+		system("ln", "-f", "$monoroot/mono/mini/mono","$distDirArchBin/mono") eq 0 or die("failed hardlinking mono executable");
+		system("ln", "-f", "$monoroot/mono/metadata/pedump","$distDirArchBin/pedump") eq 0 or die("failed hardlinking pedump executable");
 	}
 	else
 	{
-		die("TODO");
+		copy("$monoprefix/bin/mono.dll", "$distDirArchBin/mono.dll");
+		copy("$monoprefix/bin/mono.pdb", "$distDirArchBin/mono.pdb");
+		copy("$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe");
 	}
+	
+	# TODO by Mike : Is this needed?
+	# if ($buildMachine)
+	# {
+	# 	system("echo mono-runtime-$platform = $ENV{'BUILD_VCS_NUMBER'} > $buildsroot\\versions.txt");
+	# }
 }
 
 if ($test)

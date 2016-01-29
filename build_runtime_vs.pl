@@ -36,12 +36,6 @@ if ($build)
 	CompileVCProj("$monoroot/msvc/mono.sln");
 }
 
-# TODO by Mike : Is this needed?
-# if ($buildMachine)
-# {
-# 	system("echo mono-runtime-win32 = $ENV{'BUILD_VCS_NUMBER'} > $buildsrootwin\\versions.txt");
-# }
-
 sub CompileVCProj
 {
 	my $sln = shift(@_);
