@@ -277,9 +277,9 @@ if ($build)
 		# Copy over the VS built stuff that we want to use instead into the prefix directory
 		my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
 		system("cp $monoroot/msvc/$archNameForBuild/bin/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
-		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono.dll\n");
-		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono.pdb\n");
-		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.ilk $monoprefix/bin/.") eq 0 or die ("failed copying mono.ilk\n");
+		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
+		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
+		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.ilk $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.ilk\n");
 	}
 }
 else
@@ -289,6 +289,8 @@ else
 
 if ($artifact)
 {
+	print(">>> Creating artifact...\n");
+	
 	# CopyIgnoringHiddenFiles
 	if ($artifactsCommon)
 	{
@@ -402,9 +404,9 @@ if ($artifact)
 	else
 	{
 		# embedruntimes directory setup
-		copy("$monoprefix/bin/mono.dll", "$embedDirArchDestination/mono.dll");
-		copy("$monoprefix/bin/mono.pdb", "$embedDirArchDestination/mono.pdb");
-		copy("$monoprefix/bin/mono.ilk", "$embedDirArchDestination/mono.ilk");
+		system("cp", "$monoprefix/bin/mono-2.0.dll", "$embedDirArchDestination/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
+		system("cp", "$monoprefix/bin/mono-2.0.pdb", "$embedDirArchDestination/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
+		system("cp", "$monoprefix/bin/mono-2.0.ilk", "$embedDirArchDestination/mono-2.0.ilk") eq 0 or die ("failed copying mono-2.0.ilk\n");
 	}
 	
 	# monodistribution directory setup
@@ -435,9 +437,9 @@ if ($artifact)
 	}
 	else
 	{
-		copy("$monoprefix/bin/mono.dll", "$distDirArchBin/mono.dll");
-		copy("$monoprefix/bin/mono.pdb", "$distDirArchBin/mono.pdb");
-		copy("$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe");
+		system("cp", "$monoprefix/bin/mono-2.0.dll", "$distDirArchBin/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
+		system("cp", "$monoprefix/bin/mono-2.0.pdb", "$distDirArchBin/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
+		system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
 	}
 	
 	# TODO by Mike : Is this needed?
