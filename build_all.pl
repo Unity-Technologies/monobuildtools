@@ -234,6 +234,8 @@ if ($build)
 	}
 	else
 	{
+		$monoHostArch = $arch32 ? "i686" : "x86_64";
+		
 		push @configureparams, "--host=$monoHostArch-pc-mingw32";
 	}
 
@@ -263,10 +265,10 @@ if ($build)
 		
 		print("\n>>> Calling make\n");
 		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
+		
+		print("\n>>> Calling make install\n");
+		system("make install") eq 0 or die ("Failed to make install\n");
 	}
-	
-	print("\n>>> Calling make install\n");
-	system("make install") eq 0 or die ("Failed to make install\n");
 	
 	if ($^O eq "cygwin")
 	{
