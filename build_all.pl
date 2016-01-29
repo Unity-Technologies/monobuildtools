@@ -3,6 +3,8 @@ use Cwd 'abs_path';
 use Getopt::Long;
 use File::Basename;
 use File::Path;
+use lib ('external/buildscripts', "../../Tools/perl_lib","perl_lib", 'external/buildscripts/perl_lib');
+use Tools qw(InstallNameTool);
 
 system("source","~/.profile");
 print ">>> PATH in Build All = $ENV{PATH}\n\n";
@@ -13,6 +15,7 @@ my $monoroot = File::Spec->rel2abs(dirname(__FILE__) . "/../..");
 my $monoroot = abs_path($monoroot);
 
 my $buildscriptsdir = "$monoroot/external/buildscripts";
+my $addtoresultsdistdir = "$buildscriptsdir/add_to_build_results/monodistribution";
 my $monoprefix = "$monoroot/tmp/monoprefix";
 my $buildsroot = "$monoroot/builds";
 my $embeddir = "$buildsroot/embedruntimes";
@@ -25,6 +28,7 @@ my $jobs=8;
 my $test=0;
 my $artifact=0;
 my $debug=0;
+my $disableMsc=0;
 my $runRuntimeTests=1;
 my $runClasslibTests=1;
 my $existingMonoRootPath = '';
@@ -33,7 +37,7 @@ my $sdk = '';
 my $arch32 = 0;
 my $winPerl = "";
 my $winMonoRoot = "";
-my $vsVersion = "10.0";
+my $msBuildVersion = "14.0";
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -45,7 +49,8 @@ GetOptions(
 	'clean=i'=>\$clean,
 	'test=i'=>\$test,
 	'artifact=i'=>\$artifact,
-	'debug=i'=>\$artifact,
+	'debug=i'=>\$debug,
+	'disablemsc=i'=>\$disableMsc,
 	'runtimetests=i'=>\$runRuntimeTests,
 	'classlibtests=i'=>\$runClasslibTests,
 	'arch32=i'=>\$arch32,
@@ -56,7 +61,7 @@ GetOptions(
 	'skipmonomake=i'=>\$skipMonoMake,
 	'winperl=s'=>\$winPerl,
 	'winmonoroot=s'=>\$winMonoRoot,
-	'vsversion=s'=>\$vsVersion,
+	'msbuildversion=s'=>\$msBuildVersion,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -101,8 +106,7 @@ if ($build)
 	my @configureparams = ();
 	#push @configureparams, "--cache-file=$cachefile";
 	
-	# TODO by Mike: Should there be an option to turn this on?  Controls building of class libraries
-	#push @configureparams, "--disable-mcs-build";
+	push @configureparams, "--disable-mcs-build" if($disableMsc);
 	push @configureparams, "--with-glib=embedded";
 	push @configureparams, "--disable-nls";  #this removes the dependency on gettext package
 	push @configureparams, "--prefix=$monoprefix";
@@ -240,17 +244,17 @@ if ($build)
 		system("make $mcs -j$jobs") eq 0 or die ('Failed running make');
 	}
 	
+	print("\n>>> Calling make install\n");
+	system("make install") eq 0 or die ("Failed running make install");
+	
 	if ($^O eq "cygwin")
 	{
-		system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--vsversion=$vsVersion") eq 0 or die ('failing building mono with VS');
+		system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS');
 		my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
 		system("cp $monoroot/msvc/$archNameForBuild/bin/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe");
 		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono.dll");
 		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono.pdb");
 	}
-	
-	print("\n>>> Calling make install\n");
-	system("make install") eq 0 or die ("Failed running make install");
 }
 else
 {
@@ -262,7 +266,7 @@ if ($artifact)
 	print ">>> rmtree-ing $buildsroot because want to make sure we don't include old artifacts\n";
 	
 	# CopyIgnoringHiddenFiles
-	system("cp -R $buildscriptsdir/add_to_build_results/monodistribution/. $distdir/");
+	system("cp -R $addtoresultsdistdir/. $distdir/");
 	
 	$File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
 
@@ -301,6 +305,21 @@ if ($artifact)
 	}
 	elsif($^O eq 'darwin')
 	{
+# 		print "Hardlinking libmono.dylib\n";
+# 		system("ln","-f", "$root/mono/mini/.libs/libmonoboehm-2.0.1.dylib","$libtarget/libmono.0.dylib") eq 0 or die ("failed symlinking libmono.0.dylib");
+# 
+# 		print "Hardlinking libmono.a\n";
+# 		system("ln", "-f", "$root/mono/mini/.libs/libmonoboehm-2.0.a","$libtarget/libmono.a") eq 0 or die ("failed symlinking libmono.a");
+	# print "Hardlinking libMonoPosixHelper.dylib\n";
+	# system("ln","-f", "$root/support/.libs/libMonoPosixHelper.dylib","$libtarget/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib");
+	
+	# TODO : Jon thinking about these two
+	# InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libmono.0.dylib");
+	# InstallNameTool("$libtarget/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libMonoPosixHelper.dylib");
+	
+	# TODO
+	# system("ln","-f","$root/mono/mini/mono","$bintarget/mono") eq 0 or die("failed hardlinking mono executable");
+	# system("ln","-f","$root/mono/metadata/pedump","$bintarget/pedump") eq 0 or die("failed hardlinking pedump executable");
 		die("TODO");
 	}
 	else
@@ -319,11 +338,10 @@ if ($test)
 	}
 	elsif($^O eq 'darwin')
 	{
-		# TODO sym link in libgdi to required locations
-		# Need to symlink in libgdi into a few places so that the unit tests can pass
-		my $libgdiSource = "";
-		system("ln", "-s", "$libgdiSource", "$monoroot/mcs/class/Microsoft.Build.Tasks/libgdiplus.dylib");
-		system("ln", "-s", "$libgdiSource", "$monoroot/mcs/class/System.Drawing/libgdiplus.dylib");
+		# Need to copy in libgdi into a few places so that the unit tests can pass because of Apple's SIP
+		my $libgdiSource = "$addtoresultsdistdir/lib/libgdiplus.dylib";
+		copy("$libgdiSource", "$monoroot/mcs/class/Microsoft.Build.Tasks/libgdiplus.dylib");
+		copy("$libgdiSource", "$monoroot/mcs/class/System.Drawing/libgdiplus.dylib");
 	}
 	else
 	{
@@ -336,7 +354,6 @@ if ($test)
 		print("\n>>> Calling make check in $runtimeTestsDir\n\n");
 		system("make","check") eq 0 or die ("runtime tests failed\n");
 	}
-	
 	else
 	{
 		print(">>> Skipping runtime unit tests\n");
@@ -344,10 +361,17 @@ if ($test)
 	
 	if ($runClasslibTests)
 	{
-		my $classlibTestsDir = "$monoroot/mcs/class";
-		chdir("$classlibTestsDir") eq 1 or die ("failed to chdir");
-		print("\n>>> Calling make run-test in $runtimeTestsDir\n\n");
-		system("make","run-test") eq 0 or die ("classlib tests failed\n");
+		if ($disableMsc)
+		{
+			print(">>> Skipping classlib unit tests because building the class libs was disabled\n");
+		}
+		else
+		{
+			my $classlibTestsDir = "$monoroot/mcs/class";
+			chdir("$classlibTestsDir") eq 1 or die ("failed to chdir");
+			print("\n>>> Calling make run-test in $runtimeTestsDir\n\n");
+			system("make","run-test") eq 0 or die ("classlib tests failed\n");
+		}
 	}
 	else
 	{

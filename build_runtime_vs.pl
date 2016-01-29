@@ -14,14 +14,17 @@ my $buildsroot = "$monoroot/builds";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
 my $build = 0;
+my $clean = 0;
 my $arch32 = 0;
 my $debug = 0;
-my $vsVersion = "";
+my $msBuildVersion = "";
 
 GetOptions(
 	'build=i'=>\$build,
+	'clean=i'=>\$clean,
 	'arch32=i'=>\$arch32,
-	'vsversion=s'=>\$vsVersion,
+	'debug=i'=>\$debug,
+	'msbuildversion=s'=>\$msBuildVersion,
 ) or die ("illegal cmdline options");
 
 my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
@@ -30,31 +33,29 @@ my $archNameForBinDir = $arch32 ? 'bin' : 'bin-x64';
 
 if ($build)
 {
-	CompileVCProj("$monoroot/msvc/mono.sln","Release|$archNameForBuild", 0);
+	CompileVCProj("$monoroot/msvc/mono.sln");
 }
 
-if ($buildMachine)
-{
-	system("echo mono-runtime-win32 = $ENV{'BUILD_VCS_NUMBER'} > $buildsrootwin\\versions.txt");
-}
+# TODO by Mike : Is this needed?
+# if ($buildMachine)
+# {
+# 	system("echo mono-runtime-win32 = $ENV{'BUILD_VCS_NUMBER'} > $buildsrootwin\\versions.txt");
+# }
 
 sub CompileVCProj
 {
 	my $sln = shift(@_);
-	my $slnconfig = shift(@_);
-	my $incremental = shift(@_);
-	my @optional = @_;
 	
-	my $msbuild = $ENV{"ProgramFiles(x86)"}."/MSBuild/$vsVersion/Bin/MSBuild.exe";
+	my $msbuild = $ENV{"ProgramFiles(x86)"}."/MSBuild/$msBuildVersion/Bin/MSBuild.exe";
 	
 	my $config = $debug ? "Debug" : "Release";
 	my $arch = $arch32 ? "Win32" : "x64";
-	my $target = "/t:Clean,Build";
+	my $target = $clean ? "/t:Clean,Build" :"/t:Build"; 
 	my $properties = "/p:Configuration=$config;Platform=$arch";
 	
 	print ">>> $devenv $properties $target $sln\n\n";
 	system($msbuild, $properties, $target, $sln) eq 0
-			or die("VisualStudio failed to build $sln\n");
+			or die("MSBuild failed to build $sln\n");
 }
 
 
