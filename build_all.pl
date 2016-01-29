@@ -118,7 +118,7 @@ if ($build)
 	{
 		push @configureparams, "--host=$monoHostArch-pc-linux-gnu";
 		
-		unshift(@autogenparams, "--disable-parallel-mark");  #this causes crashes
+		push @configureparams, "--disable-parallel-mark";  #this causes crashes
 		
 		my $archflags = '';
 		if ($arch32)
