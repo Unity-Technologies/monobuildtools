@@ -19,7 +19,6 @@ my @thisScriptArgs = ();
 my @passAlongArgs = ();
 foreach my $arg (@ARGV)
 {
-	print("$arg\n");
 	push @backupArgs, $arg;
 	
 	if ($arg =~ /^--cygwin=/)
@@ -98,4 +97,4 @@ push @passAlongArgs, "--winperl=$windowsPerl";
 push @passAlongArgs, "--winmonoroot=$monoroot";
 
 print ">>> Calling $cygwinRootWindows\\bin\\sh.exe with @passAlongArgs";
-system("$cygwinRootWindows\\bin\\sh.exe", "$monoroot/external/buildscripts/build_all_win.sh", @passAlongArgs) eq 0 or die("failed building mono");
+system("$cygwinRootWindows\\bin\\sh.exe", "$monoroot/external/buildscripts/build_all_win.sh", @passAlongArgs) eq 0 or die("failed building mono\n");

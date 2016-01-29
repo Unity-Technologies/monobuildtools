@@ -67,7 +67,7 @@ GetOptions(
 
 print ">>> Mono checkout = $monoroot\n";
 
-chdir("$monoroot") eq 1 or die ("failed to chdir 2");
+chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
 
 # Do any settings agnostic per-platform stuff
 if($^O eq "linux")
@@ -238,26 +238,26 @@ if ($build)
 			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');
 			
 			print("\n>>> Calling make clean in mono\n");
-			system("make","clean") eq 0 or die ("failed to make clean");
+			system("make","clean") eq 0 or die ("failed to make clean\n");
 		}
 		
 		print("\n>>> Calling make\n");
-		system("make $mcs -j$jobs") eq 0 or die ('Failed running make');
+		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
 	}
 	
 	print("\n>>> Calling make install\n");
-	system("make install") eq 0 or die ("Failed running make install");
+	system("make install") eq 0 or die ("Failed to make install\n");
 	
 	if ($^O eq "cygwin")
 	{
-		system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS');
+		system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS\n');
 		
 		# Copy over the VS built stuff that we want to use instead into the prefix directory
 		my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
-		system("cp $monoroot/msvc/$archNameForBuild/bin/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe");
-		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono.dll");
-		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono.pdb");
-		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.ilk $monoprefix/bin/.") eq 0 or die ("failed copying mono.ilk");
+		system("cp $monoroot/msvc/$archNameForBuild/bin/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
+		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono.dll\n");
+		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono.pdb\n");
+		system("cp $monoroot/msvc/$archNameForBuild/lib/mono.ilk $monoprefix/bin/.") eq 0 or die ("failed copying mono.ilk\n");
 	}
 }
 else
@@ -347,31 +347,31 @@ if ($artifact)
 	if($^O eq "linux")
 	{
 		print ">>> Copying libmono.so\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmono.so") eq 0 or die ("failed copying libmonoboehm-2.0.so");
+		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmono.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
 
 		print ">>> Copying libmono-static.a\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.a","$embedDirArchDestination/libmono-static.a") eq 0 or die ("failed copying libmonoboehm-2.0.a");
+		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.a","$embedDirArchDestination/libmono-static.a") eq 0 or die ("failed copying libmonoboehm-2.0.a\n");
 
 		print ">>> Copying libMonoPosixHelper.so\n";
-		system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so");
+		system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so\n");
 		
 		if ($buildMachine)
 		{
-			system("strip $embedDirArchDestination/libmono.so") eq 0 or die("failed to strip libmono (shared)");
-			system("strip $embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die("failed to strip libMonoPosixHelper (shared)");
+			system("strip $embedDirArchDestination/libmono.so") eq 0 or die("failed to strip libmono (shared)\n");
+			system("strip $embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die("failed to strip libMonoPosixHelper (shared)\n");
 		}
 	}
 	elsif($^O eq 'darwin')
 	{
 		# embedruntimes directory setup
  		print ">>> Hardlinking libmono.dylib\n";
- 		system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.1.dylib","$embedDirArchDestination/libmono.0.dylib") eq 0 or die ("failed symlinking libmono.0.dylib");
+ 		system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.1.dylib","$embedDirArchDestination/libmono.0.dylib") eq 0 or die ("failed symlinking libmono.0.dylib\n");
 
  		print ">>> Hardlinking libmono.a\n";
- 		system("ln", "-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.a","$embedDirArchDestination/libmono.a") eq 0 or die ("failed symlinking libmono.a");
+ 		system("ln", "-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.a","$embedDirArchDestination/libmono.a") eq 0 or die ("failed symlinking libmono.a\n");
 		 
 		print "Hardlinking libMonoPosixHelper.dylib\n";
-		system("ln","-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$embedDirArchDestination/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib");
+		system("ln","-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$embedDirArchDestination/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib\n");
 	
 		# TODO : Jon thinking about these two
 		# InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libmono.0.dylib");
@@ -400,15 +400,15 @@ if ($artifact)
 		system("mkdir -p $distDirArchBin");
 		system("mkdir -p $distDirArchEtc");
 		
-		system("ln", "-f", "$monoroot/mono/mini/mono-boehm","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable");
-		system("ln", "-f", "$monoroot/mono/metadata/pedump","$distDirArchBin/pedump") eq 0 or die("failed symlinking pedump executable");
+		system("ln", "-f", "$monoroot/mono/mini/mono-boehm","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable\n");
+		system("ln", "-f", "$monoroot/mono/metadata/pedump","$distDirArchBin/pedump") eq 0 or die("failed symlinking pedump executable\n");
 		system('cp', "$monoroot/data/config","$distDirArchEtc/mono/config");
 		system("chmod", "-R", "755", $distDirArchBin);
 	}
 	elsif($^O eq 'darwin')
 	{
-		system("ln", "-f", "$monoroot/mono/mini/mono","$distDirArchBin/mono") eq 0 or die("failed hardlinking mono executable");
-		system("ln", "-f", "$monoroot/mono/metadata/pedump","$distDirArchBin/pedump") eq 0 or die("failed hardlinking pedump executable");
+		system("ln", "-f", "$monoroot/mono/mini/mono","$distDirArchBin/mono") eq 0 or die("failed hardlinking mono executable\n");
+		system("ln", "-f", "$monoroot/mono/metadata/pedump","$distDirArchBin/pedump") eq 0 or die("failed hardlinking pedump executable\n");
 	}
 	else
 	{
