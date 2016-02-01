@@ -49,8 +49,8 @@ GetOptions(
 	'artifactscommon=i'=>\$artifactsCommon,
 );
 
-print(">>> Building i386\n");
-system("perl", "$buildscriptsdir/build.pl", "--arch32=1", "--clean=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building i386');
+print(">>> Building i686\n");
+system("perl", "$buildscriptsdir/build.pl", "--arch32=1", "--clean=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building i686');
 
 if ($artifactsCommon)
 {
@@ -66,7 +66,7 @@ if ($artifact)
 	# Merge stuff in the embedruntimes directory
 	my $embedDirRoot = "$buildsroot/embedruntimes";
 	my $embedDirDestination = "$embedDirRoot/osx";
-	my $embedDirSource32 = "$embedDirRoot/osx-tmp-i386";
+	my $embedDirSource32 = "$embedDirRoot/osx-tmp-i686";
 	my $embedDirSource64 = "$embedDirRoot/osx-tmp-x86_64";
 
 	# Make sure the directory for our destination is clean before we copy stuff into it
@@ -109,7 +109,7 @@ if ($artifact)
 	my $distDirRoot = "$buildsroot/monodistribution";
 	my $distDirDestinationBin = "$buildsroot/monodistribution/bin";
 	my $distDirDestinationLib = "$buildsroot/monodistribution/lib";
-	my $distDirSourceBin32 = "$distDirRoot/bin-osx-tmp-i386";
+	my $distDirSourceBin32 = "$distDirRoot/bin-osx-tmp-i686";
 	my $distDirSourceBin64 = "$distDirRoot/bin-osx-tmp-x86_64";
 
 	# Should always exist because build_all would have put stuff in it, but in some situations

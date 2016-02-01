@@ -102,7 +102,7 @@ if ($build)
 	my $host = '';
 	my $mcs = '';
 	
-	my $monoHostArch = $arch32 ? "i386" : "x86_64";
+	my $monoHostArch = $arch32 ? "i686" : "x86_64";
 	
 	print(">>> Mono Arch = $monoHostArch\n");
 	
@@ -350,8 +350,8 @@ if ($artifact)
 	elsif($^O eq 'darwin')
 	{
 		# Note these tmp directories will get merged into a single 'osx' directory later by a parent script
-		$embedDirArchDestination = $arch32 ? "$embedDirRoot/osx-tmp-i386" : "$embedDirRoot/osx-tmp-x86_64";
-		$distDirArchBin = $arch32 ? "$distdir/bin-osx-tmp-i386" : "$distdir/bin-osx-tmp-x86_64";
+		$embedDirArchDestination = $arch32 ? "$embedDirRoot/osx-tmp-i686" : "$embedDirRoot/osx-tmp-x86_64";
+		$distDirArchBin = $arch32 ? "$distdir/bin-osx-tmp-i686" : "$distdir/bin-osx-tmp-x86_64";
 	}
 	else
 	{
