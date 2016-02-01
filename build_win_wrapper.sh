@@ -9,4 +9,4 @@ echo
 echo ">>> PATH in Win Shell Script = $PATH"
 echo
 
-perl "$BUILD_SCRIPT_ROOT/build_all.pl" "$@"
+perl "$BUILD_SCRIPT_ROOT/build.pl" "$@"

@@ -97,4 +97,4 @@ push @passAlongArgs, "--winperl=$windowsPerl";
 push @passAlongArgs, "--winmonoroot=$monoroot";
 
 print ">>> Calling $cygwinRootWindows\\bin\\sh.exe with @passAlongArgs";
-system("$cygwinRootWindows\\bin\\sh.exe", "$monoroot/external/buildscripts/build_all_win.sh", @passAlongArgs) eq 0 or die("failed building mono\n");
+system("$cygwinRootWindows\\bin\\sh.exe", "$monoroot/external/buildscripts/build_win_wrapper.sh", @passAlongArgs) eq 0 or die("failed building mono\n");

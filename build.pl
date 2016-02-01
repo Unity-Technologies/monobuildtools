@@ -28,6 +28,7 @@ my $test=0;
 my $artifact=0;
 my $debug=0;
 my $disableMsc=0;
+my $buildUsAndBoo=0;
 my $artifactsCommon=0;
 my $runRuntimeTests=1;
 my $runClasslibTests=1;
@@ -52,6 +53,7 @@ GetOptions(
 	'artifactscommon=i'=>\$artifactsCommon,
 	'debug=i'=>\$debug,
 	'disablemsc=i'=>\$disableMsc,
+	'buildusandboo=i'=>\$buildUsAndBoo,
 	'runtimetests=i'=>\$runRuntimeTests,
 	'classlibtests=i'=>\$runClasslibTests,
 	'arch32=i'=>\$arch32,
@@ -287,6 +289,12 @@ else
 	print(">>> Skipping build\n");
 }
 
+if ($buildUsAndBoo)
+{
+	print(">>> Building Unity Script and Boo...\n");
+	system("perl", "$buildscriptsdir/build_us_and_boo.pl") eq 0 or die ("Failed builidng Unity Script and Boo\n");
+}
+
 if ($artifact)
 {
 	print(">>> Creating artifact...\n");
@@ -314,10 +322,10 @@ if ($artifact)
 		
 		#TODO by Mike : Deal with copying to expected structure
 		
-		system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder");
-		system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder");
-		system("cp -r $monoprefix/lib/mono/gac $distdirlibmono") eq 0 or die("failed copying gac");
-		system("cp -r $monoprefix/lib/mono/xbuild-frameworks $distdirlibmono") eq 0 or die("failed copying xbuild-frameworks");
+		system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder\n");
+		system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder\n");
+		system("cp -r $monoprefix/lib/mono/gac $distdirlibmono") eq 0 or die("failed copying gac\n");
+		system("cp -r $monoprefix/lib/mono/xbuild-frameworks $distdirlibmono") eq 0 or die("failed copying xbuild-frameworks\n");
 
 		# now remove nunit
 		for my $profile (@profiles)

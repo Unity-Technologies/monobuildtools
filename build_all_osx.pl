@@ -40,10 +40,10 @@ GetOptions(
 );
 
 print(">>> Building i386\n");
-system("perl", "$buildscriptsdir/build_all.pl", "--arch32=1", "--clean=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building i386');
+system("perl", "$buildscriptsdir/build.pl", "--arch32=1", "--clean=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building i386');
 
 print(">>> Building x86_64\n");
-system("perl", "$buildscriptsdir/build_all.pl", "--clean=1", "--artifactsCommon=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building x86_64');
+system("perl", "$buildscriptsdir/build.pl", "--clean=1", "--artifactsCommon=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building x86_64');
 
 if ($artifact)
 {
