@@ -335,6 +335,13 @@ if ($artifact)
 		}
 		
 		system("rm -rf $distdirlibmono/gac/nunit*");
+		
+		if (-f "$monoroot/ZippedClasslibs.tar.gz")
+		{
+			system("rm -f $monoroot/ZippedClasslibs.tar.gz") or die("Failed to clean existing ZippedClasslibs.tar.gz\n");
+		}
+		
+		system("tar -hpczf $monoroot/ZippedClasslibs.tar.gz $monoroot/builds/*") eq 0 or die("Failed to zip up classlibs\n");
 	}
 	
 	# Do the platform specific logic to create the builds output structure that we want
