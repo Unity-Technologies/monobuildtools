@@ -292,6 +292,10 @@ if ($buildUsAndBoo)
 	print(">>> Building Unity Script and Boo...\n");
 	system("perl", "$buildscriptsdir/build_us_and_boo.pl") eq 0 or die ("Failed builidng Unity Script and Boo\n");
 }
+else
+{
+	print(">>> Skipping build Unity Script and Boo\n");
+}
 
 if ($artifact)
 {
@@ -453,6 +457,10 @@ if ($artifact)
 	# {
 	# 	system("echo mono-runtime-$platform = $ENV{'BUILD_VCS_NUMBER'} > $buildsroot\\versions.txt");
 	# }
+}
+else
+{
+	print(">>> Skipping artifact creation\n");
 }
 
 if ($test)
