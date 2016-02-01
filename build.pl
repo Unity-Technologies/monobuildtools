@@ -313,12 +313,11 @@ if ($artifact)
 		system("mkdir -p $distdirlibmono");
 		for my $profile (@profiles)
 		{
-			my $tmpdest = "$distdirlibmono/$profile";
-			system("mkdir -p $tmpdest");
-			system("cp -r $monoprefix/lib/mono/$profile $tmpdest");
+			system("mkdir -p $distdirlibmono");
+			system("cp -r $monoprefix/lib/mono/$profile $distdirlibmono");
 			if ($buildMachine)
 			{
-				system("rm -f $tmpdest/*.mdb");
+				system("rm -f $distdirlibmono/$profile/*.mdb");
 			}
 		}
 		
