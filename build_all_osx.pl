@@ -13,6 +13,7 @@ my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 my $buildsroot = "$monoroot/builds";
 
 my $artifact=0;
+my $artifactsCommon=0;
 
 my @thisScriptArgs = ();
 my @passAlongArgs = ();
@@ -21,7 +22,16 @@ foreach my $arg (@ARGV)
 	# Filter out --clean if someone uses it.  We have to clean since we are doing two builds
 	if (not $arg =~ /^--clean=/)
 	{
-		push @passAlongArgs, $arg;
+		# We don't need common artifacts from both, so filter our temporarily and we'll
+		# only pass it to the second build
+		if ($arg =~ /^--artifactscommon=/)
+		{
+			push @thisScriptArgs, $arg;
+		}
+		else
+		{
+			push @passAlongArgs, $arg;
+		}
 	}
 	
 	if ($arg =~ /^--artifact=/)
@@ -35,14 +45,20 @@ print(">>> Pass Along Args = @passAlongArgs\n");
 
 @ARGV = @thisScriptArgs;
 GetOptions(
-	'artifact=s'=>\$artifact,
+	'artifact=i'=>\$artifact,
+	'artifactscommon=i'=>\$artifactsCommon,
 );
 
 print(">>> Building i386\n");
 system("perl", "$buildscriptsdir/build.pl", "--arch32=1", "--clean=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building i386');
 
+if ($artifactsCommon)
+{
+	push @passAlongArgs, "--artifactscommon=1";
+}
+
 print(">>> Building x86_64\n");
-system("perl", "$buildscriptsdir/build.pl", "--clean=1", "--artifactsCommon=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building x86_64');
+system("perl", "$buildscriptsdir/build.pl", "--clean=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building x86_64');
 
 if ($artifact)
 {
