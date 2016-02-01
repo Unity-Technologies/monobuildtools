@@ -1,4 +1,3 @@
-
 use Cwd;
 use Cwd 'abs_path';
 use Getopt::Long;
@@ -47,6 +46,7 @@ system("perl", "$buildscriptsdir/build.pl", "--clean=1", "--artifactsCommon=1", 
 
 if ($artifact)
 {
+	print(">>> Creating universal binaries\n");
 	# Merge stuff in the embedruntimes directory
 	my $embedDirRoot = "$buildsroot/embedruntimes";
 	my $embedDirDestination = "$embedDirRoot/osx";

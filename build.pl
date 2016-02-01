@@ -27,7 +27,7 @@ my $jobs=8;
 my $test=0;
 my $artifact=0;
 my $debug=0;
-my $disableMsc=0;
+my $disableMcs=0;
 my $buildUsAndBoo=0;
 my $artifactsCommon=0;
 my $runRuntimeTests=1;
@@ -52,7 +52,7 @@ GetOptions(
 	'artifact=i'=>\$artifact,
 	'artifactscommon=i'=>\$artifactsCommon,
 	'debug=i'=>\$debug,
-	'disablemsc=i'=>\$disableMsc,
+	'disablemcs=i'=>\$disableMcs,
 	'buildusandboo=i'=>\$buildUsAndBoo,
 	'runtimetests=i'=>\$runRuntimeTests,
 	'classlibtests=i'=>\$runClasslibTests,
@@ -109,7 +109,7 @@ if ($build)
 	my @configureparams = ();
 	#push @configureparams, "--cache-file=$cachefile";
 	
-	push @configureparams, "--disable-mcs-build" if($disableMsc);
+	push @configureparams, "--disable-mcs-build" if($disableMcs);
 	push @configureparams, "--with-glib=embedded";
 	push @configureparams, "--disable-nls";  #this removes the dependency on gettext package
 	push @configureparams, "--prefix=$monoprefix";
@@ -494,7 +494,7 @@ if ($test)
 	
 	if ($runClasslibTests)
 	{
-		if ($disableMsc)
+		if ($disableMcs)
 		{
 			print(">>> Skipping classlib unit tests because building the class libs was disabled\n");
 		}
