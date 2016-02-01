@@ -236,9 +236,7 @@ if ($build)
 	}
 	else
 	{
-		$monoHostArch = $arch32 ? "i686" : "x86_64";
-		
-		push @configureparams, "--host=$monoHostArch-pc-mingw32";
+		push @configureparams, "--host=i686-pc-mingw32";
 	}
 
 	print ">>> Existing Mono : $existingMonoRootPath\n\n";
