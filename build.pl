@@ -432,21 +432,25 @@ if ($artifact)
 	my $embedDirRoot = "$buildsroot/embedruntimes";
 	my $embedDirArchDestination = "";
 	my $distDirArchBin = "";
+	my $versionsOutputFile = "";
 	if($^O eq "linux")
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/linux32" : "$embedDirRoot/linux64";
 		$distDirArchBin = $arch32 ? "$distdir/bin-linux32" : "$distdir/bin-linux64";
+		$versionsOutputFile = $arch32 ? "$buildsroot/versions-linux32.txt" : "$buildsroot/versions-linux64.txt";
 	}
 	elsif($^O eq 'darwin')
 	{
 		# Note these tmp directories will get merged into a single 'osx' directory later by a parent script
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/osx-tmp-i686" : "$embedDirRoot/osx-tmp-x86_64";
 		$distDirArchBin = $arch32 ? "$distdir/bin-osx-tmp-i686" : "$distdir/bin-osx-tmp-x86_64";
+		$versionsOutputFile = $arch32 ? "$buildsroot/versions-osx32.txt" : "$buildsroot/versions-osx64.txt";
 	}
 	else
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/win32" : "$embedDirRoot/win64";
 		$distDirArchBin = $arch32 ? "$distdir/bin" : "$distdir/bin-x64";
+		$versionsOutputFile = $arch32 ? "$buildsroot/versions-win32.txt" : "$buildsroot/versions-win64.txt";
 	}
 	
 	# Make sure the directory for our architecture is clean before we copy stuff into it
@@ -541,11 +545,13 @@ if ($artifact)
 		system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
 	}
 	
-	# TODO by Mike : Is this needed?
-	# if ($buildMachine)
-	# {
-	# 	system("echo mono-runtime-$platform = $ENV{'BUILD_VCS_NUMBER'} > $buildsroot\\versions.txt");
-	# }
+	# Output version information
+	system("echo \"mono-version =\" > $versionsOutputFile");
+	system("$distDirArchBin/mono --version >> $versionsOutputFile");
+	my $tmp = `git rev-parse HEAD`;
+	system("echo \"unity-mono-revision = $tmp\" >> $versionsOutputFile");
+	$tmp = `date`;
+	system("echo \"build-date = $tmp\" >> $versionsOutputFile");
 }
 else
 {
