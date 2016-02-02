@@ -1,5 +1,5 @@
 #!/bin/sh
-. $(dirname $0)/../../../mono-env
+. $(dirname $0)/mono-env
 
 US=$(dirname $0)/us.exe
 
