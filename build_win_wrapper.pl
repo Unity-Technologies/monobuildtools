@@ -16,6 +16,7 @@ my $cygwinRootWindows = "";
 my $monoInstallLinux = "";
 my $checkoutOnTheFly=0;
 my $buildDeps = "";
+my $forceDefaultBuildDeps = 0;
 
 my @thisScriptArgs = ();
 my @passAlongArgs = ();
@@ -41,6 +42,11 @@ foreach my $arg (@ARGV)
 		push @thisScriptArgs, $arg;
 		push @passAlongArgs, $arg;
 	}
+	elsif ($arg =~ /^--forcedefaultbuilddeps=/)
+	{
+		push @thisScriptArgs, $arg;
+		push @passAlongArgs, $arg;
+	}
 	else
 	{
 		push @passAlongArgs, $arg;
@@ -56,6 +62,7 @@ GetOptions(
 	'existingmono=s'=>\$monoInstallLinux,
 	'checkoutonthefly=i'=>\$checkoutOnTheFly,
 	'builddeps=s'=>\$buildDeps,
+	'forcedefaultbuilddeps=i'=>\$forceDefaultBuildDeps,
 );
 
 my $externalBuildDeps = "";
@@ -65,18 +72,21 @@ if ($buildDeps ne "")
 }
 else
 {
-	if (-d "$monoroot/external/mono-build-deps")
+	if (-d "$monoroot/external/mono-build-deps" || $forceDefaultBuildDeps)
 	{
 		$externalBuildDeps = "$monoroot/external/mono-build-deps";
 	}
-	else
+	
+	if (!(-d "$externalBuildDeps"))
 	{
 		if ($checkoutOnTheFly)
 		{
 			# Check out on the fly
 			$externalBuildDeps = "$monoroot/external/mono-build-deps";
 			print(">>> Checking out mono build dependencies to : $externalBuildDeps\n");
-			die("TODO : Implement checkout on the fly");
+			my $repo = "https://ono.unity3d.com/unity-extra/mono-build-deps";
+			print(">>> Cloning $repo at $externalBuildDeps\n");
+			system("hg", "clone", $repo, "$externalBuildDeps") eq 0 or die("failed to checkout mono build dependencies\n");
 		}
 	}
 }
@@ -107,19 +117,26 @@ if ($cygwinRootWindows eq "")
 	}
 	else
 	{
-		if (-d "C:\\Cygwin64")
+		if ($forceDefaultBuildDeps)
 		{
-			$cygwinRootWindows = "C:\\Cygwin64";
-			print(">>> Found Cygwin at : $cygwinRootWindows\n");
-		}
-		elsif (-d "C:\\Cygwin")
-		{
-			$cygwinRootWindows = "C:\\Cygwin";
-			print(">>> Found Cygwin at : $cygwinRootWindows\n");
+			die("\nCould not fined Cygwin in default external build deps location : $externalBuildDeps\n")
 		}
 		else
 		{
-			die("\nCould not fined Cygwin.  Define path using --cygwin=<path>\n")
+			if (-d "C:\\Cygwin64")
+			{
+				$cygwinRootWindows = "C:\\Cygwin64";
+				print(">>> Found Cygwin at : $cygwinRootWindows\n");
+			}
+			elsif (-d "C:\\Cygwin")
+			{
+				$cygwinRootWindows = "C:\\Cygwin";
+				print(">>> Found Cygwin at : $cygwinRootWindows\n");
+			}
+			else
+			{
+				die("\nCould not fined Cygwin.  Define path using --cygwin=<path>\n")
+			}
 		}
 	}
 }
@@ -153,16 +170,23 @@ if ($monoInstallLinux eq "")
 	}
 	else
 	{
-		if (-d "C:\\Program Files (x86)\\Mono")
+		if ($forceDefaultBuildDeps)
 		{
-			# Pass over the cygwin format since I already have it escaped correctly to survive
-			# crossing over the shell
-			$monoInstallLinux = "/cygdrive/c/Program\\ Files\\ \\(x86\\)/Mono";
-			print(">>> Found Mono at : $monoInstallLinux\n");
+			die("\nCould not fined mono in default external build deps location : $externalBuildDeps\n")
 		}
 		else
 		{
-			die("\n--existingmono=<path> is required and should be in the cygwin path format\n");
+			if (-d "C:\\Program Files (x86)\\Mono")
+			{
+				# Pass over the cygwin format since I already have it escaped correctly to survive
+				# crossing over the shell
+				$monoInstallLinux = "/cygdrive/c/Program\\ Files\\ \\(x86\\)/Mono";
+				print(">>> Found Mono at : $monoInstallLinux\n");
+			}
+			else
+			{
+				die("\n--existingmono=<path> is required and should be in the cygwin path format\n");
+			}
 		}
 	}
 }

@@ -36,6 +36,7 @@ my $artifactsCommon=0;
 my $runRuntimeTests=1;
 my $runClasslibTests=1;
 my $checkoutOnTheFly=0;
+my $forceDefaultBuildDeps=0;
 my $existingMonoRootPath = '';
 my $unityRoot = '';
 my $sdk = '';
@@ -70,8 +71,9 @@ GetOptions(
 	'winperl=s'=>\$winPerl,
 	'winmonoroot=s'=>\$winMonoRoot,
 	'msbuildversion=s'=>\$msBuildVersion,
-	'checkoutonthefly'=>\$checkoutOnTheFly,
+	'checkoutonthefly=i'=>\$checkoutOnTheFly,
 	'builddeps=s'=>\$buildDeps,
+	'forcedefaultbuilddeps=i'=>\$forceDefaultBuildDeps,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -81,7 +83,7 @@ chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
 # Do any settings agnostic per-platform stuff
 my $externalBuildDeps = "";
 
-if ($buildDeps ne "")
+if ($buildDeps ne "" && not $forceDefaultBuildDeps)
 {
 	$externalBuildDeps = $buildDeps;
 }
@@ -150,7 +152,10 @@ if ($build)
 			{
 				# Check out on the fly
 				print(">>> Checking out mono build dependencies to : $externalBuildDeps\n");
-				die("TODO : Implement checkout on the fly\n");
+				my $repo = "https://ono.unity3d.com/unity-extra/mono-build-deps";
+				print(">>> Cloning $repo at $externalBuildDeps\n");
+				system("hg", "clone", $repo, "$externalBuildDeps") eq 0 or die("failed to checkout mono build dependencies\n");
+				$cygwinRootWindows = $externalCygwin;
 			}
 		}
 		
@@ -182,8 +187,6 @@ if ($build)
 	{
 		die("Existing mono not found at : $existingMonoRootPath\n");
 	}
-	
-	exit 0;
 	
 	if($^O eq "linux")
 	{
