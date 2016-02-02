@@ -14,6 +14,8 @@ print ">>> Mono checkout found in $monoroot\n\n";
 
 my $cygwinRootWindows = "";
 my $monoInstallLinux = "";
+my $checkoutOnTheFly=0;
+my $buildDeps = "";
 
 my @thisScriptArgs = ();
 my @passAlongArgs = ();
@@ -29,6 +31,16 @@ foreach my $arg (@ARGV)
 	{
 		push @thisScriptArgs, $arg;
 	}
+	elsif ($arg =~ /^--checkoutonthefly=/)
+	{
+		push @thisScriptArgs, $arg;
+		push @passAlongArgs, $arg;
+	}
+	elsif ($arg =~ /^--builddeps=/)
+	{
+		push @thisScriptArgs, $arg;
+		push @passAlongArgs, $arg;
+	}
 	else
 	{
 		push @passAlongArgs, $arg;
@@ -42,26 +54,73 @@ print(">>> Pass Along Args = @passAlongArgs\n");
 GetOptions(
 	'cygwin=s'=>\$cygwinRootWindows,
 	'existingmono=s'=>\$monoInstallLinux,
+	'checkoutonthefly=i'=>\$checkoutOnTheFly,
+	'builddeps=s'=>\$buildDeps,
 );
+
+my $externalBuildDeps = "";
+if ($buildDeps ne "")
+{
+	$externalBuildDeps = $buildDeps;
+}
+else
+{
+	if (-d "$monoroot/external/mono-build-deps")
+	{
+		$externalBuildDeps = "$monoroot/external/mono-build-deps";
+	}
+	else
+	{
+		if ($checkoutOnTheFly)
+		{
+			# Check out on the fly
+			$externalBuildDeps = "$monoroot/external/mono-build-deps";
+			print(">>> Checking out mono build dependencies to : $externalBuildDeps\n");
+			die("TODO : Implement checkout on the fly");
+		}
+	}
+}
+
+print(">>> externalBuildDeps = $externalBuildDeps\n");
+
+my $SevenZip = "$externalBuildDeps/7z/win64/7za.exe";
 
 # Attempt to find common default cygwin install locations
 if ($cygwinRootWindows eq "")
 {
 	print(">>> No cygwin install specified.  Looking for defaults...\n");
 	
-	if (-d "C:\\Cygwin64")
+	my $externalCygwin = "$externalBuildDeps/cygwin64/builds";
+	my $externalCygwinZip = "$externalBuildDeps/cygwin64/builds.zip";
+	
+	if (-d "$externalCygwin")
 	{
-		$cygwinRootWindows = "C:\\Cygwin64";
+		$cygwinRootWindows = $externalCygwin;
 		print(">>> Found Cygwin at : $cygwinRootWindows\n");
 	}
-	elsif (-d "C:\\Cygwin")
+	elsif(-f "$externalCygwinZip")
 	{
-		$cygwinRootWindows = "C:\\Cygwin";
-		print(">>> Found Cygwin at : $cygwinRootWindows\n");
+		print(">>> Found unextracted cygwin builds.zip : $externalCygwinZip\n");
+		print(">>> Using 7z : $SevenZip\n");
+		print(">>> Extracting...\n");
+		system("$SevenZip", "x", "$externalCygwinZip", "-o$externalBuildDeps/cygwin64") eq 0 or die("Failed extracting cygwin\n");
 	}
 	else
 	{
-		die("\nCould not fined Cygwin.  Define path using --cygwin=<path>\n")
+		if (-d "C:\\Cygwin64")
+		{
+			$cygwinRootWindows = "C:\\Cygwin64";
+			print(">>> Found Cygwin at : $cygwinRootWindows\n");
+		}
+		elsif (-d "C:\\Cygwin")
+		{
+			$cygwinRootWindows = "C:\\Cygwin";
+			print(">>> Found Cygwin at : $cygwinRootWindows\n");
+		}
+		else
+		{
+			die("\nCould not fined Cygwin.  Define path using --cygwin=<path>\n")
+		}
 	}
 }
 else
@@ -71,16 +130,40 @@ else
 
 if ($monoInstallLinux eq "")
 {
-	if (-d "C:\\Program Files (x86)\\Mono")
+	print(">>> No mono install specified.  Looking for defaults...\n");
+	
+	my $externalMono = "$externalBuildDeps/mono/win/builds";
+	my $externalMonoZip = "$externalBuildDeps/mono/win/builds.zip";
+	
+	if (-d "$externalMono")
 	{
-		# Pass over the cygwin format since I already have it escaped correctly to survive
-		# crossing over the shell
-		$monoInstallLinux = "/cygdrive/c/Program\\ Files\\ \\(x86\\)/Mono";
+		$monoInstallLinux = $externalMono;
+		$monoInstallLinux =~ s/\\/\//g;
+		print(">>> Found Mono at : $monoInstallLinux\n");
+	}
+	elsif(-f "$externalMonoZip")
+	{
+		print(">>> Found unextracted mono builds.zip : $externalMonoZip\n");
+		print(">>> Using 7z : $SevenZip\n");
+		print(">>> Extracting...\n");
+		system("$SevenZip", "x", "$externalMonoZip", "-o$externalBuildDeps/mono/win") eq 0 or die("Failed extracting mono\n");
+		$monoInstallLinux = $externalMono;
+		$monoInstallLinux =~ s/\\/\//g;
 		print(">>> Found Mono at : $monoInstallLinux\n");
 	}
 	else
 	{
-		die("\n--existingmono=<path> is required and should be in the cygwin path format\n");
+		if (-d "C:\\Program Files (x86)\\Mono")
+		{
+			# Pass over the cygwin format since I already have it escaped correctly to survive
+			# crossing over the shell
+			$monoInstallLinux = "/cygdrive/c/Program\\ Files\\ \\(x86\\)/Mono";
+			print(">>> Found Mono at : $monoInstallLinux\n");
+		}
+		else
+		{
+			die("\n--existingmono=<path> is required and should be in the cygwin path format\n");
+		}
 	}
 }
 else
@@ -89,7 +172,7 @@ else
 	print(">>> Linux Mono Path = $monoInstallLinux\n");
 }
 
-push @passAlongArgs, "--existingmono=$monoInstallLinux";
+push @passAlongArgs, "--existingmono=$monoInstallLinux" if $monoInstallLinux ne "";
 
 my $windowsPerl = $Config{perlpath};
 print ">>> Perl Exe = $windowsPerl\n";

@@ -9,6 +9,9 @@ use Tools qw(InstallNameTool);
 system("source","~/.profile");
 print ">>> PATH in Build All = $ENV{PATH}\n\n";
 
+print("System Info : \n");
+system("uname", "-a");
+
 my $currentdir = getcwd();
 
 my $monoroot = File::Spec->rel2abs(dirname(__FILE__) . "/../..");
@@ -32,6 +35,7 @@ my $buildUsAndBoo=0;
 my $artifactsCommon=0;
 my $runRuntimeTests=1;
 my $runClasslibTests=1;
+my $checkoutOnTheFly=0;
 my $existingMonoRootPath = '';
 my $unityRoot = '';
 my $sdk = '';
@@ -39,6 +43,7 @@ my $arch32 = 0;
 my $winPerl = "";
 my $winMonoRoot = "";
 my $msBuildVersion = "14.0";
+my $buildDeps = "";
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -65,6 +70,8 @@ GetOptions(
 	'winperl=s'=>\$winPerl,
 	'winmonoroot=s'=>\$winMonoRoot,
 	'msbuildversion=s'=>\$msBuildVersion,
+	'checkoutonthefly'=>\$checkoutOnTheFly,
+	'builddeps=s'=>\$buildDeps,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -72,25 +79,42 @@ print ">>> Mono checkout = $monoroot\n";
 chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
 
 # Do any settings agnostic per-platform stuff
-if($^O eq "linux")
+my $externalBuildDeps = "";
+
+if ($buildDeps ne "")
 {
-}
-elsif($^O eq 'darwin')
-{
+	$externalBuildDeps = $buildDeps;
 }
 else
 {
-	if (not $existingMonoRootPath =~ /^\/cygdrive/)
-	{
-		$existingMonoRootPath = `cygpath -u $existingMonoRootPath`;
-		chomp($existingMonoRootPath);
-	}
-	
-	$existingMonoRootPath =~ tr/\\//d;
+	$externalBuildDeps = "$monoroot/external/mono-build-deps";
+}
 
-	if (!(-d $existingMonoRootPath))
+my $existingExternalMonoRoot = "$externalBuildDeps/mono";
+my $existingExternalMono = "";
+if($^O eq "linux")
+{
+	$existingExternalMono = "$existingExternalMonoRoot/linux";
+}
+elsif($^O eq 'darwin')
+{
+	$existingExternalMono = "$existingExternalMonoRoot/osx";
+}
+else
+{
+	$existingExternalMono = "$existingExternalMonoRoot/win";
+	
+	# We only care about an existing mono if we need to build.
+	# So only do this path clean up if we are building.
+	if ($build)
 	{
-		die("Existing mono not found at : $existingMonoRootPath\n");
+		if ($existingMonoRootPath ne "" && not $existingMonoRootPath =~ /^\/cygdrive/)
+		{
+			$existingMonoRootPath = `cygpath -u $existingMonoRootPath`;
+			chomp($existingMonoRootPath);
+		}
+		
+		$existingMonoRootPath =~ tr/\\//d;
 	}
 }
 
@@ -116,6 +140,50 @@ if ($build)
 	push @configureparams, "--with-monotouch=no";
 	push @configureparams, "--with-mcs-docs=no";
 	
+	if ($existingMonoRootPath eq "")
+	{
+		print(">>> No existing mono supplied.  Checking for external...\n");
+		
+		if (!(-d "$externalBuildDeps"))
+		{
+			if ($checkoutOnTheFly)
+			{
+				# Check out on the fly
+				print(">>> Checking out mono build dependencies to : $externalBuildDeps\n");
+				die("TODO : Implement checkout on the fly\n");
+			}
+		}
+		
+		if (-d "$existingExternalMono")
+		{
+			print(">>> External mono found at : $existingExternalMono\n");
+			
+			if (-d "$existingExternalMono/builds")
+			{
+				print(">>> Mono already extracted at : $existingExternalMono/builds\n");
+			}
+			
+			if (!(-d "$existingExternalMono/builds"))
+			{
+				# We need to extract builds.zip
+				die("TODO extract builds.zip\n");
+			}
+			
+			$existingMonoRootPath = "$existingExternalMono/builds";
+		}
+		else
+		{
+			print(">>> No external mono found.  Trusting a new enough mono is in your PATH.\n");
+		}
+	}
+	
+	if ($existingMonoRootPath ne "" && !(-d $existingMonoRootPath))
+	{
+		die("Existing mono not found at : $existingMonoRootPath\n");
+	}
+	
+	exit 0;
+	
 	if($^O eq "linux")
 	{
 		push @configureparams, "--host=$monoHostArch-pc-linux-gnu";
@@ -140,21 +208,24 @@ if ($build)
 	elsif($^O eq 'darwin')
 	{
 		# Set up mono for bootstrapping
-		# Find the latest mono version and use that for boostrapping
-		my $monoInstalls = '/Library/Frameworks/Mono.framework/Versions';
-		my @monoVersions = ();
-		
-		opendir( my $DIR, $monoInstalls );
-		while ( my $entry = readdir $DIR )
+		if ($existingMonoRootPath eq "")
 		{
-			next unless -d $monoInstalls . '/' . $entry;
-			next if $entry eq '.' or $entry eq '..' or $entry eq 'Current';
-			push @monoVersions, $entry;
+			# Find the latest mono version and use that for boostrapping
+			my $monoInstalls = '/Library/Frameworks/Mono.framework/Versions';
+			my @monoVersions = ();
+			
+			opendir( my $DIR, $monoInstalls );
+			while ( my $entry = readdir $DIR )
+			{
+				next unless -d $monoInstalls . '/' . $entry;
+				next if $entry eq '.' or $entry eq '..' or $entry eq 'Current';
+				push @monoVersions, $entry;
+			}
+			closedir $DIR;
+			@monoVersions = sort @monoVersions;
+			my $monoVersionToUse = pop @monoVersions;
+			$existingMonoRootPath = "$monoInstalls/$monoVersionToUse";
 		}
-		closedir $DIR;
-		@monoVersions = sort @monoVersions;
-		my $monoVersionToUse = pop @monoVersions;
-		$existingMonoRootPath = "$monoInstalls/$monoVersionToUse";
 		
 		$mcs = "EXTERNAL_MCS=$existingMonoRootPath/bin/mcs";
 		
@@ -244,6 +315,11 @@ if ($build)
 	
 	print ">>> PATH before Build = $ENV{PATH}\n\n";
 	
+	print(">>> mcs Information : \n");
+	system("which", "mcs");
+	system("mcs", "--version");
+	print("\n");
+	
 	chdir("$monoroot") eq 1 or die ("failed to chdir 2");
 	
 	if (not $skipMonoMake)
@@ -281,6 +357,8 @@ if ($build)
 		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
 		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.ilk $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.ilk\n");
 	}
+	
+	system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 }
 else
 {
@@ -304,7 +382,7 @@ if ($artifact)
 	# CopyIgnoringHiddenFiles
 	if ($artifactsCommon)
 	{
-		system("cp -R $addtoresultsdistdir/. $distdir/");
+		system("cp -R $addtoresultsdistdir/. $distdir/") eq 0 or die ("Failed copying $addtoresultsdistdir to $distdir\n");
 		
 		$File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
 
@@ -341,6 +419,7 @@ if ($artifact)
 			system("rm -f $monoroot/ZippedClasslibs.tar.gz") or die("Failed to clean existing ZippedClasslibs.tar.gz\n");
 		}
 		
+		print(">>> Creating ZippedClasslibs.tar.gz\n");
 		system("tar -hpczf $monoroot/ZippedClasslibs.tar.gz $monoroot/builds/*") eq 0 or die("Failed to zip up classlibs\n");
 	}
 	
