@@ -23,7 +23,7 @@ foreach my $arg (@ARGV)
 	# Filter out --clean if someone uses it.  We have to clean since we are doing two builds
 	if (not $arg =~ /^--clean=/)
 	{
-		# We don't need common artifacts from both, so filter our temporarily and we'll
+		# We don't need common artifacts, us, and boo, from both, so filter out temporarily and we'll
 		# only pass it to the second build
 		if ($arg =~ /^--artifactscommon=/ || $arg =~ /^--buildusandboo=/)
 		{
