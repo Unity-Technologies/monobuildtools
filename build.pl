@@ -538,7 +538,6 @@ if ($artifact)
 		system("ln", "-f", "$monoroot/mono/mini/mono-boehm","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable\n");
 		system("ln", "-f", "$monoroot/mono/metadata/pedump","$distDirArchBin/pedump") eq 0 or die("failed symlinking pedump executable\n");
 		system('cp', "$monoroot/data/config","$distDirArchEtc/mono/config") eq 0 or die("failed to copy config\n");
-		system("chmod", "-R", "755", $distDirArchBin);
 	}
 	elsif($^O eq 'darwin')
 	{
@@ -551,6 +550,8 @@ if ($artifact)
 		system("cp", "$monoprefix/bin/mono-2.0.pdb", "$distDirArchBin/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
 		system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
 	}
+	
+	system("chmod", "-R", "755", $distDirArchBin);
 	
 	# Output version information
 	print(">>> Creating version file : $versionsOutputFile\n");
