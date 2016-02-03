@@ -392,8 +392,7 @@ else
 if ($artifact)
 {
 	print(">>> Creating artifact...\n");
-	
-	# CopyIgnoringHiddenFiles
+
 	if ($artifactsCommon)
 	{
 		system("cp -R $addtoresultsdistdir/. $distdir/") eq 0 or die ("Failed copying $addtoresultsdistdir to $distdir\n");
@@ -508,9 +507,8 @@ if ($artifact)
 		print "Hardlinking libMonoPosixHelper.dylib\n";
 		system("ln","-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$embedDirArchDestination/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib\n");
 	
-		# TODO : Jon thinking about these two
-		# InstallNameTool("$libtarget/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libmono.0.dylib");
-		# InstallNameTool("$libtarget/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/$os/libMonoPosixHelper.dylib");
+		InstallNameTool("$embedDirArchDestination/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmono.0.dylib");
+		InstallNameTool("$embedDirArchDestination/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libMonoPosixHelper.dylib");
 	}
 	else
 	{
