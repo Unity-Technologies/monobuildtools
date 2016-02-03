@@ -8,10 +8,6 @@ use Tools qw(InstallNameTool);
 
 system("source","~/.profile");
 print ">>> PATH in Build All = $ENV{PATH}\n\n";
-
-print("System Info : \n");
-system("uname", "-a");
-
 my $currentdir = getcwd();
 
 my $monoroot = File::Spec->rel2abs(dirname(__FILE__) . "/../..");
@@ -78,7 +74,16 @@ GetOptions(
 
 print ">>> Mono checkout = $monoroot\n";
 
+print(">> System Info : \n");
+system("uname", "-a");
+
+my $monoRevision = `git rev-parse HEAD`;
+chdir("$buildscriptsdir") eq 1 or die ("failed to chdir : $buildscriptsdir\n");
+my $buildScriptsRevision = `git rev-parse HEAD`;
 chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
+
+print(">>> Mono Revision = $monoRevision\n");
+print(">>> Build Scripts Revision = $buildScriptsRevision\n");
 
 # Do any settings agnostic per-platform stuff
 my $externalBuildDeps = "";
@@ -547,11 +552,12 @@ if ($artifact)
 	}
 	
 	# Output version information
+	print(">>> Creating version file : $versionsOutputFile\n");
 	system("echo \"mono-version =\" > $versionsOutputFile");
 	system("$distDirArchBin/mono --version >> $versionsOutputFile");
-	my $tmp = `git rev-parse HEAD`;
-	system("echo \"unity-mono-revision = $tmp\" >> $versionsOutputFile");
-	$tmp = `date`;
+	system("echo \"unity-mono-revision = $monoRevision\" >> $versionsOutputFile");
+	system("echo \"unity-mono-build-scripts-revision = $buildScriptsRevision\" >> $versionsOutputFile");
+	my $tmp = `date`;
 	system("echo \"build-date = $tmp\" >> $versionsOutputFile");
 }
 else
