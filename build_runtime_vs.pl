@@ -27,10 +27,6 @@ GetOptions(
 	'msbuildversion=s'=>\$msBuildVersion,
 ) or die ("illegal cmdline options");
 
-my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
-my $archNameForDir = $arch32 ? 'win32' : 'win64';
-my $archNameForBinDir = $arch32 ? 'bin' : 'bin-x64';
-
 if ($build)
 {
 	CompileVCProj("$monoroot/msvc/mono.sln");
@@ -47,20 +43,7 @@ sub CompileVCProj
 	my $target = $clean ? "/t:Clean,Build" :"/t:Build"; 
 	my $properties = "/p:Configuration=$config;Platform=$arch";
 	
-	print ">>> $devenv $properties $target $sln\n\n";
+	print ">>> $msbuild $properties $target $sln\n\n";
 	system($msbuild, $properties, $target, $sln) eq 0
 			or die("MSBuild failed to build $sln\n");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
