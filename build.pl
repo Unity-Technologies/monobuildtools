@@ -422,12 +422,8 @@ if ($artifact)
 		system("cp -r $monoprefix/lib/mono/gac $distdirlibmono") eq 0 or die("failed copying gac\n");
 		system("cp -r $monoprefix/lib/mono/xbuild-frameworks $distdirlibmono") eq 0 or die("failed copying xbuild-frameworks\n");
 
-		# now remove nunit
-		for my $profile (@profiles)
-		{
-			system("rm -rf $distdirlibmono/$profile/nunit*");
-		}
-		
+		# now remove nunit from a couple places (but not all, we need some of them)
+		system("rm -rf $distdirlibmono/2.0/nunit*");
 		system("rm -rf $distdirlibmono/gac/nunit*");
 		
 		if (-f "$monoroot/ZippedClasslibs.tar.gz")
