@@ -6,8 +6,8 @@ use File::Path;
 use lib ('external/buildscripts', "../../Tools/perl_lib","perl_lib", 'external/buildscripts/perl_lib');
 use Tools qw(InstallNameTool);
 
-system("source","~/.profile");
 print ">>> PATH in Build All = $ENV{PATH}\n\n";
+
 my $currentdir = getcwd();
 
 my $monoroot = File::Spec->rel2abs(dirname(__FILE__) . "/../..");
@@ -19,6 +19,17 @@ my $monoprefix = "$monoroot/tmp/monoprefix";
 my $buildsroot = "$monoroot/builds";
 my $distdir = "$buildsroot/monodistribution";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
+
+# This script should not be ran on windows, if it is, kindly call the wrapper
+# to switch over to cygwin
+if ($^O eq "MSWin32")
+{
+	print(">>> build.pl called from Windows.  Switching over to cygwin\n");
+	system("$buildscriptsdir/build_win_wrapper.pl", @ARGV) eq 0 or die("\n");
+	exit 0;
+}
+
+system("source","~/.profile");
 
 my $build=0;
 my $clean=0;
