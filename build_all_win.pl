@@ -20,7 +20,7 @@ foreach my $arg (@ARGV)
 	}
 }
 
-print(">>> Building i386\n");
+print(">>> Building i686\n");
 system("perl", "$buildscriptsdir/build_win_wrapper.pl", "--arch32=1", "--clean=1", "--classlibtests=0", @passAlongArgs) eq 0 or die ('failing building win32');
 
 print(">>> Building x86_64\n");
