@@ -569,22 +569,6 @@ else
 
 if ($test)
 {
-	# Do platform specific stuff to prepare for the tests to run
-	if($^O eq "linux")
-	{
-	}
-	elsif($^O eq 'darwin')
-	{
-		# TODO by Mike : Remove if the --with-libgdiplus argument works
-		# Need to copy in libgdi into a few places so that the unit tests can pass because of Apple's SIP
-		# my $libgdiSource = "$addtoresultsdistdir/lib/libgdiplus.dylib";
-		# copy("$libgdiSource", "$monoroot/mcs/class/Microsoft.Build.Tasks/libgdiplus.dylib");
-		# copy("$libgdiSource", "$monoroot/mcs/class/System.Drawing/libgdiplus.dylib");
-	}
-	else
-	{
-	}
-	
 	if ($runRuntimeTests)
 	{
 		my $runtimeTestsDir = "$monoroot/mono/mini";
