@@ -298,13 +298,6 @@ if ($build)
 		$ENV{CC} = "$ENV{CC} -arch $monoHostArch";
 		$ENV{CXX} = "$ENV{CXX} -arch $monoHostArch";
 		
-		# TODO by Mike : Copied from old implementation.  What's the purpose of clearing these?
-		$ENV{mono_cv_uscore} = '';
-		$ENV{mono_cv_clang} = '';
-		$ENV{cv_mono_sizeof_sunpath} = '';
-		$ENV{ac_cv_func_posix_getpwuid_r} = '';
-		$ENV{ac_cv_func_backtrace_symbols} = '';
-		
 		# Add OSX specific autogen args
 		push @configureparams, "--host=$monoHostArch-apple-darwin12.2.0";
 		
@@ -419,8 +412,6 @@ if ($artifact)
 				system("rm -f $distdirlibmono/$profile/*.mdb");
 			}
 		}
-		
-		#TODO by Mike : Deal with copying to expected structure
 		
 		system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder\n");
 		system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder\n");
