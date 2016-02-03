@@ -94,16 +94,20 @@ else
 
 my $existingExternalMonoRoot = "$externalBuildDeps/mono";
 my $existingExternalMono = "";
+my $monoHostArch = "";
 if($^O eq "linux")
 {
+	$monoHostArch = $arch32 ? "i686" : "x86_64";
 	$existingExternalMono = "$existingExternalMonoRoot/linux";
 }
 elsif($^O eq 'darwin')
 {
+	$monoHostArch = $arch32 ? "i386" : "x86_64";
 	$existingExternalMono = "$existingExternalMonoRoot/osx";
 }
 else
 {
+	$monoHostArch = "i686";
 	$existingExternalMono = "$existingExternalMonoRoot/win";
 	
 	# We only care about an existing mono if we need to build.
@@ -121,16 +125,13 @@ else
 }
 
 print(">>> Existing Mono = $existingMonoRootPath\n");
+print(">>> Mono Arch = $monoHostArch\n");
 
 if ($build)
 {
 	my $platformflags = '';
 	my $host = '';
 	my $mcs = '';
-	
-	my $monoHostArch = $arch32 ? "i686" : "x86_64";
-	
-	print(">>> Mono Arch = $monoHostArch\n");
 	
 	my @configureparams = ();
 	#push @configureparams, "--cache-file=$cachefile";
@@ -311,7 +312,7 @@ if ($build)
 	}
 	else
 	{
-		push @configureparams, "--host=i686-pc-mingw32";
+		push @configureparams, "--host=$monoHostArch-pc-mingw32";
 	}
 
 	print ">>> Existing Mono : $existingMonoRootPath\n\n";
@@ -442,8 +443,8 @@ if ($artifact)
 	elsif($^O eq 'darwin')
 	{
 		# Note these tmp directories will get merged into a single 'osx' directory later by a parent script
-		$embedDirArchDestination = $arch32 ? "$embedDirRoot/osx-tmp-i686" : "$embedDirRoot/osx-tmp-x86_64";
-		$distDirArchBin = $arch32 ? "$distdir/bin-osx-tmp-i686" : "$distdir/bin-osx-tmp-x86_64";
+		$embedDirArchDestination = "$embedDirRoot/osx-tmp-$monoHostArch";
+		$distDirArchBin = "$distdir/bin-osx-tmp-$monoHostArch";
 		$versionsOutputFile = $arch32 ? "$buildsroot/versions-osx32.txt" : "$buildsroot/versions-osx64.txt";
 	}
 	else
