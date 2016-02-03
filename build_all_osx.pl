@@ -14,6 +14,7 @@ my $buildsroot = "$monoroot/builds";
 
 my $artifact=0;
 my $artifactsCommon=0;
+my $buildUsAndBoo=0;
 
 my @thisScriptArgs = ();
 my @passAlongArgs = ();
@@ -24,7 +25,7 @@ foreach my $arg (@ARGV)
 	{
 		# We don't need common artifacts from both, so filter our temporarily and we'll
 		# only pass it to the second build
-		if ($arg =~ /^--artifactscommon=/)
+		if ($arg =~ /^--artifactscommon=/ || $arg =~ /^--buildusandboo=/)
 		{
 			push @thisScriptArgs, $arg;
 		}
@@ -47,6 +48,7 @@ print(">>> Pass Along Args = @passAlongArgs\n");
 GetOptions(
 	'artifact=i'=>\$artifact,
 	'artifactscommon=i'=>\$artifactsCommon,
+	'buildusandboo=i'=>\$buildUsAndBoo,
 );
 
 my $monoArch32Target = "i386";
@@ -57,6 +59,11 @@ system("perl", "$buildscriptsdir/build.pl", "--arch32=1", "--clean=1", "--classl
 if ($artifactsCommon)
 {
 	push @passAlongArgs, "--artifactscommon=1";
+}
+
+if ($buildUsAndBoo)
+{
+	push @passAlongArgs, "--buildusandboo=1";
 }
 
 print(">>> Building x86_64\n");
