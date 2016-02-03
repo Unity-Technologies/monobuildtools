@@ -114,6 +114,7 @@ if ($cygwinRootWindows eq "")
 		print(">>> Using 7z : $SevenZip\n");
 		print(">>> Extracting...\n");
 		system("$SevenZip", "x", "$externalCygwinZip", "-o$externalBuildDeps/cygwin64") eq 0 or die("Failed extracting cygwin\n");
+		$cygwinRootWindows = $externalCygwin;
 	}
 	else
 	{
