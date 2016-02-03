@@ -395,6 +395,11 @@ if ($artifact)
 
 	if ($artifactsCommon)
 	{
+		if (!(-d "$distdir"))
+		{
+			system("mkdir -p $distdir") eq 0 or die("failed to make directory $distdir\n");
+		}
+		
 		system("cp -R $addtoresultsdistdir/. $distdir/") eq 0 or die ("Failed copying $addtoresultsdistdir to $distdir\n");
 		
 		$File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
