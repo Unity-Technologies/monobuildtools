@@ -428,7 +428,7 @@ if ($artifact)
 		
 		if (-f "$monoroot/ZippedClasslibs.tar.gz")
 		{
-			system("rm -f $monoroot/ZippedClasslibs.tar.gz") or die("Failed to clean existing ZippedClasslibs.tar.gz\n");
+			system("rm -f $monoroot/ZippedClasslibs.tar.gz") eq 0 or die("Failed to clean existing ZippedClasslibs.tar.gz\n");
 		}
 		
 		print(">>> Creating ZippedClasslibs.tar.gz\n");
