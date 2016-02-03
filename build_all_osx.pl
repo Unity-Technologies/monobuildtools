@@ -78,13 +78,6 @@ if ($artifact)
 	my $embedDirSource32 = "$embedDirRoot/osx-tmp-$monoArch32Target";
 	my $embedDirSource64 = "$embedDirRoot/osx-tmp-x86_64";
 
-	# Make sure the directory for our destination is clean before we copy stuff into it
-	if (-d "$embedDirDestination")
-	{
-		print(">>> Cleaning $embedDirDestination\n");
-		rmtree($embedDirDestination);
-	}
-
 	system("mkdir -p $embedDirDestination");
 
 	if (!(-d $embedDirSource32))
@@ -100,19 +93,23 @@ if ($artifact)
 	# Create universal binaries
 	for my $file ('libmono.0.dylib','libmono.a','libMonoPosixHelper.dylib')
 	{
+		print(">>> lipo $embedDirSource32/$file $embedDirSource64/$file -create -output $embedDirDestination/$file\n\n");
 		system ('lipo', "$embedDirSource32/$file", "$embedDirSource64/$file", '-create', '-output', "$embedDirDestination/$file");
 	}
 
 	if (not $buildMachine)
 	{
+		print(">>> Doing non-build machine stuff...\n");
 		for my $file ('libmono.0.dylib','libMonoPosixHelper.dylib')
 		{
+			print(">>> Removing $embedDirDestination/$file.dSYM\n");
 			rmtree ("$embedDirDestination/$file.dSYM");
+			print(">>> 'dsymutil $embedDirDestination/$file\n");
 			system ('dsymutil', "$embedDirDestination/$file") eq 0 or warn ("Failed creating $embedDirDestination/$file.dSYM");
 		}
+		
+		print(">>> Done with non-build machine stuff\n");
 	}
-
-	system('cp', "$embedDirSource32/MonoBundleBinary", "$embedDirDestination/MonoBundleBinary");
 
 	# Merge stuff in the monodistribution directory
 	my $distDirRoot = "$buildsroot/monodistribution";
@@ -145,12 +142,14 @@ if ($artifact)
 	
 	for my $file ('mono','pedump')
 	{
+		print(">>> lipo $distDirSourceBin32/$file $distDirSourceBin64/$file -create -output $distDirDestinationBin/$file\n\n");
 		system ('lipo', "$distDirSourceBin32/$file", "$distDirSourceBin64/$file", '-create', '-output', "$distDirDestinationBin/$file");
 	}
 
 	#Create universal binaries for stuff is in the embed dir but will end up in the dist dir
 	for my $file ('libMonoPosixHelper.dylib')
 	{
+		print(">>> lipo $embedDirSource32/$file $embedDirSource64/$file -create -output $distDirDestinationLib/$file\n\n");
 		system ('lipo', "$embedDirSource32/$file", "$embedDirSource64/$file", '-create', '-output', "$distDirDestinationLib/$file");
 	}
 
