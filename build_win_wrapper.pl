@@ -204,5 +204,9 @@ print ">>> Perl Exe = $windowsPerl\n";
 push @passAlongArgs, "--winperl=$windowsPerl";
 push @passAlongArgs, "--winmonoroot=$monoroot";
 
+# In some cases the file gets windowsified, to prevent issues in these cases, dos2unix the shell wrapper script before we run it
+print ">>> Calling $cygwinRootWindows\\bin\\dos2unix.exe $monoroot/external/buildscripts/build_win_wrapper.sh";
+system("$cygwinRootWindows\\bin\\dos2unix.exe", "$monoroot/external/buildscripts/build_win_wrapper.sh") eq 0 or die("failed building mono\n");
+
 print ">>> Calling $cygwinRootWindows\\bin\\sh.exe with @passAlongArgs";
 system("$cygwinRootWindows\\bin\\sh.exe", "$monoroot/external/buildscripts/build_win_wrapper.sh", @passAlongArgs) eq 0 or die("failed building mono\n");
