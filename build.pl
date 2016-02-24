@@ -395,6 +395,8 @@ if ($artifact)
 
 	if ($artifactsCommon)
 	{
+		print(">>> Creating common artifacts...\n");
+		
 		if (!(-d "$distdir"))
 		{
 			system("mkdir -p $distdir") eq 0 or die("failed to make directory $distdir\n");
