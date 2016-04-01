@@ -19,6 +19,7 @@ my $lib = "$monodistro/lib";
 my $libmono = "$lib/mono";
 my $monoprefix = "$root/tmp/monoprefix";
 my $buildscriptsdir = "$root/external/buildscripts";
+my $monobuilddepsdir = "$root/external/mono-build-deps";
 my $unityPath = "$root/../../unity/build";
 my $xcodePath = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform';
 
@@ -167,8 +168,8 @@ system("cp -r $monoprefix/lib/mono/xbuild-frameworks $monodistro/lib/mono") eq 0
 
 # Fake support for unity and unity_web until we move completely to 4.0
 system("rm -rf $monodistro/lib/mono/unity $monodistro/lib/mono/unity_web");
-system("cp -R $monodistro/lib/mono/2.0 $monodistro/lib/mono/unity");
-system("cp -R $monodistro/lib/mono/2.0 $monodistro/lib/mono/unity_web");
+system("cp -R $monobuilddepsdir/reference-assemblies/unity $monodistro/lib/mono/unity");
+system("cp -R $monobuilddepsdir/reference-assemblies/unity_web $monodistro/lib/mono/unity_web");
 
 sub CopyIgnoringHiddenFiles
 {
