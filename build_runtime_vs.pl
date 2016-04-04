@@ -37,6 +37,11 @@ sub CompileVCProj
 	my $sln = shift(@_);
 	
 	my $msbuild = $ENV{"ProgramFiles(x86)"}."/MSBuild/$msBuildVersion/Bin/MSBuild.exe";
+
+	if (!(-f "$msbuild"))
+	{
+		$msbuild = $ENV{"ProgramFiles(x86)"}."/MSBuild/12.0/Bin/MSBuild.exe";
+	}
 	
 	my $config = $debug ? "Debug" : "Release";
 	my $arch = $arch32 ? "Win32" : "x64";
