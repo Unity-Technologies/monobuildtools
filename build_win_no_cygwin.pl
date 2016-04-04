@@ -27,18 +27,11 @@ my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
 my $build=0;
 my $clean=0;
-my $test=0;
 my $artifact=0;
 my $debug=0;
-my $disableMcs=0;
-my $artifactsCommon=0;
-my $runRuntimeTests=1;
-my $runClasslibTests=1;
 my $checkoutOnTheFly=0;
 my $forceDefaultBuildDeps=0;
 my $existingMonoRootPath = '';
-my $unityRoot = '';
-my $sdk = '';
 my $arch32 = 0;
 my $winPerl = "perl";
 my $winMonoRoot = $monoroot;
@@ -50,20 +43,10 @@ print(">>> Build All Args = @ARGV\n");
 GetOptions(
 	'build=i'=>\$build,
 	'clean=i'=>\$clean,
-	'test=i'=>\$test,
 	'artifact=i'=>\$artifact,
-	'artifactscommon=i'=>\$artifactsCommon,
 	'debug=i'=>\$debug,
-	'disablemcs=i'=>\$disableMcs,
-	'buildusandboo=i'=>\$buildUsAndBoo,
-	'runtimetests=i'=>\$runRuntimeTests,
-	'classlibtests=i'=>\$runClasslibTests,
 	'arch32=i'=>\$arch32,
-	'jobs=i'=>\$jobs,
-	'sdk=s'=>\$sdk,
 	'existingmono=s'=>\$existingMonoRootPath,
-	'unityroot=s'=>\$unityRoot,
-	'skipmonomake=i'=>\$skipMonoMake,
 	'winperl=s'=>\$winPerl,
 	'winmonoroot=s'=>\$winMonoRoot,
 	'msbuildversion=s'=>\$msBuildVersion,
