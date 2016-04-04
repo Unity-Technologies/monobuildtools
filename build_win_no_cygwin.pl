@@ -63,6 +63,21 @@ chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
 print(">>> Mono Revision = $monoRevision\n");
 print(">>> Build Scripts Revision = $buildScriptsRevision\n");
 
+# Do any settings agnostic per-platform stuff
+my $externalBuildDeps = "";
+
+if ($buildDeps ne "" && not $forceDefaultBuildDeps)
+{
+	$externalBuildDeps = $buildDeps;
+}
+else
+{
+	$externalBuildDeps = "$monoroot/external/mono-build-deps";
+}
+
+my $existingExternalMonoRoot = "$externalBuildDeps\\mono";
+my $existingExternalMono = "$existingExternalMonoRoot\\win";
+
 if ($clean)
 {
 	print(">>> Cleaning $monoprefix\n");
@@ -73,6 +88,53 @@ if ($clean)
 
 if ($build)
 {
+	if ($existingMonoRootPath eq "")
+	{
+		print(">>> No existing mono supplied.  Checking for external...\n");
+		
+		if (!(-d "$externalBuildDeps"))
+		{
+			if ($checkoutOnTheFly)
+			{
+				# Check out on the fly
+				print(">>> Checking out mono build dependencies to : $externalBuildDeps\n");
+				my $repo = "https://ono.unity3d.com/unity-extra/mono-build-deps";
+				print(">>> Cloning $repo at $externalBuildDeps\n");
+				system("hg", "clone", $repo, "$externalBuildDeps") eq 0 or die("failed to checkout mono build dependencies\n");
+			}
+		}
+		
+		if (-d "$existingExternalMono")
+		{
+			print(">>> External mono found at : $existingExternalMono\n");
+			
+			if (-d "$existingExternalMono/builds")
+			{
+				print(">>> Mono already extracted at : $existingExternalMono/builds\n");
+			}
+			
+			if (!(-d "$existingExternalMono/builds"))
+			{
+				# We need to extract builds.zip
+				print(">>> Extracting mono builds.zip...\n");
+				my $SevenZip = "$externalBuildDeps/7z/win64/7za.exe";
+				print(">>> Using 7z : $SevenZip\n");
+				system("$SevenZip", "x", "$existingExternalMono/builds.zip", "-o$existingExternalMono") eq 0 or die("Failed extracting mono builds.zip\n");
+			}
+			
+			$existingMonoRootPath = "$existingExternalMono/builds";
+		}
+		else
+		{
+			print(">>> No external mono found.  Trusting a new enough mono is in your PATH.\n");
+		}
+	}
+	
+	if ($existingMonoRootPath ne "" && !(-d $existingMonoRootPath))
+	{
+		die("Existing mono not found at : $existingMonoRootPath\n");
+	}
+
 	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS\n');
 
 	if (!(-d "$monoprefix\\bin"))
