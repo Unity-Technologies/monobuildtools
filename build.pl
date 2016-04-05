@@ -424,6 +424,9 @@ if ($artifact)
 		system("cp -r $monoprefix/lib/mono/gac $distdirlibmono") eq 0 or die("failed copying gac\n");
 		system("cp -r $monoprefix/lib/mono/xbuild-frameworks $distdirlibmono") eq 0 or die("failed copying xbuild-frameworks\n");
 
+		system("cp -R $externalBuildDeps/reference-assemblies/unity $distdirlibmono/unity");
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity_web $distdirlibmono/unity_web");
+
 		# now remove nunit from a couple places (but not all, we need some of them)
 		system("rm -rf $distdirlibmono/2.0/nunit*");
 		system("rm -rf $distdirlibmono/gac/nunit*");
