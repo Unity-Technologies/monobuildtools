@@ -82,6 +82,9 @@ if ($clean)
 {
 	print(">>> Cleaning $monoprefix\n");
 	rmtree($monoprefix);
+
+	print(">>> Cleaning $buildsroot\n");
+	rmtree($buildsroot);
 }
 
 # *******************  Build Stage  **************************
@@ -191,9 +194,30 @@ if ($artifact)
 		print(">>> Cleaning $distDirArchBin\n");
 		rmtree($distDirArchBin);
 	}
+
+	if (!(-d "$buildsroot"))
+	{
+		print(">>> Creating directory $buildsroot\n");
+		system("mkdir $buildsroot") eq 0 or die("failed to create directory $buildsroot\n");
+	}
+
+	if (!(-d "$embedDirRoot"))
+	{
+		print(">>> Creating directory $embedDirRoot\n");
+		system("mkdir $embedDirRoot") eq 0 or die("failed to create directory $embedDirRoot\n");
+	}
+
+	if (!(-d "$distdir"))
+	{
+		print(">>> Creating directory $distdir\n");
+		system("mkdir $distdir") eq 0 or die("failed to create directory $distdir\n");
+	}
 	
-	system("mkdir $embedDirArchDestination");
-	system("mkdir $distDirArchBin");
+	print(">>> Creating directory $embedDirArchDestination\n");
+	system("mkdir $embedDirArchDestination") eq 0 or die("failed to create directory $embedDirArchDestination\n");
+
+	print(">>> Creating directory $distDirArchBin\n");
+	system("mkdir $distDirArchBin") eq 0 or die("failed to create directory $distDirArchBin\n");
 	
 	# embedruntimes directory setup
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
