@@ -137,10 +137,22 @@ if ($build)
 
 	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS\n');
 
-	if (!(-d "$monoprefix\\bin"))
+	if (!(-d "$monoroot\\tmp"))
+	{
+		print(">>> Creating directory $monoroot\\tmp\n");
+		system("mkdir $monoroot\\tmp") eq 0 or die ("failing creating $monoroot\\tmp\n");;
+	}
+
+	if (!(-d "$monoprefix"))
 	{
 		print(">>> Creating directory $monoprefix\n");
-		system("mkdir $monoprefix\\bin");
+		system("mkdir $monoprefix") eq 0 or die ("failing creating $monoprefix\n");;
+	}
+
+	if (!(-d "$monoprefix\\bin"))
+	{
+		print(">>> Creating directory $monoprefix\\bin\n");
+		system("mkdir $monoprefix\\bin") eq 0 or die ("failing creating $monoprefix\\bin\n");;
 	}
 
 	# Copy over the VS built stuff that we want to use instead into the prefix directory
