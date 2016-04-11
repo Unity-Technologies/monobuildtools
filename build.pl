@@ -396,6 +396,7 @@ if ($artifact)
 	if ($artifactsCommon)
 	{
 		print(">>> Creating common artifacts...\n");
+		print(">>> distribution directory = $distdir\n");
 		
 		if (!(-d "$distdir"))
 		{
