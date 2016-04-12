@@ -440,7 +440,7 @@ if ($artifact)
 		print(">>> Creating ZippedClasslibs.tar.gz\n");
 		print(">>> Changing directory to : $buildsroot\n");
 		chdir("$buildsroot");
-		system("tar -hpczf $monoroot/ZippedClasslibs.tar.gz $monoroot/builds/*") eq 0 or die("Failed to zip up classlibs\n");
+		system("tar -hpczf ../ZippedClasslibs.tar.gz *") eq 0 or die("Failed to zip up classlibs\n");
 		print(">>> Changing directory back to : $currentdir\n");
 		chdir("$currentdir");
 	}
