@@ -369,7 +369,6 @@ if ($build)
 		system("cp $monoroot/msvc/$archNameForBuild/bin/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
 		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
 		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
-		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.ilk $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.ilk\n");
 	}
 	
 	system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");

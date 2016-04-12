@@ -223,7 +223,6 @@ if ($artifact)
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
 	copy("$monoprefix/bin/mono-2.0.dll", "$embedDirArchDestination/mono-2.0.dll") or die ("failed copying mono-2.0.dll\n");
 	copy("$monoprefix/bin/mono-2.0.pdb", "$embedDirArchDestination/mono-2.0.pdb") or die ("failed copying mono-2.0.pdb\n");
-	copy("$monoprefix/bin/mono-2.0.ilk", "$embedDirArchDestination/mono-2.0.ilk") or die ("failed copying mono-2.0.ilk\n");
 	
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
