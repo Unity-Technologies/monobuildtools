@@ -321,6 +321,9 @@ if ($build)
 	}
 	else
 	{
+		# Fixes a line ending issue that happens on windows when we try to run autogen.sh
+		$ENV{'SHELLOPTS'} = "igncr";
+			
 		push @configureparams, "--host=$monoHostArch-pc-mingw32";
 	}
 
