@@ -160,10 +160,11 @@ if ($build)
 
 	# Copy over the VS built stuff that we want to use instead into the prefix directory
 	my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
-	copy("$monoroot/msvc/$archNameForBuild/bin/mono.exe", "$monoprefix/bin/.") or die ("failed copying mono.exe\n");
-	copy("$monoroot/msvc/$archNameForBuild/bin/mono-2.0.dll", "$monoprefix/bin/.") or die ("failed copying mono-2.0.dll\n");
-	copy("$monoroot/msvc/$archNameForBuild/bin/mono-2.0.pdb", "$monoprefix/bin/.") or die ("failed copying mono-2.0.pdb\n");
-	copy("$monoroot/msvc/$archNameForBuild/bin/mono-2.0.ilk", "$monoprefix/bin/.") or die ("failed copying mono-2.0.ilk\n");
+	my $configDirName = $debug ? "Debug" : "Release";
+	copy("$monoroot/msvc/$archNameForBuild/bin/$configDirName/mono.exe", "$monoprefix/bin/.") or die ("failed copying mono.exe\n");
+	copy("$monoroot/msvc/$archNameForBuild/bin/$configDirName/mono-2.0.dll", "$monoprefix/bin/.") or die ("failed copying mono-2.0.dll\n");
+	copy("$monoroot/msvc/$archNameForBuild/bin/$configDirName/mono-2.0.pdb", "$monoprefix/bin/.") or die ("failed copying mono-2.0.pdb\n");
+	copy("$monoroot/msvc/$archNameForBuild/bin/$configDirName/mono-2.0.ilk", "$monoprefix/bin/.") or die ("failed copying mono-2.0.ilk\n");
 
 	system("xcopy /y /f $addtoresultsdistdir\\bin\\*.* $monoprefix\\bin\\") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 }
