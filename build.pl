@@ -410,22 +410,10 @@ if ($artifact)
 		$File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
 
 		my $distdirlibmono = "$distdir/lib/mono";
-		my @profiles = ("2.0","3.5","4.0","4.5");
-		system("mkdir -p $distdirlibmono");
-		for my $profile (@profiles)
-		{
-			system("mkdir -p $distdirlibmono");
-			system("cp -r $monoprefix/lib/mono/$profile $distdirlibmono");
-			if ($buildMachine)
-			{
-				system("rm -f $distdirlibmono/$profile/*.mdb");
-			}
-		}
+		system("cp -r $monoprefix/lib/mono $distdir/lib");
 		
 		system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder\n");
 		system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder\n");
-		system("cp -r $monoprefix/lib/mono/gac $distdirlibmono") eq 0 or die("failed copying gac\n");
-		system("cp -r $monoprefix/lib/mono/xbuild-frameworks $distdirlibmono") eq 0 or die("failed copying xbuild-frameworks\n");
 
 		system("cp -R $externalBuildDeps/reference-assemblies/unity $distdirlibmono/unity");
  		system("cp -R $externalBuildDeps/reference-assemblies/unity_web $distdirlibmono/unity_web");
