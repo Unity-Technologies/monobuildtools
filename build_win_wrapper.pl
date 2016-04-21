@@ -79,14 +79,20 @@ else
 	
 	if (!(-d "$externalBuildDeps"))
 	{
-		if ($checkoutOnTheFly)
+		if (not $checkoutonthefly && $cygwinRootWindows eq "")
 		{
-			# Check out on the fly
-			$externalBuildDeps = "$monoroot/external/mono-build-deps";
-			print(">>> Checking out mono build dependencies to : $externalBuildDeps\n");
-			my $repo = "https://ono.unity3d.com/unity-extra/mono-build-deps";
-			print(">>> Cloning $repo at $externalBuildDeps\n");
-			system("hg", "clone", $repo, "$externalBuildDeps") eq 0 or die("failed to checkout mono build dependencies\n");
+			print(">>> No external build deps found and --cygwin not used.  Might as well try to check them out.  If the checkout fails, we'll continue, but the build will probably fail\n");
+		}
+
+		# Check out on the fly
+		print(">>> Checking out mono build dependencies to : $externalBuildDeps\n");
+		my $repo = "https://ono.unity3d.com/unity-extra/mono-build-deps";
+		print(">>> Cloning $repo at $externalBuildDeps\n");
+		my $checkoutResult = system("hg", "clone", $repo, "$externalBuildDeps");
+
+		if ($checkoutOnTheFly && $checkoutResult ne 0)
+		{
+			die("failed to checkout mono build dependencies\n");
 		}
 	}
 }
