@@ -297,6 +297,11 @@ if ($build)
 			$sdkPath = "$xcodePath/Developer/SDKs/MacOSX$sdkversion.sdk";
 			$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -mmacosx-version-min=$macversion -isysroot $sdkPath";
 		}
+
+		if ($externalBuildDeps ne "")
+		{
+			$ENV{PATH} = "$externalBuildDeps/autoconf/bin:$externalBuildDeps/libtool/bin:$externalBuildDeps/automake/bin:$ENV{PATH}";
+		}
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -Os" if not $debug; #optimize for size
@@ -342,6 +347,10 @@ if ($build)
 	system("which", "mcs");
 	system("mcs", "--version");
 	print("\n");
+
+	system("which", "autoconf");
+	system("which", "automake");
+	system("which", "glibtool");
 	
 	chdir("$monoroot") eq 1 or die ("failed to chdir 2");
 	
