@@ -301,6 +301,9 @@ if ($build)
 		if ($externalBuildDeps ne "")
 		{
 			$ENV{PATH} = "$externalBuildDeps/autoconf/bin:$externalBuildDeps/libtool/bin:$externalBuildDeps/automake/bin:$ENV{PATH}";
+
+			$ENV{'LIBTOOLIZE'} = "$externalBuildDeps/libtool/bin/glibtoolize";
+			$ENV{'LIBTOOL'} = "$externalBuildDeps/libtool/bin/glibtool";
 		}
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
@@ -361,9 +364,6 @@ if ($build)
 	system("which", "glibtoolize");
 	system("glibtoolize", "--version");
 	print("\n");
-
-	$ENV{'LIBTOOLIZE'} = '$externalBuildDeps/libtool/bin/glibtoolize';
-	$ENV{'LIBTOOL'} = '$externalBuildDeps/libtool/bin/glibtool';
 
 	print ">>> LIBTOOLIZE before Build = $ENV{LIBTOOLIZE}\n";
 	print ">>> LIBTOOL before Build = $ENV{LIBTOOLIZE}\n";
