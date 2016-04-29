@@ -348,9 +348,25 @@ if ($build)
 	system("mcs", "--version");
 	print("\n");
 
+	print ">>> Checking on some tools...\n";
 	system("which", "autoconf");
+	system("autoconf", "--version");
+
 	system("which", "automake");
+	system("automake", "--version");
+
 	system("which", "glibtool");
+	system("glibtool", "--version");
+
+	system("which", "glibtoolize");
+	system("glibtoolize", "--version");
+	print("\n");
+
+	$ENV{'LIBTOOLIZE'} = '$externalBuildDeps/libtool/bin/glibtoolize';
+	$ENV{'LIBTOOL'} = '$externalBuildDeps/libtool/bin/glibtool';
+
+	print ">>> LIBTOOLIZE before Build = $ENV{LIBTOOLIZE}\n";
+	print ">>> LIBTOOL before Build = $ENV{LIBTOOLIZE}\n";
 	
 	chdir("$monoroot") eq 1 or die ("failed to chdir 2");
 	
