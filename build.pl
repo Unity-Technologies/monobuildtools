@@ -308,10 +308,11 @@ if ($build)
 			print "\n";
 			print ">>> Building automake\n";
 			my $automakeVersion = "1.9.6";
-			system("tar xzf $externalBuildDeps/automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
+			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+			system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
 			my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
-			chdir("$externalBuildDeps/automake-$automakeVersion") eq 1 or die ("failed to chdir to automake directory\n");
-			system("./configure --prefix=$externalBuildDeps/automake-$automakeVersion/tmp") eq 0 or die ("failed to configure automake\n");
+			chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
+			system("./configure --prefix=$automakeDir/tmp") eq 0 or die ("failed to configure automake\n");
 			system("make") eq 0 or die ("failed to make automake\n");
 			system("make install") eq 0 or die ("failed to make install automake\n");
 			$ENV{PATH} = "$automakeDir/tmp/bin:$ENV{PATH}";
