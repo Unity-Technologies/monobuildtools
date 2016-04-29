@@ -300,10 +300,22 @@ if ($build)
 
 		if ($externalBuildDeps ne "")
 		{
-			$ENV{PATH} = "$externalBuildDeps/autoconf/bin:$externalBuildDeps/libtool/bin:$externalBuildDeps/automake/bin:$ENV{PATH}";
+			$ENV{PATH} = "$externalBuildDeps/autoconf/bin:$externalBuildDeps/libtool/bin:$ENV{PATH}";
 
 			$ENV{'LIBTOOLIZE'} = "$externalBuildDeps/libtool/bin/glibtoolize";
 			$ENV{'LIBTOOL'} = "$externalBuildDeps/libtool/bin/glibtool";
+
+			print "\n";
+			print ">>> Building automake\n";
+			my $automakeVersion = "1.9.6";
+			system("tar xzf $externalBuildDeps/automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
+			my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
+			chdir("$externalBuildDeps/automake-$automakeVersion") eq 1 or die ("failed to chdir to automake directory\n");
+			system("./configure --prefix=$externalBuildDeps/automake-$automakeVersion/tmp") eq 0 or die ("failed to configure automake\n");
+			system("make") eq 0 or die ("failed to make automake\n");
+			system("make install") eq 0 or die ("failed to make install automake\n");
+			$ENV{PATH} = "$automakeDir/tmp/bin:$ENV{PATH}";
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
@@ -368,7 +380,7 @@ if ($build)
 	print ">>> LIBTOOLIZE before Build = $ENV{LIBTOOLIZE}\n";
 	print ">>> LIBTOOL before Build = $ENV{LIBTOOLIZE}\n";
 	
-	chdir("$monoroot") eq 1 or die ("failed to chdir 2");
+	chdir("$monoroot") eq 1 or die ("failed to chdir 2\n");
 	
 	if (not $skipMonoMake)
 	{
