@@ -303,30 +303,42 @@ if ($build)
 			$ENV{PATH} = "$externalBuildDeps/autoconf/bin:$ENV{PATH}";
 
 			print "\n";
-			print ">>> Building automake and libtool\n";
+			print ">>> Building automake and libtool if needed...\n";
 			my $automakeVersion = "1.15";
 			my $libtoolVersion = "2.4.6";
-			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
-			system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
-			system("tar xzf libtool-$libtoolVersion.tar.gz") eq 0  or die ("failed to extract libtool\n");
-			
 			my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
-			chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
-			system("./configure --prefix=$automakeDir/tmp") eq 0 or die ("failed to configure automake\n");
-			system("make") eq 0 or die ("failed to make automake\n");
-			system("make install") eq 0 or die ("failed to make install automake\n");
-			$ENV{PATH} = "$automakeDir/tmp/bin:$ENV{PATH}";
-
 			my $libtoolDir = "$externalBuildDeps/libtool-$libtoolVersion";
-			chdir("$libtoolDir") eq 1 or die ("failed to chdir to libtool directory\n");
-			system("./configure --prefix=$libtoolDir/tmp") eq 0 or die ("failed to configure libtool\n");
-			system("make") eq 0 or die ("failed to make libtool\n");
-			system("make install") eq 0 or die ("failed to make install libtool\n");
-			$ENV{PATH} = "$libtoolDir/tmp/bin:$ENV{PATH}";
-			$ENV{'LIBTOOLIZE'} = "$libtoolDir/tmp/bin/glibtoolize";
-			$ENV{'LIBTOOL'} = "$libtoolDir/tmp/bin/glibtool";
+
+			if (!(-d "$automakeDir"))
+			{
+				chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+				system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
+
+				chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
+				system("./configure --prefix=$automakeDir/tmp") eq 0 or die ("failed to configure automake\n");
+				system("make") eq 0 or die ("failed to make automake\n");
+				system("make install") eq 0 or die ("failed to make install automake\n");
+				$ENV{PATH} = "$automakeDir/tmp/bin:$ENV{PATH}";
+
+				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+
+			}
+
+			if (!(-d "$libtoolDir"))
+			{
+				chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+				system("tar xzf libtool-$libtoolVersion.tar.gz") eq 0  or die ("failed to extract libtool\n");
 			
-			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+				chdir("$libtoolDir") eq 1 or die ("failed to chdir to libtool directory\n");
+				system("./configure --prefix=$libtoolDir/tmp") eq 0 or die ("failed to configure libtool\n");
+				system("make") eq 0 or die ("failed to make libtool\n");
+				system("make install") eq 0 or die ("failed to make install libtool\n");
+				$ENV{PATH} = "$libtoolDir/tmp/bin:$ENV{PATH}";
+				$ENV{'LIBTOOLIZE'} = "$libtoolDir/tmp/bin/libtoolize";
+				$ENV{'LIBTOOL'} = "$libtoolDir/tmp/bin/libtool";
+
+				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+			}
 		}
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
@@ -381,10 +393,10 @@ if ($build)
 	system("which", "automake");
 	system("automake", "--version");
 
-	system("which", "glibtool");
+	system("which", "libtool");
 	system("glibtool", "--version");
 
-	system("which", "glibtoolize");
+	system("which", "libtoolize");
 	system("glibtoolize", "--version");
 	print("\n");
 
