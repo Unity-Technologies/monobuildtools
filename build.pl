@@ -318,7 +318,6 @@ if ($build)
 				system("./configure --prefix=$automakeDir/tmp") eq 0 or die ("failed to configure automake\n");
 				system("make") eq 0 or die ("failed to make automake\n");
 				system("make install") eq 0 or die ("failed to make install automake\n");
-				$ENV{PATH} = "$automakeDir/tmp/bin:$ENV{PATH}";
 
 				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 
@@ -333,13 +332,15 @@ if ($build)
 				system("./configure --prefix=$libtoolDir/tmp") eq 0 or die ("failed to configure libtool\n");
 				system("make") eq 0 or die ("failed to make libtool\n");
 				system("make install") eq 0 or die ("failed to make install libtool\n");
-				$ENV{PATH} = "$libtoolDir/tmp/bin:$ENV{PATH}";
-				$ENV{'LIBTOOLIZE'} = "$libtoolDir/tmp/bin/libtoolize";
-				$ENV{'LIBTOOL'} = "$libtoolDir/tmp/bin/libtool";
 
 				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 			}
 		}
+
+		$ENV{PATH} = "$automakeDir/tmp/bin:$ENV{PATH}";
+		$ENV{PATH} = "$libtoolDir/tmp/bin:$ENV{PATH}";
+		$ENV{'LIBTOOLIZE'} = "$libtoolDir/tmp/bin/libtoolize";
+		$ENV{'LIBTOOL'} = "$libtoolDir/tmp/bin/libtool";
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -Os" if not $debug; #optimize for size
