@@ -335,12 +335,12 @@ if ($build)
 
 				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 			}
-		}
 
-		$ENV{PATH} = "$automakeDir/tmp/bin:$ENV{PATH}";
-		$ENV{PATH} = "$libtoolDir/tmp/bin:$ENV{PATH}";
-		$ENV{'LIBTOOLIZE'} = "$libtoolDir/tmp/bin/libtoolize";
-		$ENV{'LIBTOOL'} = "$libtoolDir/tmp/bin/libtool";
+			$ENV{PATH} = "$automakeDir/tmp/bin:$ENV{PATH}";
+			$ENV{PATH} = "$libtoolDir/tmp/bin:$ENV{PATH}";
+			$ENV{'LIBTOOLIZE'} = "$libtoolDir/tmp/bin/libtoolize";
+			$ENV{'LIBTOOL'} = "$libtoolDir/tmp/bin/libtool";
+		}
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -Os" if not $debug; #optimize for size
