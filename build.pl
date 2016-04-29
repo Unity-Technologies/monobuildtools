@@ -300,14 +300,29 @@ if ($build)
 
 		if ($externalBuildDeps ne "")
 		{
-			$ENV{PATH} = "$externalBuildDeps/autoconf/bin:$ENV{PATH}";
-
 			print "\n";
-			print ">>> Building automake and libtool if needed...\n";
+			print ">>> Building autoconf, automake, and libtool if needed...\n";
+			my $autoconfVersion = "2.69";
 			my $automakeVersion = "1.15";
 			my $libtoolVersion = "2.4.6";
+			my $autoconfDir = "$externalBuildDeps/autoconf-$autoconfVersion";
 			my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
 			my $libtoolDir = "$externalBuildDeps/libtool-$libtoolVersion";
+
+			if (!(-d "$autoconfDir"))
+			{
+				chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+				system("tar xzf autoconf-$autoconfVersion.tar.gz") eq 0  or die ("failed to extract autoconf\n");
+
+				chdir("$autoconfDir") eq 1 or die ("failed to chdir to autoconf directory\n");
+				system("./configure --prefix=$autoconfDir/tmp") eq 0 or die ("failed to configure autoconf\n");
+				system("make") eq 0 or die ("failed to make autoconf\n");
+				system("make install") eq 0 or die ("failed to make install autoconf\n");
+
+				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+			}
+
+			$ENV{PATH} = "$autoconfDir/tmp/bin:$ENV{PATH}";
 
 			if (!(-d "$automakeDir"))
 			{
