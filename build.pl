@@ -410,14 +410,14 @@ if ($build)
 	system("automake", "--version");
 
 	system("which", "libtool");
-	system("glibtool", "--version");
+	system("libtool", "--version");
 
 	system("which", "libtoolize");
-	system("glibtoolize", "--version");
+	system("libtoolize", "--version");
 	print("\n");
 
 	print ">>> LIBTOOLIZE before Build = $ENV{LIBTOOLIZE}\n";
-	print ">>> LIBTOOL before Build = $ENV{LIBTOOLIZE}\n";
+	print ">>> LIBTOOL before Build = $ENV{LIBTOOL}\n";
 	
 	chdir("$monoroot") eq 1 or die ("failed to chdir 2\n");
 	
