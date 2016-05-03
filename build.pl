@@ -308,6 +308,9 @@ if ($build)
 			my $autoconfDir = "$externalBuildDeps/autoconf-$autoconfVersion";
 			my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
 			my $libtoolDir = "$externalBuildDeps/libtool-$libtoolVersion";
+			my $builtToolsDir = "$externalBuildDeps/built-tools"
+
+			$ENV{PATH} = "$builtToolsDir/bin:$ENV{PATH}";
 
 			if (!(-d "$autoconfDir"))
 			{
@@ -315,14 +318,12 @@ if ($build)
 				system("tar xzf autoconf-$autoconfVersion.tar.gz") eq 0  or die ("failed to extract autoconf\n");
 
 				chdir("$autoconfDir") eq 1 or die ("failed to chdir to autoconf directory\n");
-				system("./configure --prefix=$autoconfDir/tmp") eq 0 or die ("failed to configure autoconf\n");
+				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure autoconf\n");
 				system("make") eq 0 or die ("failed to make autoconf\n");
 				system("make install") eq 0 or die ("failed to make install autoconf\n");
 
 				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 			}
-
-			$ENV{PATH} = "$autoconfDir/tmp/bin:$ENV{PATH}";
 
 			if (!(-d "$automakeDir"))
 			{
@@ -330,7 +331,7 @@ if ($build)
 				system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
 
 				chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
-				system("./configure --prefix=$automakeDir/tmp") eq 0 or die ("failed to configure automake\n");
+				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
 				system("make") eq 0 or die ("failed to make automake\n");
 				system("make install") eq 0 or die ("failed to make install automake\n");
 
@@ -344,17 +345,15 @@ if ($build)
 				system("tar xzf libtool-$libtoolVersion.tar.gz") eq 0  or die ("failed to extract libtool\n");
 			
 				chdir("$libtoolDir") eq 1 or die ("failed to chdir to libtool directory\n");
-				system("./configure --prefix=$libtoolDir/tmp") eq 0 or die ("failed to configure libtool\n");
+				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure libtool\n");
 				system("make") eq 0 or die ("failed to make libtool\n");
 				system("make install") eq 0 or die ("failed to make install libtool\n");
 
 				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 			}
 
-			$ENV{PATH} = "$automakeDir/tmp/bin:$ENV{PATH}";
-			$ENV{PATH} = "$libtoolDir/tmp/bin:$ENV{PATH}";
-			$ENV{'LIBTOOLIZE'} = "$libtoolDir/tmp/bin/libtoolize";
-			$ENV{'LIBTOOL'} = "$libtoolDir/tmp/bin/libtool";
+			$ENV{'LIBTOOLIZE'} = "$builtToolsDir/bin/libtoolize";
+			$ENV{'LIBTOOL'} = "$builtToolsDir/bin/libtool";
 		}
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
