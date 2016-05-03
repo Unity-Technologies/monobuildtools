@@ -15,7 +15,6 @@ my $monoroot = abs_path($monoroot);
 
 my $buildscriptsdir = "$monoroot/external/buildscripts";
 my $addtoresultsdistdir = "$buildscriptsdir/add_to_build_results/monodistribution";
-my $monoprefix = "$monoroot/tmp/monoprefix";
 my $buildsroot = "$monoroot/builds";
 my $distdir = "$buildsroot/monodistribution";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
@@ -142,6 +141,15 @@ else
 
 print(">>> Existing Mono = $existingMonoRootPath\n");
 print(">>> Mono Arch = $monoHostArch\n");
+
+# From Massi: I was getting failures in install_name_tool about space
+# for the commands being too small, and adding here things like
+# $ENV{LDFLAGS} = '-headerpad_max_install_names' and
+# $ENV{LDFLAGS} = '-headerpad=0x40000' did not help at all (and also
+# adding them to our final gcc invocation to make the bundle).
+# Lucas noticed that I was lacking a Mono prefix, and having a long
+# one would give us space, so here is this silly looong prefix.
+my $monoprefix = "$monoroot/tmp/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting";
 
 if ($build)
 {
