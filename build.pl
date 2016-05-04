@@ -110,6 +110,7 @@ else
 my $existingExternalMonoRoot = "$externalBuildDeps/mono";
 my $existingExternalMono = "";
 my $monoHostArch = "";
+my $monoprefix = "$monoroot/tmp";
 if($^O eq "linux")
 {
 	$monoHostArch = $arch32 ? "i686" : "x86_64";
@@ -119,6 +120,15 @@ elsif($^O eq 'darwin')
 {
 	$monoHostArch = $arch32 ? "i386" : "x86_64";
 	$existingExternalMono = "$existingExternalMonoRoot/osx";
+
+	# From Massi: I was getting failures in install_name_tool about space
+	# for the commands being too small, and adding here things like
+	# $ENV{LDFLAGS} = '-headerpad_max_install_names' and
+	# $ENV{LDFLAGS} = '-headerpad=0x40000' did not help at all (and also
+	# adding them to our final gcc invocation to make the bundle).
+	# Lucas noticed that I was lacking a Mono prefix, and having a long
+	# one would give us space, so here is this silly looong prefix.
+	$monoprefix = "$monoroot/tmp/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting";
 }
 else
 {
@@ -141,15 +151,6 @@ else
 
 print(">>> Existing Mono = $existingMonoRootPath\n");
 print(">>> Mono Arch = $monoHostArch\n");
-
-# From Massi: I was getting failures in install_name_tool about space
-# for the commands being too small, and adding here things like
-# $ENV{LDFLAGS} = '-headerpad_max_install_names' and
-# $ENV{LDFLAGS} = '-headerpad=0x40000' did not help at all (and also
-# adding them to our final gcc invocation to make the bundle).
-# Lucas noticed that I was lacking a Mono prefix, and having a long
-# one would give us space, so here is this silly looong prefix.
-my $monoprefix = "$monoroot/tmp/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting";
 
 if ($build)
 {
@@ -458,9 +459,10 @@ if ($build)
 		
 		# Copy over the VS built stuff that we want to use instead into the prefix directory
 		my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
-		system("cp $monoroot/msvc/$archNameForBuild/bin/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
-		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
-		system("cp $monoroot/msvc/$archNameForBuild/bin/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
+		my $config = $debug ? "Debug" : "Release";
+		system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
+		system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
+		system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
 	}
 	
 	system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
