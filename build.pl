@@ -582,7 +582,6 @@ if ($artifact)
 		# embedruntimes directory setup
 		system("cp", "$monoprefix/bin/mono-2.0.dll", "$embedDirArchDestination/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
 		system("cp", "$monoprefix/bin/mono-2.0.pdb", "$embedDirArchDestination/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
-		system("cp", "$monoprefix/bin/mono-2.0.ilk", "$embedDirArchDestination/mono-2.0.ilk") eq 0 or die ("failed copying mono-2.0.ilk\n");
 	}
 	
 	# monodistribution directory setup
