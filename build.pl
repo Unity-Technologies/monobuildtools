@@ -44,7 +44,6 @@ my $runClasslibTests=1;
 my $checkoutOnTheFly=0;
 my $forceDefaultBuildDeps=0;
 my $existingMonoRootPath = '';
-my $unityRoot = '';
 my $sdk = '';
 my $arch32 = 0;
 my $winPerl = "";
@@ -72,7 +71,6 @@ GetOptions(
 	'jobs=i'=>\$jobs,
 	'sdk=s'=>\$sdk,
 	'existingmono=s'=>\$existingMonoRootPath,
-	'unityroot=s'=>\$unityRoot,
 	'skipmonomake=i'=>\$skipMonoMake,
 	'winperl=s'=>\$winPerl,
 	'winmonoroot=s'=>\$winMonoRoot,
@@ -265,47 +263,24 @@ if ($build)
 		
 		$mcs = "EXTERNAL_MCS=$existingMonoRootPath/bin/mcs";
 		
-		my $sdkPath = '';
 		if ($sdk eq '')
 		{
 			$sdk='10.11';
 		}
 		
-		my $xcodePath = '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform';
 		my $macversion = '10.8';
-		
-		if ($buildMachine)
-		{
-			if ($unityRoot eq "")
-			{
-				$unityRoot = abs_path("$monoroot/../../unity/build");
-			}
-			
-			if (!(-d "$unityRoot"))
-			{
-				die("Could not fine Unity at : $unityRoot , match expected structure or use --unityroot=<path>\n");
-			}
-			
-			# Set up clang toolchain
-			$sdkPath = "$unityRoot/External/MacBuildEnvironment/builds/MacOSX$sdk.sdk";
-			if (! -d $sdkPath)
-			{
-				print("Unzipping mac build toolchain\n");
-				system("cd $unityRoot; ./jam EditorZips; cd $currentdir");
-			}
-			$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
-			$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
 
-			$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$unityRoot/External/MacBuildEnvironment/builds/usr/include -mmacosx-version-min=$macversion -isysroot $sdkPath";
-		}
-		else
+		my $macBuildEnvDir = "$externalBuildDeps/MacBuildEnvironment";
+		my $sdkPath = "$macBuildEnvDir/builds/MacOSX$sdk.sdk";
+		if (! -d $sdkPath)
 		{
-			$ENV{'CC'} = "clang";
-			$ENV{'CXX'} = "clang++";
-			
-			$sdkPath = "$xcodePath/Developer/SDKs/MacOSX$sdkversion.sdk";
-			$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -mmacosx-version-min=$macversion -isysroot $sdkPath";
+			print("Unzipping mac build toolchain\n");
+			system('unzip', '-qd', "$macBuildEnvDir", "$macBuildEnvDir/builds.zip");
 		}
+
+		$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
+		$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
+		$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$macBuildEnvDir/builds/usr/include -mmacosx-version-min=$macversion -isysroot $sdkPath";
 
 		if ($externalBuildDeps ne "")
 		{
