@@ -17,8 +17,6 @@ my $monoprefix = "$monoroot/tmp/monoprefix";
 my $buildsroot = "$monoroot/builds";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
-#my $msBuildVersion = "14.0";
-
 GetOptions(
 	'monoprefix=s'=>\$monoprefix,
 ) or die ("illegal cmdline options");
@@ -35,16 +33,8 @@ BuildUnityScriptFor45();
 
 sub XBuild
 {
-	# if($^O eq "MSWin32")
-	# {
-	# 	my $msbuild = $ENV{"ProgramFiles(x86)"}."/MSBuild/$msBuildVersion/Bin/MSBuild.exe";
-	# 	system("$msbuild", @_) eq 0 or die("Failed to msbuild @_\n");
-	# }
-	# else
-	# {
 	print(">>> Running : $monoprefix/bin/xbuild @_\n");
 	system("$monoprefix/bin/xbuild", @_) eq 0 or die("Failed to xbuild @_\n");
-	# }
 }
 
 sub Booc45
