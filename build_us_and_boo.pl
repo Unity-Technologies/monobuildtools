@@ -16,10 +16,15 @@ my $buildscriptsdir = "$monoroot/external/buildscripts";
 my $monoprefix = "$monoroot/tmp/monoprefix";
 my $buildsroot = "$monoroot/builds";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
-my $xbuildPath = "$monoprefix/bin/xbuild";
 
-my $monoprefix45 = "$monoprefix/lib/mono/4.5";
 #my $msBuildVersion = "14.0";
+
+GetOptions(
+	'monoprefix=s'=>\$monoprefix,
+) or die ("illegal cmdline options");
+
+my $xbuildPath = "$monoprefix/bin/xbuild";
+my $monoprefix45 = "$monoprefix/lib/mono/4.5";
 
 if (!(-f "$xbuildPath"))
 {

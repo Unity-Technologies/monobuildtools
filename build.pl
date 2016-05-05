@@ -450,7 +450,7 @@ else
 if ($buildUsAndBoo)
 {
 	print(">>> Building Unity Script and Boo...\n");
-	system("perl", "$buildscriptsdir/build_us_and_boo.pl") eq 0 or die ("Failed builidng Unity Script and Boo\n");
+	system("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix") eq 0 or die ("Failed builidng Unity Script and Boo\n");
 }
 else
 {
@@ -483,6 +483,12 @@ if ($artifact)
 
 		system("cp -R $externalBuildDeps/reference-assemblies/unity $distdirlibmono/unity");
  		system("cp -R $externalBuildDeps/reference-assemblies/unity_web $distdirlibmono/unity_web");
+
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/2.0-api");
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/2.0-api");
+
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.0-api");
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.0-api");
 
 		# now remove nunit from a couple places (but not all, we need some of them)
 		system("rm -rf $distdirlibmono/2.0/nunit*");
