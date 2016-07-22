@@ -24,7 +24,7 @@ my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 if ($^O eq "MSWin32")
 {
 	print(">>> build.pl called from Windows.  Switching over to cygwin\n");
-	system("$buildscriptsdir/build_win_wrapper.pl", @ARGV) eq 0 or die("\n");
+	system("perl", "$buildscriptsdir/build_win_wrapper.pl", @ARGV) eq 0 or die("\n");
 	exit 0;
 }
 
