@@ -478,7 +478,13 @@ if ($artifact)
 		my $distdirlibmono = "$distdir/lib/mono";
 		system("cp -r $monoprefix/lib/mono $distdir/lib");
 		
-		system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder\n");
+		if($^O ne 'darwin')
+		{
+			# On OSX we build a universal binary for 32-bit and 64-bit in the mono executable. The class library build
+			# only creates the 64-bit slice, so we don't want to end up with a single slice binary in the output.
+			# If we do, it will step on the universal binary produced but the OSX runtime build.
+			system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder\n");
+		}
 		system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder\n");
 
 		system("cp -R $externalBuildDeps/reference-assemblies/unity $distdirlibmono/unity");
