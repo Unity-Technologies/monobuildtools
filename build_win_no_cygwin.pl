@@ -72,7 +72,7 @@ if ($buildDeps ne "" && not $forceDefaultBuildDeps)
 }
 else
 {
-	$externalBuildDeps = "$monoroot/external/mono-build-deps";
+	$externalBuildDeps = "$monoroot/../../mono-build-deps/build";
 }
 
 my $existingExternalMonoRoot = "$externalBuildDeps\\mono";
