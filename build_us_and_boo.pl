@@ -46,7 +46,7 @@ sub Booc45
 
 sub BuildUnityScriptFor45
 {
-	my $booCheckout = "$monoroot/external/boo";
+	my $booCheckout = "$monoroot/../../boo/build";
 	print(">>> Using mono prefix $monoprefix45\n");
 	
 	# Build host is handling this
@@ -59,7 +59,7 @@ sub BuildUnityScriptFor45
 		}
 	}
 	
-	my $usCheckout = "$monoroot/external/unityscript";
+	my $usCheckout = "$monoroot/../../unityscript/build";
 	if (!$buildMachine)
 	{
 		if (!(-d "$usCheckout"))
