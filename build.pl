@@ -554,17 +554,16 @@ if ($artifact)
 	if($^O eq "linux")
 	{
 		print ">>> Copying libmono.so\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmono.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
-
-		print ">>> Copying libmono-static.a\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.a","$embedDirArchDestination/libmono-static.a") eq 0 or die ("failed copying libmonoboehm-2.0.a\n");
+		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
 
 		print ">>> Copying libMonoPosixHelper.so\n";
 		system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so\n");
 		
 		if ($buildMachine)
 		{
-			system("strip $embedDirArchDestination/libmono.so") eq 0 or die("failed to strip libmono (shared)\n");
+			system("strip $embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die("failed to strip libmonoboehm-2.0.so (shared)\n");
+			system("strip $embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die("failed to strip libmonosgen-2.0.so (shared)\n");
 			system("strip $embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die("failed to strip libMonoPosixHelper (shared)\n");
 		}
 	}
