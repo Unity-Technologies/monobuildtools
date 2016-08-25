@@ -490,6 +490,9 @@ if ($artifact)
  		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.0-api");
  		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.0-api");
 
+		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.5-api");
+		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.5-api");
+
 		# now remove nunit from a couple places (but not all, we need some of them)
 		system("rm -rf $distdirlibmono/2.0/nunit*");
 		system("rm -rf $distdirlibmono/gac/nunit*");
