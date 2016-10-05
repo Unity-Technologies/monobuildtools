@@ -162,6 +162,7 @@ if ($build)
 	push @configureparams, "--disable-mcs-build" if($disableMcs);
 	push @configureparams, "--with-glib=embedded";
 	push @configureparams, "--disable-nls";  #this removes the dependency on gettext package
+	push @configureparams, "--disable-btls";  #this removes the dependency on cmake to build btls for now
 	push @configureparams, "--prefix=$monoprefix";
 	push @configureparams, "--with-monotouch=no";
 	push @configureparams, "--with-mcs-docs=no";
