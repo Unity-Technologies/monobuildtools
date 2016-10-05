@@ -17,6 +17,7 @@ my $build = 0;
 my $clean = 0;
 my $arch32 = 0;
 my $debug = 0;
+my $gc = "boehm";
 my $msBuildVersion = "";
 
 GetOptions(
@@ -25,6 +26,7 @@ GetOptions(
 	'arch32=i'=>\$arch32,
 	'debug=i'=>\$debug,
 	'msbuildversion=s'=>\$msBuildVersion,
+	'gc=s'=>\$gc,
 ) or die ("illegal cmdline options");
 
 if ($build)
@@ -41,7 +43,7 @@ sub CompileVCProj
 	my $config = $debug ? "Debug" : "Release";
 	my $arch = $arch32 ? "Win32" : "x64";
 	my $target = $clean ? "/t:Clean,Build" :"/t:Build"; 
-	my $properties = "/p:Configuration=$config;Platform=$arch;MONO_USE_TARGET_SUFFIX=false";
+	my $properties = "/p:Configuration=$config;Platform=$arch;MONO_TARGET_GC=$gc";
 	
 	print ">>> $msbuild $properties $target $sln\n\n";
 	system($msbuild, $properties, $target, $sln) eq 0

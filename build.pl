@@ -102,7 +102,7 @@ if ($buildDeps ne "" && not $forceDefaultBuildDeps)
 }
 else
 {
-	$externalBuildDeps = "$monoroot/external/mono-build-deps";
+	$externalBuildDeps = "$monoroot/../../mono-build-deps/build";
 }
 
 my $existingExternalMonoRoot = "$externalBuildDeps/mono";
@@ -490,6 +490,9 @@ if ($artifact)
  		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.0-api");
  		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.0-api");
 
+		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.5-api");
+		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.5-api");
+
 		# now remove nunit from a couple places (but not all, we need some of them)
 		system("rm -rf $distdirlibmono/2.0/nunit*");
 		system("rm -rf $distdirlibmono/gac/nunit*");
@@ -554,17 +557,16 @@ if ($artifact)
 	if($^O eq "linux")
 	{
 		print ">>> Copying libmono.so\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmono.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
-
-		print ">>> Copying libmono-static.a\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.a","$embedDirArchDestination/libmono-static.a") eq 0 or die ("failed copying libmonoboehm-2.0.a\n");
+		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
 
 		print ">>> Copying libMonoPosixHelper.so\n";
 		system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so\n");
 		
 		if ($buildMachine)
 		{
-			system("strip $embedDirArchDestination/libmono.so") eq 0 or die("failed to strip libmono (shared)\n");
+			system("strip $embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die("failed to strip libmonoboehm-2.0.so (shared)\n");
+			system("strip $embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die("failed to strip libmonosgen-2.0.so (shared)\n");
 			system("strip $embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die("failed to strip libMonoPosixHelper (shared)\n");
 		}
 	}
@@ -572,15 +574,15 @@ if ($artifact)
 	{
 		# embedruntimes directory setup
  		print ">>> Hardlinking libmono.dylib\n";
- 		system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.1.dylib","$embedDirArchDestination/libmono.0.dylib") eq 0 or die ("failed symlinking libmono.0.dylib\n");
 
- 		print ">>> Hardlinking libmono.a\n";
- 		system("ln", "-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.a","$embedDirArchDestination/libmono.a") eq 0 or die ("failed symlinking libmono.a\n");
+		system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.dylib","$embedDirArchDestination/libmonoboehm-2.0.dylib") eq 0 or die ("failed symlinking libmonoboehm-2.0.dylib\n");
+		system("ln","-f", "$monoroot/mono/mini/.libs/libmonosgen-2.0.dylib","$embedDirArchDestination/libmonosgen-2.0.dylib") eq 0 or die ("failed symlinking libmonosgen-2.0.dylib\n");
 		 
 		print "Hardlinking libMonoPosixHelper.dylib\n";
 		system("ln","-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$embedDirArchDestination/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib\n");
 	
-		InstallNameTool("$embedDirArchDestination/libmono.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmono.0.dylib");
+		InstallNameTool("$embedDirArchDestination/libmonoboehm-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonoboehm-2.0.dylib");
+		InstallNameTool("$embedDirArchDestination/libmonosgen-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.dylib");
 		InstallNameTool("$embedDirArchDestination/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libMonoPosixHelper.dylib");
 	}
 	else
