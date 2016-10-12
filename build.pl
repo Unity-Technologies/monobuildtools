@@ -243,8 +243,6 @@ if ($build)
 
 	if ($android)
 	{
-		#system("perl", "$buildscriptsdir/PrepareAndroidSDK.pl", "-ndk=r10e", "-env=envsetup.sh") eq 0 or die("failed to prepare android sdk\n"); 
-		#system("source", "envsetup.sh");
 		my $prepSdk = "";
 		my $prepTools = "";
 		my $prepNdk = "r10e";
