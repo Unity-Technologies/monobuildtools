@@ -5,6 +5,7 @@ use File::Basename;
 use File::Path;
 use lib ('external/buildscripts', "../../Tools/perl_lib","perl_lib", 'external/buildscripts/perl_lib');
 use Tools qw(InstallNameTool);
+use PrepareAndroidSDK;
 
 print ">>> PATH in Build All = $ENV{PATH}\n\n";
 
@@ -50,6 +51,8 @@ my $winPerl = "";
 my $winMonoRoot = "";
 my $msBuildVersion = "14.0";
 my $buildDeps = "";
+my $android=0;
+my $androidArch = "";
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -78,6 +81,8 @@ GetOptions(
 	'checkoutonthefly=i'=>\$checkoutOnTheFly,
 	'builddeps=s'=>\$buildDeps,
 	'forcedefaultbuilddeps=i'=>\$forceDefaultBuildDeps,
+	'android=i'=>\$android,
+	'androidarch=s'=>\$androidArch,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -92,6 +97,18 @@ chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
 
 print(">>> Mono Revision = $monoRevision\n");
 print(">>> Build Scripts Revision = $buildScriptsRevision\n");
+
+my $isDesktopBuild=1;
+if ($android)
+{
+	$isDesktopBuild = 0;
+
+	# Disable building of the class libraries by default when building the android runtime
+	# since we don't care about a class library build in this situation (as of writing this at least)
+	# but only if the test flag is not set.  If the test flag was set, we'd need to build the classlibs 
+	# in order to run the tests
+	$disablemcs = 1 if(!($test));
+}
 
 # Do any settings agnostic per-platform stuff
 my $externalBuildDeps = "";
@@ -157,14 +174,20 @@ if ($build)
 	my $mcs = '';
 	
 	my @configureparams = ();
+
+	# TODO by Mike : Add back.  The android build script was using it
 	#push @configureparams, "--cache-file=$cachefile";
 	
 	push @configureparams, "--disable-mcs-build" if($disableMcs);
 	push @configureparams, "--with-glib=embedded";
 	push @configureparams, "--disable-nls";  #this removes the dependency on gettext package
-	push @configureparams, "--prefix=$monoprefix";
-	push @configureparams, "--with-monotouch=no";
 	push @configureparams, "--with-mcs-docs=no";
+
+	if ($isDesktopBuild)
+	{
+		push @configureparams, "--prefix=$monoprefix";
+		push @configureparams, "--with-monotouch=no";
+	}
 	
 	if ($existingMonoRootPath eq "")
 	{
@@ -217,8 +240,39 @@ if ($build)
 	{
 		die("Existing mono not found at : $existingMonoRootPath\n");
 	}
-	
-	if($^O eq "linux")
+
+	if ($android)
+	{
+		#system("perl", "$buildscriptsdir/PrepareAndroidSDK.pl", "-ndk=r10e", "-env=envsetup.sh") eq 0 or die("failed to prepare android sdk\n"); 
+		#system("source", "envsetup.sh");
+		my $prepSdk = "";
+		my $prepTools = "";
+		my $prepNdk = "r10e";
+		my $prepEnv = "envsetup.sh";
+		
+		$ENV{ANDROID_PLATFORM} = "android-9";
+		$ENV{GCC_PREFIX} = "arm-linux-androideabi-";
+		$ENV{GCC_VERSION} = "4.8";
+
+		print(">>> Android Platform = $ENV{ANDROID_PLATFORM}\n");
+		print(">>> Android NDK Version = $prepNdk\n");
+		print(">>> Android GCC Prefix = $ENV{GCC_PREFIX}\n");
+		print(">>> Android GCC Version = $ENV{GCC_VERSION}\n");
+
+		PrepareAndroidSDK::GetAndroidSDK($prepSdk, $prepTools, $prepNdk, $prepEnv, $externalBuildDeps, $monoroot);
+
+		my $androidNdkRoot = $ENV{ANDROID_NDK_ROOT};
+		my $androidPlatformRoot = "$androidNdkRoot/platforms/$ENV{ANDROID_PLATFORM}/arch-arm";
+		my $androidToolchain = "$androidNdkRoot/toolchains/$ENV{GCC_PREFIX}$ENV{GCC_VERSION}/prebuilt/$ENV{HOST_ENV}";
+
+		print(">>> Android Arch = $androidArch\n");
+		print(">>> Android NDK Root = $androidNdkRoot\n");
+		print(">>> Android Platform Root = $androidPlatformRoot\n");
+		print(">>> Android Toolchain = $androidToolchain\n");
+
+		die("testing");
+	}
+	elsif($^O eq "linux")
 	{
 		push @configureparams, "--host=$monoHostArch-pc-linux-gnu";
 		
