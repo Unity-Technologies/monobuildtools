@@ -126,6 +126,7 @@ my $existingExternalMonoRoot = "$externalBuildDeps/mono";
 my $existingExternalMono = "";
 my $monoHostArch = "";
 my $monoprefix = "$monoroot/tmp";
+my $runningOnWindows=0;
 if($^O eq "linux")
 {
 	$monoHostArch = $arch32 ? "i686" : "x86_64";
@@ -149,6 +150,7 @@ else
 {
 	$monoHostArch = "i686";
 	$existingExternalMono = "$existingExternalMonoRoot/win";
+	$runningOnWindows = 1;
 	
 	# We only care about an existing mono if we need to build.
 	# So only do this path clean up if we are building.
@@ -182,10 +184,10 @@ if ($build)
 	push @configureparams, "--with-glib=embedded";
 	push @configureparams, "--disable-nls";  #this removes the dependency on gettext package
 	push @configureparams, "--with-mcs-docs=no";
+	push @configureparams, "--prefix=$monoprefix";
 
 	if ($isDesktopBuild)
 	{
-		push @configureparams, "--prefix=$monoprefix";
 		push @configureparams, "--with-monotouch=no";
 	}
 	
@@ -241,6 +243,64 @@ if ($build)
 		die("Existing mono not found at : $existingMonoRootPath\n");
 	}
 
+	if ($externalBuildDeps ne "")
+	{
+		print "\n";
+		print ">>> Building autoconf, automake, and libtool if needed...\n";
+		my $autoconfVersion = "2.69";
+		my $automakeVersion = "1.15";
+		my $libtoolVersion = "2.4.6";
+		my $autoconfDir = "$externalBuildDeps/autoconf-$autoconfVersion";
+		my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
+		my $libtoolDir = "$externalBuildDeps/libtool-$libtoolVersion";
+		my $builtToolsDir = "$externalBuildDeps/built-tools";
+
+		$ENV{PATH} = "$builtToolsDir/bin:$ENV{PATH}";
+
+		if (!(-d "$autoconfDir"))
+		{
+			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+			system("tar xzf autoconf-$autoconfVersion.tar.gz") eq 0  or die ("failed to extract autoconf\n");
+
+			chdir("$autoconfDir") eq 1 or die ("failed to chdir to autoconf directory\n");
+			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure autoconf\n");
+			system("make") eq 0 or die ("failed to make autoconf\n");
+			system("make install") eq 0 or die ("failed to make install autoconf\n");
+
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+		}
+
+		if (!(-d "$automakeDir"))
+		{
+			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+			system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
+
+			chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
+			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
+			system("make") eq 0 or die ("failed to make automake\n");
+			system("make install") eq 0 or die ("failed to make install automake\n");
+
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+
+		}
+
+		if (!(-d "$libtoolDir"))
+		{
+			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+			system("tar xzf libtool-$libtoolVersion.tar.gz") eq 0  or die ("failed to extract libtool\n");
+		
+			chdir("$libtoolDir") eq 1 or die ("failed to chdir to libtool directory\n");
+			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure libtool\n");
+			system("make") eq 0 or die ("failed to make libtool\n");
+			system("make install") eq 0 or die ("failed to make install libtool\n");
+
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+		}
+
+		$ENV{'LIBTOOLIZE'} = "$builtToolsDir/bin/libtoolize";
+		$ENV{'LIBTOOL'} = "$builtToolsDir/bin/libtool";
+	}
+
 	if ($android)
 	{
 		my $prepSdk = "";
@@ -252,6 +312,20 @@ if ($build)
 		$ENV{GCC_PREFIX} = "arm-linux-androideabi-";
 		$ENV{GCC_VERSION} = "4.8";
 
+		if ($^O eq "linux")
+		{
+			$ENV{HOST_ENV} = "linux";
+		}
+		elsif ($^O eq 'darwin')
+		{
+			$ENV{HOST_ENV} = "darwin";
+		}
+		else
+		{
+			$ENV{HOST_ENV} = "windows";
+		}
+
+		print "\n";
 		print(">>> Android Platform = $ENV{ANDROID_PLATFORM}\n");
 		print(">>> Android NDK Version = $prepNdk\n");
 		print(">>> Android GCC Prefix = $ENV{GCC_PREFIX}\n");
@@ -263,12 +337,137 @@ if ($build)
 		my $androidPlatformRoot = "$androidNdkRoot/platforms/$ENV{ANDROID_PLATFORM}/arch-arm";
 		my $androidToolchain = "$androidNdkRoot/toolchains/$ENV{GCC_PREFIX}$ENV{GCC_VERSION}/prebuilt/$ENV{HOST_ENV}";
 
+		if (!(-d "$androidToolchain"))
+		{
+			$androidToolchain = "$androidToolchain-x86";
+			if (!(-d "$androidToolchain"))
+			{
+				$androidToolchain = "$androidToolchain_64";
+			}
+		}
+
 		print(">>> Android Arch = $androidArch\n");
 		print(">>> Android NDK Root = $androidNdkRoot\n");
 		print(">>> Android Platform Root = $androidPlatformRoot\n");
 		print(">>> Android Toolchain = $androidToolchain\n");
 
-		die("testing");
+		if (!(-d "$androidToolchain"))
+		{
+			die("Failed to locate android toolchain\n");
+		}
+
+		if (!(-d "$androidPlatformRoot"))
+		{
+			die("Failed to locate android platform root\n");
+		}
+
+		my $kraitPatchPath = "$monoroot/../../android_krait_signal_handler/build";
+
+		if ("$androidArch" eq 'armv5')
+		{
+			$ENV{CFLAGS} = "-DARM_FPU_NONE=1 -march=armv5te -mtune=xscale -msoft-float";
+		}
+		elsif ("$androidArch" eq 'armv6_vfp')
+		{
+			$ENV{CFLAGS} = "-DARM_FPU_VFP=1  -march=armv6 -mtune=xscale -msoft-float -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1";
+		}
+		elsif ("$androidArch" eq 'armv7a')
+		{
+			$ENV{CFLAGS} = "-DARM_FPU_VFP=1  -march=armv7-a                            -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1";
+			$ENV{LDFLAGS} = "-Wl,--fix-cortex-a8";
+		}
+		else
+		{
+			die("Unsupported android arch : $androidArch\n");
+		}
+
+		my $toolChainExtension = "";
+		if ($runningOnWindows)
+		{
+			$toolChainExtension = ".exe";
+
+			$androidPlatformRoot = `cygpath -w $androidPlatformRoot`;
+			$winToolChainExtension = `cygpath -w $toolChainExtension`;
+			# clean up trailing new lines that end up in the output from cygpath.
+			$androidPlatformRoot =~ s/\n+$//;
+			$winToolChainExtension =~ s/\n+$//;
+		}
+
+		$ENV{PATH} = "$androidToolchain/bin:$ENV{PATH}";
+		$ENV{CC} = "$androidToolchain/bin/$ENV{GCC_PREFIX}gcc$toolChainExtension --sysroot=$androidPlatformRoot";
+		$ENV{CXX} = "$androidToolchain/bin/$ENV{GCC_PREFIX}g++$toolChainExtension --sysroot=$androidPlatformRoot";
+		$ENV{CPP} = "$androidToolchain/bin/$ENV{GCC_PREFIX}cpp$toolChainExtension";
+		$ENV{CXXCPP} = "$androidToolchain/bin/$ENV{GCC_PREFIX}cpp$toolChainExtension";
+		$ENV{CPATH} = "$androidPlatformRoot/usr/include";
+		$ENV{LD} = "$winToolChainExtension/bin/$ENV{GCC_PREFIX}ld$toolChainExtension";
+		$ENV{AS} = "$androidToolchain/bin/$ENV{GCC_PREFIX}as$toolChainExtension";
+		$ENV{AR} = "$androidToolchain/bin/$ENV{GCC_PREFIX}ar$toolChainExtension";
+		$ENV{RANLIB} = "$androidToolchain/bin/$ENV{GCC_PREFIX}ranlib$toolChainExtension";
+		$ENV{STRIP} = "$androidToolchain/bin/$ENV{GCC_PREFIX}strip$toolChainExtension";
+
+		$ENV{CFLAGS} = "-DANDROID -DPLATFORM_ANDROID -DLINUX -D__linux__ -DHAVE_USR_INCLUDE_MALLOC_H -DPAGE_SIZE=0x1000 -D_POSIX_PATH_MAX=256 -DS_IWRITE=S_IWUSR -DHAVE_PTHREAD_MUTEX_TIMEDLOCK -fpic -g -funwind-tables -ffunction-sections -fdata-sections $ENV{CFLAGS}";
+		$ENV{CXXFLAGS} = $ENV{CFLAGS};
+		$ENV{CPPFLAGS} = $ENV{CFLAGS};
+
+		$ENV{LDFLAGS} = "-Wl,--wrap,sigaction -Wl,--no-undefined -Wl,--gc-sections -Wl,-rpath-link=$androidPlatformRoot/usr/lib -ldl -lm -llog -lc $ENV{LDFLAGS}";
+
+		print "\n";
+		print ">>> Environment:\n";
+		print ">>> \tCC = $ENV{CC}\n";
+		print ">>> \tCXX = $ENV{CXX}\n";
+		print ">>> \tCPP = $ENV{CPP}\n";
+		print ">>> \tCXXCPP = $ENV{CXXCPP}\n";
+		print ">>> \tCPATH = $ENV{CPATH}\n";
+		print ">>> \tLD = $ENV{LD}\n";
+		print ">>> \tAS = $ENV{AS}\n";
+		print ">>> \tAR = $ENV{AR}\n";
+		print ">>> \tRANLIB = $ENV{RANLIB}\n";
+		print ">>> \tSTRIP = $ENV{STRIP}\n";
+		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+		print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+		print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+
+		#
+		# TODO by Mike : Use this version isntead once krait patch building is implemented
+		#
+		#$ENV{LDFLAGS} = "-Wl,--wrap,sigaction -L$kraitPatchPath/obj/local/armeabi -lkrait-signal-handler -Wl,--no-undefined -Wl,--gc-sections -Wl,-rpath-link=$androidPlatformRoot/usr/lib -ldl -lm -llog -lc";
+
+		#
+		# TODO by Mike : Try to get this building again once all the other env setup is in place.
+		#
+		#my $kraitPatchRepo = "git://github.com/Unity-Technologies/krait-signal-handler.git";
+		#if (-d "$kraitPatchPath")
+		#{
+		#	print ">>> Krait patch repository already cloned"
+		#}
+		#else
+		#{
+		#	system("git", "clone", "--branch", "master", "$kraitPatchRepo", "$kraitPatchPath") eq 0 or die ('failing cloning Krait patch');
+		#}
+
+		#chdir("$kraitPatchPath") eq 1 or die ("failed to chdir to krait patch directory\n");
+		#system("perl", "build.pl") eq 0 or die ('failing to build Krait patch');
+		#chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+
+		if("$androidArch" eq 'armv5')
+		{
+			push @configureparams, "--host=$androidArch-linux-androideabi";
+		}
+		else
+		{
+			die("Unsupported android arch : $androidArch\n");
+		}
+
+		push @configureparams, "--disable-parallel-mark";
+		push @configureparams, "--disable-shared-handles";
+		push @configureparams, "--with-sigaltstack=no";
+		push @configureparams, "--with-tls=pthread";
+		push @configureparams, "--disable-boehm";
+		push @configureparams, "--disable-visibility-hidden";
+		push @configureparams, "mono_cv_uscore=yes";
+
+		die("testing\n");
 	}
 	elsif($^O eq "linux")
 	{
@@ -333,64 +532,6 @@ if ($build)
 		$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
 		$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
 		$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$macBuildEnvDir/builds/usr/include -mmacosx-version-min=$macversion -isysroot $sdkPath";
-
-		if ($externalBuildDeps ne "")
-		{
-			print "\n";
-			print ">>> Building autoconf, automake, and libtool if needed...\n";
-			my $autoconfVersion = "2.69";
-			my $automakeVersion = "1.15";
-			my $libtoolVersion = "2.4.6";
-			my $autoconfDir = "$externalBuildDeps/autoconf-$autoconfVersion";
-			my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
-			my $libtoolDir = "$externalBuildDeps/libtool-$libtoolVersion";
-			my $builtToolsDir = "$externalBuildDeps/built-tools";
-
-			$ENV{PATH} = "$builtToolsDir/bin:$ENV{PATH}";
-
-			if (!(-d "$autoconfDir"))
-			{
-				chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
-				system("tar xzf autoconf-$autoconfVersion.tar.gz") eq 0  or die ("failed to extract autoconf\n");
-
-				chdir("$autoconfDir") eq 1 or die ("failed to chdir to autoconf directory\n");
-				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure autoconf\n");
-				system("make") eq 0 or die ("failed to make autoconf\n");
-				system("make install") eq 0 or die ("failed to make install autoconf\n");
-
-				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
-			}
-
-			if (!(-d "$automakeDir"))
-			{
-				chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
-				system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
-
-				chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
-				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
-				system("make") eq 0 or die ("failed to make automake\n");
-				system("make install") eq 0 or die ("failed to make install automake\n");
-
-				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
-
-			}
-
-			if (!(-d "$libtoolDir"))
-			{
-				chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
-				system("tar xzf libtool-$libtoolVersion.tar.gz") eq 0  or die ("failed to extract libtool\n");
-			
-				chdir("$libtoolDir") eq 1 or die ("failed to chdir to libtool directory\n");
-				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure libtool\n");
-				system("make") eq 0 or die ("failed to make libtool\n");
-				system("make install") eq 0 or die ("failed to make install libtool\n");
-
-				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
-			}
-
-			$ENV{'LIBTOOLIZE'} = "$builtToolsDir/bin/libtoolize";
-			$ENV{'LIBTOOL'} = "$builtToolsDir/bin/libtool";
-		}
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -Os" if not $debug; #optimize for size
