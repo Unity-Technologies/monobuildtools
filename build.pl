@@ -107,7 +107,7 @@ if ($android)
 	# since we don't care about a class library build in this situation (as of writing this at least)
 	# but only if the test flag is not set.  If the test flag was set, we'd need to build the classlibs 
 	# in order to run the tests
-	$disablemcs = 1 if(!($test));
+	$disableMcs = 1 if(!($test));
 }
 
 # Do any settings agnostic per-platform stuff
@@ -472,8 +472,6 @@ if ($build)
 		push @configureparams, "--disable-boehm";
 		push @configureparams, "--disable-visibility-hidden";
 		push @configureparams, "mono_cv_uscore=yes";
-
-		die("testing\n");
 	}
 	elsif($^O eq "linux")
 	{
@@ -614,12 +612,14 @@ if ($build)
 			system('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status');
 
 			print("\n>>> Calling autogen in mono\n");
-			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');
-			
+			print("\n");
+			print("\n>>> Configure parameters are : @configureparams\n");
+			print("\n");	
+			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');			
 			print("\n>>> Calling make clean in mono\n");
 			system("make","clean") eq 0 or die ("failed to make clean\n");
 		}
-		
+
 		print("\n>>> Calling make\n");
 		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
 		
