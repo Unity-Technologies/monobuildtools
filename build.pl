@@ -315,7 +315,7 @@ if ($build)
 		my $isArmArch = 1;
 		my $toolchainName = "";
 		my $platformRootPostfix = "";
-		my $useKraitPatch = 0;
+		my $useKraitPatch = 1;
 		my $kraitPatchPath = "$monoroot/../../android_krait_signal_handler/build";
 		my $toolChainExtension = "";
 
@@ -470,23 +470,19 @@ if ($build)
 
 		if ($useKraitPatch)
 		{
-			#
-			# TODO by Mike : Try to get this building again once all the other env setup is in place.
-			#
-			#my $kraitPatchRepo = "git://github.com/Unity-Technologies/krait-signal-handler.git";
-			#if (-d "$kraitPatchPath")
-			#{
-			#	print ">>> Krait patch repository already cloned"
-			#}
-			#else
-			#{
-			#	system("git", "clone", "--branch", "master", "$kraitPatchRepo", "$kraitPatchPath") eq 0 or die ('failing cloning Krait patch');
-			#}
+			my $kraitPatchRepo = "git://github.com/Unity-Technologies/krait-signal-handler.git";
+			if (-d "$kraitPatchPath")
+			{
+				print ">>> Krait patch repository already cloned"
+			}
+			else
+			{
+				system("git", "clone", "--branch", "master", "$kraitPatchRepo", "$kraitPatchPath") eq 0 or die ('failing cloning Krait patch');
+			}
 
-			#chdir("$kraitPatchPath") eq 1 or die ("failed to chdir to krait patch directory\n");
-			#system("perl", "build.pl") eq 0 or die ('failing to build Krait patch');
-			#chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
-			die("Building the krait patch is not implemented yet\n");
+			chdir("$kraitPatchPath") eq 1 or die ("failed to chdir to krait patch directory\n");
+			system("perl", "build.pl") eq 0 or die ('failing to build Krait patch');
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 
 		if ($isArmArch)
