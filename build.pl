@@ -312,6 +312,8 @@ if ($build)
 		$ENV{GCC_PREFIX} = "arm-linux-androideabi-";
 		$ENV{GCC_VERSION} = "4.8";
 
+		my $toolchainName = "$ENV{GCC_PREFIX}$ENV{GCC_VERSION}";
+
 		if ($^O eq "linux")
 		{
 			$ENV{HOST_ENV} = "linux";
@@ -335,7 +337,7 @@ if ($build)
 
 		my $androidNdkRoot = $ENV{ANDROID_NDK_ROOT};
 		my $androidPlatformRoot = "$androidNdkRoot/platforms/$ENV{ANDROID_PLATFORM}/arch-arm";
-		my $androidToolchain = "$androidNdkRoot/toolchains/$ENV{GCC_PREFIX}$ENV{GCC_VERSION}/prebuilt/$ENV{HOST_ENV}";
+		my $androidToolchain = "$androidNdkRoot/toolchains/$toolchainName/prebuilt/$ENV{HOST_ENV}";
 
 		print(">>> Android Toolchain EARLY = $androidToolchain\n");
 
@@ -367,6 +369,7 @@ if ($build)
 			die("Failed to locate android platform root\n");
 		}
 
+		my $useKraitPatch = 0;
 		my $kraitPatchPath = "$monoroot/../../android_krait_signal_handler/build";
 
 		if ("$androidArch" eq 'armv5')
@@ -393,10 +396,8 @@ if ($build)
 			$toolChainExtension = ".exe";
 
 			$androidPlatformRoot = `cygpath -w $androidPlatformRoot`;
-			$winToolChainExtension = `cygpath -w $toolChainExtension`;
 			# clean up trailing new lines that end up in the output from cygpath.
 			$androidPlatformRoot =~ s/\n+$//;
-			$winToolChainExtension =~ s/\n+$//;
 		}
 
 		$ENV{PATH} = "$androidToolchain/bin:$ENV{PATH}";
@@ -405,7 +406,7 @@ if ($build)
 		$ENV{CPP} = "$androidToolchain/bin/$ENV{GCC_PREFIX}cpp$toolChainExtension";
 		$ENV{CXXCPP} = "$androidToolchain/bin/$ENV{GCC_PREFIX}cpp$toolChainExtension";
 		$ENV{CPATH} = "$androidPlatformRoot/usr/include";
-		$ENV{LD} = "$winToolChainExtension/bin/$ENV{GCC_PREFIX}ld$toolChainExtension";
+		$ENV{LD} = "$androidToolchain/bin/$ENV{GCC_PREFIX}ld$toolChainExtension";
 		$ENV{AS} = "$androidToolchain/bin/$ENV{GCC_PREFIX}as$toolChainExtension";
 		$ENV{AR} = "$androidToolchain/bin/$ENV{GCC_PREFIX}ar$toolChainExtension";
 		$ENV{RANLIB} = "$androidToolchain/bin/$ENV{GCC_PREFIX}ranlib$toolChainExtension";
@@ -415,7 +416,12 @@ if ($build)
 		$ENV{CXXFLAGS} = $ENV{CFLAGS};
 		$ENV{CPPFLAGS} = $ENV{CFLAGS};
 
-		$ENV{LDFLAGS} = "-Wl,--wrap,sigaction -Wl,--no-undefined -Wl,--gc-sections -Wl,-rpath-link=$androidPlatformRoot/usr/lib -ldl -lm -llog -lc $ENV{LDFLAGS}";
+		if ($useKraitPatch)
+		{
+			$ENV{LDFLAGS} = "-Wl,--wrap,sigaction -L$kraitPatchPath/obj/local/armeabi -lkrait-signal-handler $ENV{LDFLAGS}";
+		}
+
+		$ENV{LDFLAGS} = "-Wl,--no-undefined -Wl,--gc-sections -Wl,-rpath-link=$androidPlatformRoot/usr/lib -ldl -lm -llog -lc $ENV{LDFLAGS}";
 
 		print "\n";
 		print ">>> Environment:\n";
@@ -434,27 +440,26 @@ if ($build)
 		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
 		print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
 
-		#
-		# TODO by Mike : Use this version isntead once krait patch building is implemented
-		#
-		#$ENV{LDFLAGS} = "-Wl,--wrap,sigaction -L$kraitPatchPath/obj/local/armeabi -lkrait-signal-handler -Wl,--no-undefined -Wl,--gc-sections -Wl,-rpath-link=$androidPlatformRoot/usr/lib -ldl -lm -llog -lc";
+		if ($useKraitPatch)
+		{
+			#
+			# TODO by Mike : Try to get this building again once all the other env setup is in place.
+			#
+			#my $kraitPatchRepo = "git://github.com/Unity-Technologies/krait-signal-handler.git";
+			#if (-d "$kraitPatchPath")
+			#{
+			#	print ">>> Krait patch repository already cloned"
+			#}
+			#else
+			#{
+			#	system("git", "clone", "--branch", "master", "$kraitPatchRepo", "$kraitPatchPath") eq 0 or die ('failing cloning Krait patch');
+			#}
 
-		#
-		# TODO by Mike : Try to get this building again once all the other env setup is in place.
-		#
-		#my $kraitPatchRepo = "git://github.com/Unity-Technologies/krait-signal-handler.git";
-		#if (-d "$kraitPatchPath")
-		#{
-		#	print ">>> Krait patch repository already cloned"
-		#}
-		#else
-		#{
-		#	system("git", "clone", "--branch", "master", "$kraitPatchRepo", "$kraitPatchPath") eq 0 or die ('failing cloning Krait patch');
-		#}
-
-		#chdir("$kraitPatchPath") eq 1 or die ("failed to chdir to krait patch directory\n");
-		#system("perl", "build.pl") eq 0 or die ('failing to build Krait patch');
-		#chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+			#chdir("$kraitPatchPath") eq 1 or die ("failed to chdir to krait patch directory\n");
+			#system("perl", "build.pl") eq 0 or die ('failing to build Krait patch');
+			#chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+			die("Building the krait patch is not implemented yet\n");
+		}
 
 		if("$androidArch" eq 'armv5')
 		{
@@ -472,6 +477,24 @@ if ($build)
 		push @configureparams, "--disable-boehm";
 		push @configureparams, "--disable-visibility-hidden";
 		push @configureparams, "mono_cv_uscore=yes";
+		
+		# TODO by Mike : Can probably remove.  Doesn't seem to be needed, but I typed it out
+		# and don't want to delete it until I'm sure it's not needed
+		#push @configureparams, "PATH=$ENV{PATH}";
+		#push @configureparams, "CC=$ENV{CC}";
+		#push @configureparams, "CXX=$ENV{CXX}";
+		#push @configureparams, "CPP=$ENV{CPP}";
+		#push @configureparams, "CXXCPP=$ENV{CXXCPP}";
+		#push @configureparams, "CFLAGS=$ENV{CFLAGS}";
+		#push @configureparams, "CPPFLAGS=$ENV{CPPFLAGS}";
+		#push @configureparams, "CXXFLAGS=$ENV{CXXFLAGS}";
+		#push @configureparams, "LDFLAGS=$ENV{LDFLAGS}";
+		#push @configureparams, "LD=$ENV{LD}";
+		#push @configureparams, "AR=$ENV{AR}";
+		#push @configureparams, "AS=$ENV{AS}";
+		#push @configureparams, "RANLIB=$ENV{RANLIB}";
+		#push @configureparams, "STRIP=$ENV{STRIP}";
+		#push @configureparams, "CPATH=$ENV{CPATH}";
 	}
 	elsif($^O eq "linux")
 	{
