@@ -26,7 +26,8 @@ our $NDK_ROOT_ENV = "ANDROID_NDK_ROOT";
 # based on https://dl-ssl.google.com/android/repository/repository-7.xml
 
 our $BASE_URL_SDK = "http://dl.google.com/android/repository/";
-our $BASE_URL_NDK = "http://dl.google.com/android/ndk/";
+our $BASE_URL_NDK_LEGACY = "http://dl.google.com/android/ndk/";
+our $BASE_URL_NDK = "http://dl.google.com/android/repository/";
 
 our $sdks =
 {
@@ -57,6 +58,27 @@ our $platform_tools =
 	"windows"		=> "platform-tools_r12-windows.zip",
 	"linux"			=> "platform-tools_r12-linux.zip",
 	"macosx"		=> "platform-tools_r12-macosx.zip",
+};
+
+our $baseUrlNdks =
+{
+	"r5"		=> $BASE_URL_NDK_LEGACY,
+	"r5b"		=> $BASE_URL_NDK_LEGACY,
+	"r5c"		=> $BASE_URL_NDK_LEGACY,
+	"r6"		=> $BASE_URL_NDK_LEGACY,
+	"r6b"		=> $BASE_URL_NDK_LEGACY,
+	"r7"		=> $BASE_URL_NDK_LEGACY,
+	"r7b"		=> $BASE_URL_NDK_LEGACY,
+	"r7c"		=> $BASE_URL_NDK_LEGACY,
+	"r8"		=> $BASE_URL_NDK_LEGACY,
+	"r8b"		=> $BASE_URL_NDK_LEGACY,
+	"r8c"		=> $BASE_URL_NDK_LEGACY,
+	"r8e"		=> $BASE_URL_NDK_LEGACY,
+	"r9"		=> $BASE_URL_NDK_LEGACY,
+	"r10e"		=> $BASE_URL_NDK_LEGACY,
+	"r11"		=> $BASE_URL_NDK,
+	"r12"		=> $BASE_URL_NDK,
+	"r13"		=> $BASE_URL_NDK,
 };
 
 our $ndks =
@@ -144,6 +166,24 @@ our $ndks =
 						"windows" => "android-ndk-r10e-windows-x86.exe",
 						"macosx" => "android-ndk-r10e-darwin-x86_64.bin",
 						"linux" => "android-ndk-r10e-linux-x86.bin",
+					},
+	"r11"		=>
+					{
+						"windows" => "android-ndk-r11-windows-x86_64.zip",
+						"macosx" => "android-ndk-r11-darwin-x86_64.zip",
+						"linux" => "android-ndk-r11-linux-x86_64.zip",
+					},
+	"r12"		=>
+					{
+						"windows" => "android-ndk-r12-windows-x86_64.zip",
+						"macosx" => "android-ndk-r12-darwin-x86_64.zip",
+						"linux" => "android-ndk-r12-linux-x86_64.zip",
+					},
+	"r13"		=>
+					{
+						"windows" => "android-ndk-r13-windows-x86_64.zip",
+						"macosx" => "android-ndk-r13-darwin-x86_64.zip",
+						"linux" => "android-ndk-r13-linux-x86_64.zip",
 					},
 };
 
@@ -513,8 +553,10 @@ sub PrepareNDK
 	my $archive = $ndks->{$ndk}->{$HOST_ENV};
 	die ("Unknown NDK release '$ndk' (for $HOST_ENV)") if (!$archive);
 
+	my $baseUrlNdk = $baseUrlNdks->${ndk};
+
 	print(">>> Downloading '$ndk' to '$ndk_root'\n");
-	DownloadAndUnpackArchive($BASE_URL_NDK . $archive, $ndk_root);
+	DownloadAndUnpackArchive($baseUrlNdk . $archive, $ndk_root);
 }
 
 1;
