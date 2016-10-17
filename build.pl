@@ -348,7 +348,7 @@ if ($build)
 			}
 			else
 			{
-				$androidToolchain = "$androidToolchain-86_64";
+				$androidToolchain = "$androidToolchain-x86_64";
 			}
 		}
 
