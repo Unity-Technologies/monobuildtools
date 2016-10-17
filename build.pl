@@ -98,7 +98,12 @@ chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
 print(">>> Mono Revision = $monoRevision\n");
 print(">>> Build Scripts Revision = $buildScriptsRevision\n");
 
-my $isDesktopBuild=1;
+if ($androidArch ne "")
+{
+	$android = 1;
+}
+
+my $isDesktopBuild = 1;
 if ($android)
 {
 	$isDesktopBuild = 0;
@@ -307,12 +312,31 @@ if ($build)
 		my $prepTools = "";
 		my $prepNdk = "r10e";
 		my $prepEnv = "envsetup.sh";
+		my $isArmArch = 1;
+		my $toolchainName = "";
+		my $platformRootPostfix = "";
+		my $useKraitPatch = 0;
+		my $kraitPatchPath = "$monoroot/../../android_krait_signal_handler/build";
+		my $toolChainExtension = "";
+
+		$isArmArch = 0 if ($androidArch eq "x86");
 		
 		$ENV{ANDROID_PLATFORM} = "android-9";
-		$ENV{GCC_PREFIX} = "arm-linux-androideabi-";
 		$ENV{GCC_VERSION} = "4.8";
 
-		my $toolchainName = "$ENV{GCC_PREFIX}$ENV{GCC_VERSION}";
+		if ($isArmArch)
+		{
+			$ENV{GCC_PREFIX} = "arm-linux-androideabi-";
+			$toolchainName = "$ENV{GCC_PREFIX}$ENV{GCC_VERSION}";
+			$platformRootPostfix = "arm";
+		}
+		else
+		{
+			$ENV{GCC_PREFIX} = "i686-linux-android-";
+			$toolchainName = "x86-$ENV{GCC_VERSION}";
+			$platformRootPostfix = "x86";
+			$useKraitPatch = 0;
+		}
 
 		if ($^O eq "linux")
 		{
@@ -336,11 +360,8 @@ if ($build)
 		PrepareAndroidSDK::GetAndroidSDK($prepSdk, $prepTools, $prepNdk, $prepEnv, $externalBuildDeps, $monoroot);
 
 		my $androidNdkRoot = $ENV{ANDROID_NDK_ROOT};
-		my $androidPlatformRoot = "$androidNdkRoot/platforms/$ENV{ANDROID_PLATFORM}/arch-arm";
+		my $androidPlatformRoot = "$androidNdkRoot/platforms/$ENV{ANDROID_PLATFORM}/arch-$platformRootPostfix";
 		my $androidToolchain = "$androidNdkRoot/toolchains/$toolchainName/prebuilt/$ENV{HOST_ENV}";
-
-		print(">>> Android Toolchain EARLY = $androidToolchain\n");
-
 
 		if (!(-d "$androidToolchain"))
 		{
@@ -352,6 +373,15 @@ if ($build)
 			{
 				$androidToolchain = "$androidToolchain-x86_64";
 			}
+		}
+
+		if ($runningOnWindows)
+		{
+			$toolChainExtension = ".exe";
+
+			$androidPlatformRoot = `cygpath -w $androidPlatformRoot`;
+			# clean up trailing new lines that end up in the output from cygpath.
+			$androidPlatformRoot =~ s/\n+$//;
 		}
 
 		print(">>> Android Arch = $androidArch\n");
@@ -369,9 +399,6 @@ if ($build)
 			die("Failed to locate android platform root\n");
 		}
 
-		my $useKraitPatch = 0;
-		my $kraitPatchPath = "$monoroot/../../android_krait_signal_handler/build";
-
 		if ("$androidArch" eq 'armv5')
 		{
 			$ENV{CFLAGS} = "-DARM_FPU_NONE=1 -march=armv5te -mtune=xscale -msoft-float";
@@ -382,23 +409,24 @@ if ($build)
 		}
 		elsif ("$androidArch" eq 'armv7a')
 		{
-			$ENV{CFLAGS} = "-DARM_FPU_VFP=1  -march=armv7-a                            -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1";
+			$ENV{CFLAGS} = "-DARM_FPU_VFP=1  -march=armv7-a -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1";
 			$ENV{LDFLAGS} = "-Wl,--fix-cortex-a8";
+		}
+		elsif ("$androidArch" eq 'x86')
+		{
+			$ENV{LDFLAGS} = "-lgcc"
 		}
 		else
 		{
 			die("Unsupported android arch : $androidArch\n");
 		}
 
-		my $toolChainExtension = "";
-		if ($runningOnWindows)
+		if ($isArmArch)
 		{
-			$toolChainExtension = ".exe";
-
-			$androidPlatformRoot = `cygpath -w $androidPlatformRoot`;
-			# clean up trailing new lines that end up in the output from cygpath.
-			$androidPlatformRoot =~ s/\n+$//;
+			$ENV{CFLAGS} = "-funwind-tables $ENV{CFLAGS}";
+			$ENV{LDFLAGS} = "-Wl,-rpath-link=$androidPlatformRoot/usr/lib $ENV{LDFLAGS}"
 		}
+
 
 		$ENV{PATH} = "$androidToolchain/bin:$ENV{PATH}";
 		$ENV{CC} = "$androidToolchain/bin/$ENV{GCC_PREFIX}gcc$toolChainExtension --sysroot=$androidPlatformRoot";
@@ -412,7 +440,7 @@ if ($build)
 		$ENV{RANLIB} = "$androidToolchain/bin/$ENV{GCC_PREFIX}ranlib$toolChainExtension";
 		$ENV{STRIP} = "$androidToolchain/bin/$ENV{GCC_PREFIX}strip$toolChainExtension";
 
-		$ENV{CFLAGS} = "-DANDROID -DPLATFORM_ANDROID -DLINUX -D__linux__ -DHAVE_USR_INCLUDE_MALLOC_H -DPAGE_SIZE=0x1000 -D_POSIX_PATH_MAX=256 -DS_IWRITE=S_IWUSR -DHAVE_PTHREAD_MUTEX_TIMEDLOCK -fpic -g -funwind-tables -ffunction-sections -fdata-sections $ENV{CFLAGS}";
+		$ENV{CFLAGS} = "-DANDROID -DPLATFORM_ANDROID -DLINUX -D__linux__ -DHAVE_USR_INCLUDE_MALLOC_H -DPAGE_SIZE=0x1000 -D_POSIX_PATH_MAX=256 -DS_IWRITE=S_IWUSR -DHAVE_PTHREAD_MUTEX_TIMEDLOCK -fpic -g -ffunction-sections -fdata-sections $ENV{CFLAGS}";
 		$ENV{CXXFLAGS} = $ENV{CFLAGS};
 		$ENV{CPPFLAGS} = $ENV{CFLAGS};
 
@@ -421,7 +449,7 @@ if ($build)
 			$ENV{LDFLAGS} = "-Wl,--wrap,sigaction -L$kraitPatchPath/obj/local/armeabi -lkrait-signal-handler $ENV{LDFLAGS}";
 		}
 
-		$ENV{LDFLAGS} = "-Wl,--no-undefined -Wl,--gc-sections -Wl,-rpath-link=$androidPlatformRoot/usr/lib -ldl -lm -llog -lc $ENV{LDFLAGS}";
+		$ENV{LDFLAGS} = "-Wl,--no-undefined -Wl,--gc-sections -ldl -lm -llog -lc $ENV{LDFLAGS}";
 
 		print "\n";
 		print ">>> Environment:\n";
@@ -461,9 +489,13 @@ if ($build)
 			die("Building the krait patch is not implemented yet\n");
 		}
 
-		if("$androidArch" eq 'armv5')
+		if ($isArmArch)
 		{
-			push @configureparams, "--host=$androidArch-linux-androideabi";
+			push @configureparams, "--host=armv5-linux-androideabi";
+		}
+		elsif ("$androidArch" eq 'x86')
+		{
+			push @configureparams, "--host=i686-linux-android";
 		}
 		else
 		{
@@ -744,7 +776,12 @@ if ($artifact)
 	my $embedDirArchDestination = "";
 	my $distDirArchBin = "";
 	my $versionsOutputFile = "";
-	if($^O eq "linux")
+	if ($android)
+	{
+		$embedDirArchDestination = "$embedDirRoot/android/$androidArch";
+		$versionsOutputFile = "$buildsroot/versions-android-$androidArch.txt";
+	}
+	elsif($^O eq "linux")
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/linux32" : "$embedDirRoot/linux64";
 		$distDirArchBin = $arch32 ? "$distdir/bin-linux32" : "$distdir/bin-linux64";
@@ -776,13 +813,19 @@ if ($artifact)
 		print(">>> Cleaning $distDirArchBin\n");
 		rmtree($distDirArchBin);
 	}
-	
-	system("mkdir -p $embedDirArchDestination");
-	system("mkdir -p $distDirArchBin");
-	
+
+	system("mkdir -p $embedDirArchDestination") if ($embedDirArchDestination ne "");
+	system("mkdir -p $distDirArchBin") if ($distDirArchBin ne "");
+
 	# embedruntimes directory setup
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
-	if($^O eq "linux")
+	if ($android)
+	{
+		print ">>> Copying libmono.so\n";
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+	}
+	elsif($^O eq "linux")
 	{
 		print ">>> Copying libmono.so\n";
 		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
@@ -822,7 +865,11 @@ if ($artifact)
 	
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
-	if($^O eq "linux")
+	if ($android)
+	{
+		# Nothing to do
+	}
+	elsif($^O eq "linux")
 	{
 		my $distDirArchEtc = $arch32 ? "$distdir/etc-linux32" : "$distdir/etc-linux64";
 
@@ -852,12 +899,16 @@ if ($artifact)
 		system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
 	}
 	
-	system("chmod", "-R", "755", $distDirArchBin);
+	# Not all build configurations output to the distro dir, so only chmod it if it exists
+	system("chmod", "-R", "755", $distDirArchBin) if (-d "$distDirArchBin");
 	
 	# Output version information
 	print(">>> Creating version file : $versionsOutputFile\n");
 	system("echo \"mono-version =\" > $versionsOutputFile");
-	system("$distDirArchBin/mono --version >> $versionsOutputFile");
+
+	# Not all build configurations output to the distro dir, only try to output version info if there is a distro dir
+	system("$distDirArchBin/mono --version >> $versionsOutputFile") if (-d "$distDirArchBin");
+
 	system("echo \"unity-mono-revision = $monoRevision\" >> $versionsOutputFile");
 	system("echo \"unity-mono-build-scripts-revision = $buildScriptsRevision\" >> $versionsOutputFile");
 	my $tmp = `date`;
