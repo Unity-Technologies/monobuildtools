@@ -337,12 +337,18 @@ if ($build)
 		my $androidPlatformRoot = "$androidNdkRoot/platforms/$ENV{ANDROID_PLATFORM}/arch-arm";
 		my $androidToolchain = "$androidNdkRoot/toolchains/$ENV{GCC_PREFIX}$ENV{GCC_VERSION}/prebuilt/$ENV{HOST_ENV}";
 
+		print(">>> Android Toolchain EARLY = $androidToolchain\n");
+
+
 		if (!(-d "$androidToolchain"))
 		{
-			$androidToolchain = "$androidToolchain-x86";
-			if (!(-d "$androidToolchain"))
+			if (-d "$androidToolchain-x86")
 			{
-				$androidToolchain = "$androidToolchain_64";
+				$androidToolchain = "$androidToolchain-x86";
+			}
+			else
+			{
+				$androidToolchain = "$androidToolchain-86_64";
 			}
 		}
 
