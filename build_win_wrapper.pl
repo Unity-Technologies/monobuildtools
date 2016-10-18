@@ -210,6 +210,9 @@ print ">>> Perl Exe = $windowsPerl\n";
 push @passAlongArgs, "--winperl=$windowsPerl";
 push @passAlongArgs, "--winmonoroot=$monoroot";
 
+# Helps shell scripts with windows line endings play nice with cygwin
+$ENV{SHELLOPTS} = igncr;
+
 # In some cases the file gets windowsified, to prevent issues in these cases, dos2unix the shell wrapper script before we run it
 print ">>> Calling $cygwinRootWindows\\bin\\dos2unix.exe $monoroot/external/buildscripts/build_win_wrapper.sh";
 system("$cygwinRootWindows\\bin\\dos2unix.exe", "$monoroot/external/buildscripts/build_win_wrapper.sh") eq 0 or die("failed building mono\n");
