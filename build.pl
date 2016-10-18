@@ -505,24 +505,6 @@ if ($build)
 		push @configureparams, "--disable-boehm";
 		push @configureparams, "--disable-visibility-hidden";
 		push @configureparams, "mono_cv_uscore=yes";
-		
-		# TODO by Mike : Can probably remove.  Doesn't seem to be needed, but I typed it out
-		# and don't want to delete it until I'm sure it's not needed
-		#push @configureparams, "PATH=$ENV{PATH}";
-		#push @configureparams, "CC=$ENV{CC}";
-		#push @configureparams, "CXX=$ENV{CXX}";
-		#push @configureparams, "CPP=$ENV{CPP}";
-		#push @configureparams, "CXXCPP=$ENV{CXXCPP}";
-		#push @configureparams, "CFLAGS=$ENV{CFLAGS}";
-		#push @configureparams, "CPPFLAGS=$ENV{CPPFLAGS}";
-		#push @configureparams, "CXXFLAGS=$ENV{CXXFLAGS}";
-		#push @configureparams, "LDFLAGS=$ENV{LDFLAGS}";
-		#push @configureparams, "LD=$ENV{LD}";
-		#push @configureparams, "AR=$ENV{AR}";
-		#push @configureparams, "AS=$ENV{AS}";
-		#push @configureparams, "RANLIB=$ENV{RANLIB}";
-		#push @configureparams, "STRIP=$ENV{STRIP}";
-		#push @configureparams, "CPATH=$ENV{CPATH}";
 	}
 	elsif($^O eq "linux")
 	{
