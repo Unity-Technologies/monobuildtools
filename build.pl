@@ -424,7 +424,7 @@ if ($build)
 		if ($isArmArch)
 		{
 			$ENV{CFLAGS} = "-funwind-tables $ENV{CFLAGS}";
-			$ENV{LDFLAGS} = "-Wl,-rpath-link=$androidPlatformRoot/usr/lib $ENV{LDFLAGS}"
+			$ENV{LDFLAGS} = "-Wl,-rpath-link=$androidPlatformRoot/usr/lib $ENV{LDFLAGS}";
 		}
 
 
