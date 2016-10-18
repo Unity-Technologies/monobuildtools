@@ -553,7 +553,7 @@ sub PrepareNDK
 	my $archive = $ndks->{$ndk}->{$HOST_ENV};
 	die ("Unknown NDK release '$ndk' (for $HOST_ENV)") if (!$archive);
 
-	my $baseUrlNdk = $baseUrlNdks->${ndk};
+	my $baseUrlNdk = $baseUrlNdks->{$ndk};
 
 	print(">>> Downloading '$ndk' to '$ndk_root'\n");
 	DownloadAndUnpackArchive($baseUrlNdk . $archive, $ndk_root);
