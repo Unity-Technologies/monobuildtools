@@ -15,4 +15,4 @@ GetOptions(
 ) or die ("illegal cmdline options");
 
 
-system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=$clean", "--artifact=1", "--arch32=1", "--iphone=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed builidng mono for $androidArch\n");
+system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=$clean", "--artifact=1", "--arch32=1", "--iphoneArch=armv7", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed builidng mono for $androidArch\n");

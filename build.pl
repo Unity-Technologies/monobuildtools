@@ -54,6 +54,7 @@ my $buildDeps = "";
 my $android=0;
 my $androidArch = "";
 my $iphone=0;
+my $iphoneArch = "";
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -85,6 +86,7 @@ GetOptions(
 	'android=i'=>\$android,
 	'androidarch=s'=>\$androidArch,
 	'iphone=i'=>\$iphone,
+	'iphonearch=s'=>\$iphoneArch,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -103,6 +105,11 @@ print(">>> Build Scripts Revision = $buildScriptsRevision\n");
 if ($androidArch ne "")
 {
 	$android = 1;
+}
+
+if ($iphoneArch ne "")
+{
+	$iphone = 1;
 }
 
 my $isDesktopBuild = 1;
@@ -320,12 +327,12 @@ if ($build)
 		my $macSdkVersion = "10.6";
 		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
 		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk/";
-		my $iosArch = "armv7";
 
 		print(">>> iOS Build Environment = $iosBuildEnvDir\n");
 		print(">>> iOS SDK Version = $iosSdkVersion\n");
 		print(">>> Mac SDK Version = $macSdkVersion\n");
 		print(">>> iOS SDK Root = $iosSdkRoot\n");
+		print(">>> iPhone Arch = $iphoneArch\n");
 
 		if (! -d "$iosBuildEnvDir/builds")
 		{
@@ -337,8 +344,8 @@ if ($build)
 		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
 		$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
 
-		$ENV{CC} = "gcc -arch $iosArch";
-		$ENV{CXX} = "g++ -arch $iosArch";
+		$ENV{CC} = "gcc -arch $iphoneArch";
+		$ENV{CXX} = "g++ -arch $iphoneArch";
 		$ENV{LD} = $ENV{CC};
 
 		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden -Os -isysroot $iosSdkRoot";
@@ -926,7 +933,12 @@ if ($artifact)
 	my $embedDirArchDestination = "";
 	my $distDirArchBin = "";
 	my $versionsOutputFile = "";
-	if ($android)
+	if ($iphone)
+	{
+		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneArch";
+		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneArch.txt";
+	}
+	elsif ($android)
 	{
 		$embedDirArchDestination = "$embedDirRoot/android/$androidArch";
 		$versionsOutputFile = "$buildsroot/versions-android-$androidArch.txt";
@@ -969,7 +981,12 @@ if ($artifact)
 
 	# embedruntimes directory setup
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
-	if ($android)
+	if ($iphone)
+	{
+		print ">>> Copying libmonosgen-2.0\n";
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+	}
+	elsif ($android)
 	{
 		print ">>> Copying libmonosgen-2.0\n";
 		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
