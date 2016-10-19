@@ -416,7 +416,7 @@ if ($build)
 				}
 				else
 				{
-					my ($name,$path,$suffix) = fileparse($depsNdkArchive);
+					my ($name,$path,$suffix) = fileparse($depsNdkArchive, qr/\.[^.]*/);
 
 					print(">>> Android NDK Extension = $suffix\n");
 
@@ -428,7 +428,7 @@ if ($build)
 					}
 					elsif (lc $suffix eq '.bin')
 					{	chmod(0755, $depsNdkArchive);
-						system($depsNdkArchive, "-o" . $externalBuildDeps);
+						system($depsNdkArchive, "-o$externalBuildDeps");
 					}
 					else
 					{
