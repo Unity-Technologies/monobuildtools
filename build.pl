@@ -171,6 +171,12 @@ else
 	}
 }
 
+if ($runningOnWindows)
+{
+	# Fixes a line ending issue that happens on windows when we try to run autogen.sh
+	$ENV{'SHELLOPTS'} = "igncr";
+}
+
 print(">>> Existing Mono = $existingMonoRootPath\n");
 print(">>> Mono Arch = $monoHostArch\n");
 
@@ -611,10 +617,7 @@ if ($build)
 		print "\n";
 	}
 	else
-	{
-		# Fixes a line ending issue that happens on windows when we try to run autogen.sh
-		$ENV{'SHELLOPTS'} = "igncr";
-			
+	{			
 		push @configureparams, "--host=$monoHostArch-pc-mingw32";
 	}
 
