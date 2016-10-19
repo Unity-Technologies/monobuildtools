@@ -911,13 +911,13 @@ if ($artifact)
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
 	if ($android)
 	{
-		print ">>> Copying libmono.so\n";
+		print ">>> Copying libmonosgen-2.0\n";
 		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
 		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
 	}
 	elsif($^O eq "linux")
 	{
-		print ">>> Copying libmono.so\n";
+		print ">>> Copying libmonosgen-2.0\n";
 		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
 		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
 
@@ -934,7 +934,7 @@ if ($artifact)
 	elsif($^O eq 'darwin')
 	{
 		# embedruntimes directory setup
- 		print ">>> Hardlinking libmono.dylib\n";
+ 		print ">>> Hardlinking libmonosgen-2.0\n";
 
 		system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.dylib","$embedDirArchDestination/libmonoboehm-2.0.dylib") eq 0 or die ("failed symlinking libmonoboehm-2.0.dylib\n");
 		system("ln","-f", "$monoroot/mono/mini/.libs/libmonosgen-2.0.dylib","$embedDirArchDestination/libmonosgen-2.0.dylib") eq 0 or die ("failed symlinking libmonosgen-2.0.dylib\n");
