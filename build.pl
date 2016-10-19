@@ -427,6 +427,15 @@ if ($build)
 			$ENV{LDFLAGS} = "-Wl,-rpath-link=$androidPlatformRoot/usr/lib $ENV{LDFLAGS}";
 		}
 
+		# On windows, we need to give a bit more info to play nice with cygwin
+		if ($runningOnWindows)
+		{
+			my $winLdLibDir = "$androidPlatformRoot\\usr\\lib";
+			# need to use forward slashes so that they don't all get stripped away
+			$winLdLibDir =~ s/\\/\//g;
+			$ENV{LDFLAGS} = "-L$winLdLibDir $ENV{LDFLAGS}";
+		}
+
 
 		$ENV{PATH} = "$androidToolchain/bin:$ENV{PATH}";
 		$ENV{CC} = "$androidToolchain/bin/$ENV{GCC_PREFIX}gcc$toolChainExtension --sysroot=$androidPlatformRoot";
