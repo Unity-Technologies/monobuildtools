@@ -320,7 +320,7 @@ if ($build)
 		my $toolchainName = "";
 		my $platformRootPostfix = "";
 		my $useKraitPatch = 1;
-		my $kraitPatchPath = "$monoroot/../../android_krait_signal_handler/build";
+		my $kraitPatchPath = abs_path("$monoroot/../../android_krait_signal_handler/build");
 		my $toolChainExtension = "";
 		my $useBuildDepsForNDK = 1;
 
@@ -471,6 +471,11 @@ if ($build)
 			$androidPlatformRoot =~ s/\n+$//;
 			# Switch over to forward slashes.  They propagate down the toolchain correctly
 			$androidPlatformRoot =~ s/\\/\//g;
+
+			# this will get passed as a path to the linker, so we need to windows-ify the path
+			$kraitPatchPath = `cygpath -w $kraitPatchPath`;
+			$kraitPatchPath =~ s/\n+$//;
+			$kraitPatchPath =~ s/\\/\//g;
 		}
 
 		print(">>> Android Arch = $androidArch\n");
@@ -593,6 +598,7 @@ if ($build)
 		push @configureparams, "--disable-boehm";
 		push @configureparams, "--disable-visibility-hidden";
 		push @configureparams, "mono_cv_uscore=yes";
+		push @configureparams, "ac_cv_header_zlib_h=no" if($runningOnWindows);
 	}
 	elsif($^O eq "linux")
 	{
