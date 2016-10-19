@@ -318,12 +318,20 @@ if ($build)
 	{
 		my $iosSdkVersion = "9.3";
 		my $macSdkVersion = "10.6";
-		my $iosSdkRoot = "$externalBuildDeps/iOSBuildEnvironment/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk/";
+		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
+		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk/";
 		my $iosArch = "armv7";
 
+		print(">>> iOS Build Environment = iosBuildEnvDir\n");
 		print(">>> iOS SDK Version = $iosSdkVersion\n");
 		print(">>> Mac SDK Version = $macSdkVersion\n");
 		print(">>> iOS SDK Root = iosSdkRoot\n");
+
+		if (! -d "$iosBuildEnvDir/builds")
+		{
+			print("Unzipping ios build toolchain\n");
+			system('unzip', '-qd', "$iosBuildEnvDir", "$iosBuildEnvDir/builds.zip");
+		}
 
 		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
 		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
