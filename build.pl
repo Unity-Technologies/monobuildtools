@@ -379,11 +379,9 @@ if ($build)
 			}
 
 			my $depsNdkArchive = "$externalBuildDeps/$ndkName";
-			#my $depsNdkExtractionTmp = "$externalBuildDeps/android-tmp";
 			my $depsNdkFinal = "$externalBuildDeps/android-ndk-$ndkVersion";
 
 			print(">>> Android NDK Archive = $depsNdkArchive\n");
-			#print(">>> Android NDK Extraction Tmp = $depsNdkExtractionTmp\n");
 			print(">>> Android NDK Extraction Destination = $depsNdkFinal\n");
 			print("\n");
 
@@ -396,9 +394,6 @@ if ($build)
 			else
 			{
 				print(">>> Android NDK needs to be extracted\n");
-
-				#print(">>> Cleaning $depsNdkExtractionTmp\n");
-				#rmtree($depsNdkExtractionTmp);
 
 				if ($runningOnWindows)
 				{
