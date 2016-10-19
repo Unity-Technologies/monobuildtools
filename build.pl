@@ -329,8 +329,8 @@ if ($build)
 
 		if (! -d "$iosBuildEnvDir/builds")
 		{
-			print("Unzipping ios build toolchain\n");
-			system('unzip', '-qd', "$iosBuildEnvDir", "$iosBuildEnvDir/builds.zip");
+			print(">>> Unzipping ios build toolchain\n");
+			system('unzip', '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
 		}
 
 		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
@@ -716,7 +716,7 @@ if ($build)
 		my $sdkPath = "$macBuildEnvDir/builds/MacOSX$sdk.sdk";
 		if (! -d $sdkPath)
 		{
-			print("Unzipping mac build toolchain\n");
+			print(">>> Unzipping mac build toolchain\n");
 			system('unzip', '-qd', "$macBuildEnvDir", "$macBuildEnvDir/builds.zip");
 		}
 
