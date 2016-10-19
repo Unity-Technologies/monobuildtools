@@ -688,23 +688,44 @@ if ($build)
 		print("\n>>> Calling make\n");
 		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
 		
-		print("\n>>> Calling make install\n");
-		system("make install") eq 0 or die ("Failed to make install\n");
+		if ($isDesktopBuild)
+		{
+			print("\n>>> Calling make install\n");
+			system("make install") eq 0 or die ("Failed to make install\n");
+		}
+		else
+		{
+			if ($disableMcs)
+			{
+				print(">>> Skipping make install.  We don't need to run this step when building the runtime on non-desktop platforms.\n");
+			}
+			else
+			{
+				# Note by Mike : make install on Windows for android runtime runs into more cygwin path issues.  The one I hit was related to ranlib.exe being passed cygwin linux paths
+				# and as a result not being able to find stuff.  The previous build scripts didn't run make install for android or iOS, so I think we are fine to skip this step.
+				# However, if we were to build the class libs for these cases, then we probably would need to run make install.  If that day comes, we'll have to figure out what to do here.
+				print(">>> Attempting to build class libs for a non-desktop platform.  The `make install` step is probably needed, but it has cygwin path related problems on Windows for android\n");
+				die("Blocking this code path until we need it.  It probably should be looked at more closely before letting it proceed\n");
+			}
+		}
 	}
 	
-	if ($^O eq "cygwin")
+	if ($isDesktopBuild)
 	{
-		system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS\n');
+		if ($^O eq "cygwin")
+		{
+			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS\n');
+			
+			# Copy over the VS built stuff that we want to use instead into the prefix directory
+			my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
+			my $config = $debug ? "Debug" : "Release";
+			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
+			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
+			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
+		}
 		
-		# Copy over the VS built stuff that we want to use instead into the prefix directory
-		my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
-		my $config = $debug ? "Debug" : "Release";
-		system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
-		system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
-		system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
+		system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 	}
-	
-	system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 }
 else
 {
