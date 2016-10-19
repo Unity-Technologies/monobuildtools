@@ -314,8 +314,63 @@ if ($build)
 		$ENV{'LIBTOOLIZE'} = "$builtToolsDir/bin/libtoolize";
 		$ENV{'LIBTOOL'} = "$builtToolsDir/bin/libtool";
 	}
+	if ($iphone)
+	{
+		my $iosSdkVersion = "9.3";
+		my $macSdkVersion = "10.6";
+		my $iosSdkRoot = "$externalBuildDeps/iOSBuildEnvironment/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk/";
+		my $iosArch = "armv7";
 
-	if ($android)
+		print(">>> iOS SDK Version = $iosSdkVersion\n");
+		print(">>> Mac SDK Version = $macSdkVersion\n");
+		print(">>> iOS SDK Root = iosSdkRoot\n");
+
+		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
+		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
+		$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
+
+		$ENV{CC} = "gcc -arch $iosArch";
+		$ENV{CXX} = "g++ -arch $iosArch";
+		$ENV{LD} = $ENV{CC};
+
+		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden -Os -isysroot $iosSdkRoot";
+		$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
+		$ENV{CPPFLAGS} = $ENV{CXXFLAGS};
+
+		$ENV{LDFLAGS} = "-liconv -Wl,-syslibroot,$iosSdkRoot";
+
+		print "\n";
+		print ">>> Environment:\n";
+		print ">>> \tCC = $ENV{CC}\n";
+		print ">>> \tCXX = $ENV{CXX}\n";
+		print ">>> \tLD = $ENV{LD}\n";
+		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+		print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+		print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+		print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
+		print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
+
+		push @configureparams, "--host=arm-apple-darwin9";
+
+		push @configureparams, "--with-sigaltstack=no";
+		push @configureparams, "--disable-shared-handles";
+		push @configureparams, "--with-tls=pthread";
+		push @configureparams, "--disable-boehm";
+		push @configureparams, "--enable-minimal=jit,profiler,com";
+
+
+		# TODO by Mike : What to do about this stuff?
+		# perl -pi -e 's/MONO_SIZEOF_SUNPATH 0/MONO_SIZEOF_SUNPATH 104/' config.h
+		# perl -pi -e 's/#define HAVE_FINITE 1//' config.h
+		# #perl -pi -e 's/#define HAVE_MMAP 1//' config.h
+		# perl -pi -e 's/#define HAVE_CURSES_H 1//' config.h
+		# perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
+
+
+		die("testing\n");
+	}
+	elsif ($android)
 	{
 		my $ndkVersion = "r10e";
 		my $isArmArch = 1;
