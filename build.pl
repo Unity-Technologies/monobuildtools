@@ -53,6 +53,7 @@ my $msBuildVersion = "14.0";
 my $buildDeps = "";
 my $android=0;
 my $androidArch = "";
+my $iphone=0;
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -83,6 +84,7 @@ GetOptions(
 	'forcedefaultbuilddeps=i'=>\$forceDefaultBuildDeps,
 	'android=i'=>\$android,
 	'androidarch=s'=>\$androidArch,
+	'iphone=i'=>\$iphone,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
