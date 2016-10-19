@@ -9,9 +9,11 @@ my $monoroot = abs_path($monoroot);
 my $buildScriptsRoot = "$monoroot/external/buildscripts";
 
 my $androidArch = "";
+my $clean = 1;
 
 GetOptions(
    "androidarch=s"=>\$androidArch,
+   "clean=i"=>\$clean,
 ) or die ("illegal cmdline options");
 
 # By default, build runtime for all the variants we need.  But allow something to specify an individual variation to build
@@ -24,5 +26,5 @@ if ($androidArch eq "")
 }
 else
 {
-	system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=1", "--artifact=1", "--arch32=1", "--androidarch=$androidArch", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed builidng mono for $androidArch\n");
+	system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=$clean", "--artifact=1", "--arch32=1", "--androidarch=$androidArch", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed builidng mono for $androidArch\n");
 }
