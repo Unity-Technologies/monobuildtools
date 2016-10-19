@@ -187,7 +187,6 @@ if ($build)
 	my $platformflags = '';
 	my $host = '';
 	my $mcs = '';
-	my $androidHackForWindowsPlatformRootLinux = "";
 	
 	my @configureparams = ();
 
@@ -463,9 +462,6 @@ if ($build)
 			}
 		}
 
-		# Cache this now while it's linux format, we will need it later for a workaround on windows
-		$androidHackForWindowsPlatformRootLinux = $androidPlatformRoot;
-
 		if ($runningOnWindows)
 		{
 			$toolChainExtension = ".exe";
@@ -473,6 +469,8 @@ if ($build)
 			$androidPlatformRoot = `cygpath -w $androidPlatformRoot`;
 			# clean up trailing new lines that end up in the output from cygpath.
 			$androidPlatformRoot =~ s/\n+$//;
+			# Switch over to forward slashes.  They propagate down the toolchain correctly
+			$androidPlatformRoot =~ s/\\/\//g;
 		}
 
 		print(">>> Android Arch = $androidArch\n");
@@ -517,16 +515,6 @@ if ($build)
 			$ENV{CFLAGS} = "-funwind-tables $ENV{CFLAGS}";
 			$ENV{LDFLAGS} = "-Wl,-rpath-link=$androidPlatformRoot/usr/lib $ENV{LDFLAGS}";
 		}
-
-		# On windows, we need to give a bit more info to play nice with cygwin
-		if ($runningOnWindows)
-		{
-			my $winLdLibDir = "$androidPlatformRoot\\usr\\lib";
-			# need to use forward slashes so that they don't all get stripped away
-			$winLdLibDir =~ s/\\/\//g;
-			$ENV{LDFLAGS} = "-L$winLdLibDir $ENV{LDFLAGS}";
-		}
-
 
 		$ENV{PATH} = "$androidToolchain/bin:$ENV{PATH}";
 		$ENV{CC} = "$androidToolchain/bin/$ENV{GCC_PREFIX}gcc$toolChainExtension --sysroot=$androidPlatformRoot";
@@ -748,25 +736,6 @@ if ($build)
 			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');			
 			print("\n>>> Calling make clean in mono\n");
 			system("make","clean") eq 0 or die ("failed to make clean\n");
-		}
-
-		# Note by Mike : Windows+Cygwin Hack - workaround for some parts of the mono build not passing the full path to android object files to the linker under cygwin.
-		# I didn't try to find the root problem, but basically the issue is that some parts of the build will pass 
-		#  	C:/Unity/dev/unity-mono-katana/android-ndk_auto-r10e/platforms/android-9/arch-x86/usr/lib/crtbegin_dynamic.o
-		# as an argument to linker (ex during eglib build), where as other parts (ex: mono/mini) will only pass
-		#   crtbegin_dynamic.o
-		# This is probably some cygwin path related thing.  Copying the dlls into the dirs that don't get the full path is the 'fix' I found that worked.
-		if ($android && $runningOnWindows)
-		{
-			my @dirsToCopyDepsInto = ("mono/mini", "mono/dis", "mono/profiler", "ikvm-native", "support");
-			foreach my $subDir (@dirsToCopyDepsInto)
-			{
-				system("cp $androidHackForWindowsPlatformRootLinux/usr/lib/crtbegin_dynamic.o $monoroot/$subDir/crtbegin_dynamic.o") eq 0 or die("failed copying crtbegin_dynamic.o\n");
-				system("cp $androidHackForWindowsPlatformRootLinux/usr/lib/crtend_android.o $monoroot/$subDir/crtend_android.o") eq 0 or die("failed copying crtend_android.o\n");
-				system("cp $androidHackForWindowsPlatformRootLinux/usr/lib/crtbegin_so.o $monoroot/$subDir/crtbegin_so.o") eq 0 or die("failed copying crtbegin_so.o\n");
-				system("cp $androidHackForWindowsPlatformRootLinux/usr/lib/crtbegin_static.o $monoroot/$subDir/crtbegin_static.o") eq 0 or die("failed copying crtbegin_static.o\n");
-				system("cp $androidHackForWindowsPlatformRootLinux/usr/lib/crtend_so.o $monoroot/$subDir/crtend_so.o") eq 0 or die("failed copying crtend_so.o\n");
-			}
 		}
 
 		print("\n>>> Calling make\n");
