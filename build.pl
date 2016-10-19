@@ -322,10 +322,10 @@ if ($build)
 		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk/";
 		my $iosArch = "armv7";
 
-		print(">>> iOS Build Environment = iosBuildEnvDir\n");
+		print(">>> iOS Build Environment = $iosBuildEnvDir\n");
 		print(">>> iOS SDK Version = $iosSdkVersion\n");
 		print(">>> Mac SDK Version = $macSdkVersion\n");
-		print(">>> iOS SDK Root = iosSdkRoot\n");
+		print(">>> iOS SDK Root = $iosSdkRoot\n");
 
 		if (! -d "$iosBuildEnvDir/builds")
 		{
