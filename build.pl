@@ -324,6 +324,11 @@ if ($build)
 
 	if ($iphone)
 	{
+		if ($runningOnWindows)
+		{
+			die("This build is not supported on Windows\n");
+		}
+
 		my $iosSdkVersion = "9.3";
 		my $macSdkVersion = "10.6";
 		my $iphoneOsMinVersion = "3.0";
