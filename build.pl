@@ -326,6 +326,7 @@ if ($build)
 
 	my $macSdkPath = "";
 	my $macversion = '10.8';
+	my $darwinVersion = "9";
 	if ($^O eq 'darwin')
 	{
 		if ($sdk eq '')
@@ -350,15 +351,13 @@ if ($build)
 		}
 
 		my $iosSdkVersion = "9.3";
-		my $macSdkVersion = "10.6";
 		my $iphoneOsMinVersion = "3.0";
-		my $iosDarwinVersion = "9";
+		
 		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
 		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk";
 
 		print(">>> iOS Build Environment = $iosBuildEnvDir\n");
 		print(">>> iOS SDK Version = $iosSdkVersion\n");
-		print(">>> Mac SDK Version = $macSdkVersion\n");
 		print(">>> iOS SDK Root = $iosSdkRoot\n");
 		print(">>> iPhone Arch = $iphoneArch\n");
 
@@ -394,7 +393,7 @@ if ($build)
 		print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
 		print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
 
-		push @configureparams, "--host=arm-apple-darwin$iosDarwinVersion";
+		push @configureparams, "--host=arm-apple-darwin$darwinVersion";
 
 		push @configureparams, "--with-sigaltstack=no";
 		push @configureparams, "--disable-shared-handles";
@@ -431,15 +430,16 @@ if ($build)
 			die("This build is not supported on Windows\n");
 		}
 
-		$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP";
-		$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
+		$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP -mmacosx-version-min=$macversion";
+		$ENV{CXXFLAGS} = "-mmacosx-version-min=$macversion -stdlib=libc++";
+		$ENV{CPPFLAGS} = "$ENV{CFLAGS} -mmacosx-version-min=$macversion";
 
 		$ENV{CC} = "$macSdkPath/../usr/bin/clang -arch i386";
 		$ENV{CXX} = "$macSdkPath/../usr/bin/clang++ -arch i386";
 		$ENV{CPP} = "$ENV{CC} -E";
 		$ENV{LD} = $ENV{CC};
-		$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$MAC_SDK_VERSION -isysroot $macSdkPath";
-
+		$ENV{LDFLAGS} = "-stdlib=libc++";
+		$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$macversion -isysroot $macSdkPath";
 
 		print "\n";
 		print ">>> Environment:\n";
@@ -447,9 +447,9 @@ if ($build)
 		print ">>> \tCXX = $ENV{CXX}\n";
 		print ">>> \tLD = $ENV{LD}\n";
 		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
-		#print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+		print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
 		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
-		#print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+		print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
 		#print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
 		#print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
 		print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
@@ -460,6 +460,16 @@ if ($build)
 
 		push @configureparams, "--target=arm-darwin";
 		push @configureparams, "--with-macversion=$macversion";
+
+		# TODO by Mike : Left off here.  This file doesn't exist.  We have to call something to generate it.  Here is what xamarin is doing
+		# define GenerateCrossOffsets
+		# $(3)/$(1).h: .stamp-configure-$(3) target7/mono/arch/arm/arm_dpimacros.h targetwatch/mono/arch/arm/arm_dpimacros.h $(4)/tools/offsets-tool/.stamp-clone $(4)/tools/offsets-tool/MonoAotOffsetsDumper.exe
+		# 	$(Q) MONO_PATH=$(4)/tools/offsets-tool/CppSharp \
+		# 	$(SYSTEM_MONO) $(4)/tools/offsets-tool/MonoAotOffsetsDumper.exe --abi $(1) --out $(2) --mono $(abspath $(4)) --maccore $(abspath $(TOP))
+		# endef
+		push @configureparams, "--with-cross-offsets=arm-apple-darwin10.h";
+		
+		#push @configureparams, "--with-llvm=../llvm/usr";
 
 		# TODO by Mike : What to do about this ?
 		#perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
