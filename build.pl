@@ -113,7 +113,7 @@ if ($iphoneArch ne "")
 }
 
 my $isDesktopBuild = 1;
-if ($android)
+if ($android || $iphone)
 {
 	$isDesktopBuild = 0;
 
@@ -321,12 +321,13 @@ if ($build)
 		$ENV{'LIBTOOLIZE'} = "$builtToolsDir/bin/libtoolize";
 		$ENV{'LIBTOOL'} = "$builtToolsDir/bin/libtool";
 	}
+
 	if ($iphone)
 	{
 		my $iosSdkVersion = "9.3";
 		my $macSdkVersion = "10.6";
 		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
-		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk/";
+		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk";
 
 		print(">>> iOS Build Environment = $iosBuildEnvDir\n");
 		print(">>> iOS SDK Version = $iosSdkVersion\n");
@@ -373,17 +374,16 @@ if ($build)
 		push @configureparams, "--with-tls=pthread";
 		push @configureparams, "--disable-boehm";
 		push @configureparams, "--enable-minimal=jit,profiler,com";
+		# TODO by Mike : I think xamarin does this, not sure if we need to?
+		#push @configureparams, "--disable-iconv";
+		push @configureparams, "mono_cv_uscore=yes";
+		push @configureparams, "cv_mono_sizeof_sunpath=104";
+		push @configureparams, "ac_cv_func_posix_getpwuid_r=yes";
+		push @configureparams, "ac_cv_func_backtrace_symbols=no";
+		push @configureparams, "ac_cv_func_finite=no";
+		push @configureparams, "ac_cv_header_curses_h=no";
 
-
-		# TODO by Mike : What to do about this stuff?
-		# perl -pi -e 's/MONO_SIZEOF_SUNPATH 0/MONO_SIZEOF_SUNPATH 104/' config.h
-		# perl -pi -e 's/#define HAVE_FINITE 1//' config.h
-		# #perl -pi -e 's/#define HAVE_MMAP 1//' config.h
-		# perl -pi -e 's/#define HAVE_CURSES_H 1//' config.h
-		# perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
-
-
-		die("testing\n");
+		die("Testing\n");
 	}
 	elsif ($android)
 	{
@@ -805,8 +805,19 @@ if ($build)
 			print("\n>>> Calling autogen in mono\n");
 			print("\n");
 			print("\n>>> Configure parameters are : @configureparams\n");
-			print("\n");	
-			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');			
+			print("\n");
+
+			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');
+
+			if ($iphone)
+			{
+				# TODO by Mike : What to do about this stuff?
+				#system("perl", "-pi", "-e", "'s/#define HAVE_MMAP 1//'", "config.h");
+				#system("perl", "-pi", "-e", "'s/#define HAVE_STRNDUP 1//'", "eglib/config.h") eq 0 or die ("failed to tweak eglib/config.h\n");
+
+				#die("testing\n");
+			}
+
 			print("\n>>> Calling make clean in mono\n");
 			system("make","clean") eq 0 or die ("failed to make clean\n");
 		}
