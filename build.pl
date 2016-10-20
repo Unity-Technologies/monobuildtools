@@ -355,9 +355,7 @@ if ($build)
 		$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
 		$ENV{CPPFLAGS} = $ENV{CXXFLAGS};
 
-		#$ENV{LDFLAGS} = "-arch $iphoneArch -liconv -Wl,-syslibroot,$iosSdkRoot";
-
-		$ENV{LDFLAGS} = "-arch $iphoneArch -lobjc -lc++ -Wl,-syslibroot,$iosSdkRoot";
+		$ENV{LDFLAGS} = "-arch $iphoneArch -liconv -lobjc -lc++ -Wl,-syslibroot,$iosSdkRoot";
 
 		print "\n";
 		print ">>> Environment:\n";
@@ -386,7 +384,6 @@ if ($build)
 		push @configureparams, "--enable-icall-export";
 		push @configureparams, "--disable-icall-tables";
 		push @configureparams, "--disable-executables";
-		push @configureparams, "--disable-iconv";
 		push @configureparams, "--disable-visibility-hidden";
 		push @configureparams, "--enable-dtrace=no";
 		
