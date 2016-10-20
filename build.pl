@@ -322,6 +322,25 @@ if ($build)
 		$ENV{'LIBTOOL'} = "$builtToolsDir/bin/libtool";
 	}
 
+	my $macSdkPath = "";
+	if ($^O eq 'darwin')
+	{
+		if ($sdk eq '')
+		{
+			$sdk='10.11';
+		}
+		
+		my $macversion = '10.8';
+
+		my $macBuildEnvDir = "$externalBuildDeps/MacBuildEnvironment";
+		$macSdkPath = "$macBuildEnvDir/builds/MacOSX$sdk.sdk";
+		if (! -d $macSdkPath)
+		{
+			print(">>> Unzipping mac build toolchain\n");
+			system('unzip', '-qd', "$macBuildEnvDir", "$macBuildEnvDir/builds.zip");
+		}
+	}
+
 	if ($iphone)
 	{
 		if ($runningOnWindows)
@@ -730,25 +749,10 @@ if ($build)
 		}
 		
 		$mcs = "EXTERNAL_MCS=$existingMonoRootPath/bin/mcs";
-		
-		if ($sdk eq '')
-		{
-			$sdk='10.11';
-		}
-		
-		my $macversion = '10.8';
 
-		my $macBuildEnvDir = "$externalBuildDeps/MacBuildEnvironment";
-		my $sdkPath = "$macBuildEnvDir/builds/MacOSX$sdk.sdk";
-		if (! -d $sdkPath)
-		{
-			print(">>> Unzipping mac build toolchain\n");
-			system('unzip', '-qd', "$macBuildEnvDir", "$macBuildEnvDir/builds.zip");
-		}
-
-		$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
-		$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
-		$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$macBuildEnvDir/builds/usr/include -mmacosx-version-min=$macversion -isysroot $sdkPath";
+		$ENV{'CC'} = "$macSdkPath/../usr/bin/clang";
+		$ENV{'CXX'} = "$macSdkPath/../usr/bin/clang++";
+		$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$macBuildEnvDir/builds/usr/include -mmacosx-version-min=$macversion -isysroot $macSdkPath";
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -Os" if not $debug; #optimize for size
