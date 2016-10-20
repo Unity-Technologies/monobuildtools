@@ -344,22 +344,13 @@ if ($build)
 		}
 
 		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
-
-		# TODO by Mike : this `$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include` doesn't exist, so it must not be doing anything.
-		# clean up if it ends up being something that is not needed, rather than something that needs fixed
-		#$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
 		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
-
-		# TODO by Mike : this `$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include` doesn't exist, so it must not be doing anything.
-		# clean up if it ends up being something that is not needed, rather than something that needs fixed
-		#$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
 		$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
 
 		$ENV{CC} = "gcc -arch $iphoneArch";
 		$ENV{CXX} = "g++ -arch $iphoneArch";
 		$ENV{LD} = $ENV{CC};
 
-		# we had : -fvisibility=hidden -DZ_PREFIX
 		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot -gdwarf-2";
 		$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
 		$ENV{CPPFLAGS} = $ENV{CXXFLAGS};
@@ -381,7 +372,6 @@ if ($build)
 		print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
 		print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
 
-		#push @configureparams, "--build=i386-apple-darwin$iosDarwinVersion";
 		push @configureparams, "--host=arm-apple-darwin$iosDarwinVersion";
 
 		push @configureparams, "--with-sigaltstack=no";
@@ -402,7 +392,6 @@ if ($build)
 		push @configureparams, "--enable-dtrace=no";
 		
 		push @configureparams, "--enable-minimal=ssa,com,jit,reflection_emit_save,reflection_emit,portability,assembly_remapping,attach,verifier,full_messages,appdomains,security,sgen_remset,sgen_marksweep_par,sgen_marksweep_fixed,sgen_marksweep_fixed_par,sgen_copying,logging,remoting,shared_perfcounters";
-		#push @configureparams, "--enable-minimal=jit,profiler,com";
 		
 		push @configureparams, "mono_cv_uscore=yes";
 		push @configureparams, "cv_mono_sizeof_sunpath=104";
@@ -410,12 +399,6 @@ if ($build)
 		push @configureparams, "ac_cv_func_backtrace_symbols=no";
 		push @configureparams, "ac_cv_func_finite=no";
 		push @configureparams, "ac_cv_header_curses_h=no";
-
-		
-		#push @configureparams, "ac_cv_func_fstatat=no";
-		#push @configureparams, "ac_cv_func_readlinkat=no";
-
-		#die("Testing\n");
 	}
 	elsif ($android)
 	{
