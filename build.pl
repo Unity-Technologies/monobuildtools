@@ -357,8 +357,7 @@ if ($build)
 
 		#$ENV{LDFLAGS} = "-arch $iphoneArch -liconv -Wl,-syslibroot,$iosSdkRoot";
 
-		#-Wl,-no_weak_imports
-		$ENV{LDFLAGS} = "-arch $iphoneArch -framework CoreFoundation -lobjc -lc++ -Wl,-syslibroot,$iosSdkRoot";
+		$ENV{LDFLAGS} = "-arch $iphoneArch -lobjc -lc++ -Wl,-syslibroot,$iosSdkRoot";
 
 		print "\n";
 		print ">>> Environment:\n";
@@ -399,6 +398,9 @@ if ($build)
 		push @configureparams, "ac_cv_func_backtrace_symbols=no";
 		push @configureparams, "ac_cv_func_finite=no";
 		push @configureparams, "ac_cv_header_curses_h=no";
+
+		# TODO by Mike : What to do about this stuff?
+		#system("perl", "-pi", "-e", "'s/#define HAVE_STRNDUP 1//'", "eglib/config.h") eq 0 or die ("failed to tweak eglib/config.h\n");
 	}
 	elsif ($android)
 	{
@@ -823,15 +825,6 @@ if ($build)
 			print("\n");
 
 			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');
-
-			if ($iphone)
-			{
-				# TODO by Mike : What to do about this stuff?
-				#system("perl", "-pi", "-e", "'s/#define HAVE_MMAP 1//'", "config.h");
-				#system("perl", "-pi", "-e", "'s/#define HAVE_STRNDUP 1//'", "eglib/config.h") eq 0 or die ("failed to tweak eglib/config.h\n");
-
-				#die("testing\n");
-			}
 
 			print("\n>>> Calling make clean in mono\n");
 			system("make","clean") eq 0 or die ("failed to make clean\n");
