@@ -325,14 +325,13 @@ if ($build)
 	}
 
 	my $macSdkPath = "";
+	my $macversion = '10.8';
 	if ($^O eq 'darwin')
 	{
 		if ($sdk eq '')
 		{
 			$sdk='10.11';
 		}
-		
-		my $macversion = '10.8';
 
 		my $macBuildEnvDir = "$externalBuildDeps/MacBuildEnvironment";
 		$macSdkPath = "$macBuildEnvDir/builds/MacOSX$sdk.sdk";
@@ -427,7 +426,43 @@ if ($build)
 	}
 	elsif ($iphoneCross)
 	{
-		die("not implemented yet\n");
+		if ($runningOnWindows)
+		{
+			die("This build is not supported on Windows\n");
+		}
+
+		$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP";
+		$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
+
+		$ENV{CC} = "$macSdkPath/../usr/bin/clang -arch i386";
+		$ENV{CXX} = "$macSdkPath/../usr/bin/clang++ -arch i386";
+		$ENV{CPP} = "$ENV{CC} -E";
+		$ENV{LD} = $ENV{CC};
+		$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$MAC_SDK_VERSION -isysroot $macSdkPath";
+
+
+		print "\n";
+		print ">>> Environment:\n";
+		print ">>> \tCC = $ENV{CC}\n";
+		print ">>> \tCXX = $ENV{CXX}\n";
+		print ">>> \tLD = $ENV{LD}\n";
+		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+		#print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+		#print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+		#print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
+		#print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
+		print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
+
+		push @configureparams, "--with-sigaltstack=no";
+		push @configureparams, "--disable-shared-handles";
+		push @configureparams, "--with-tls=pthread";
+
+		push @configureparams, "--target=arm-darwin";
+		push @configureparams, "--with-macversion=$macversion";
+
+		# TODO by Mike : What to do about this ?
+		#perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
 	}
 	elsif ($android)
 	{
