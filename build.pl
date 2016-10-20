@@ -356,7 +356,7 @@ if ($build)
 		$ENV{CXX} = "g++ -arch $iphoneArch";
 		$ENV{LD} = $ENV{CC};
 
-		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot -gdwarf-2";
+		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
 		$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
 		$ENV{CPPFLAGS} = $ENV{CXXFLAGS};
 
