@@ -359,11 +359,15 @@ if ($build)
 		$ENV{CXX} = "g++ -arch $iphoneArch";
 		$ENV{LD} = $ENV{CC};
 
-		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DZ_PREFIX -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -fvisibility=hidden -Os -isysroot $iosSdkRoot";
+		# we had : -fvisibility=hidden -DZ_PREFIX
+		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot -gdwarf-2";
 		$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
 		$ENV{CPPFLAGS} = $ENV{CXXFLAGS};
 
-		$ENV{LDFLAGS} = "-liconv -Wl,-syslibroot,$iosSdkRoot";
+		#$ENV{LDFLAGS} = "-arch $iphoneArch -liconv -Wl,-syslibroot,$iosSdkRoot";
+
+		#-Wl,-no_weak_imports
+		$ENV{LDFLAGS} = "-arch $iphoneArch -framework CoreFoundation -lobjc -lc++ -Wl,-syslibroot,$iosSdkRoot";
 
 		print "\n";
 		print ">>> Environment:\n";
@@ -377,21 +381,39 @@ if ($build)
 		print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
 		print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
 
+		#push @configureparams, "--build=i386-apple-darwin$iosDarwinVersion";
 		push @configureparams, "--host=arm-apple-darwin$iosDarwinVersion";
 
 		push @configureparams, "--with-sigaltstack=no";
 		push @configureparams, "--disable-shared-handles";
 		push @configureparams, "--with-tls=pthread";
 		push @configureparams, "--disable-boehm";
-		push @configureparams, "--enable-minimal=jit,profiler,com";
-		# TODO by Mike : I think xamarin does this, not sure if we need to?
-		#push @configureparams, "--disable-iconv";
+
+		push @configureparams, "--enable-llvm-runtime";
+		push @configureparams, "--with-bitcode=yes";
+
+		push @configureparams, "--with-lazy-gc-thread-creation=yes";
+		push @configureparams, "--without-ikvm-native";
+		push @configureparams, "--enable-icall-export";
+		push @configureparams, "--disable-icall-tables";
+		push @configureparams, "--disable-executables";
+		push @configureparams, "--disable-iconv";
+		push @configureparams, "--disable-visibility-hidden";
+		push @configureparams, "--enable-dtrace=no";
+		
+		push @configureparams, "--enable-minimal=ssa,com,jit,reflection_emit_save,reflection_emit,portability,assembly_remapping,attach,verifier,full_messages,appdomains,security,sgen_remset,sgen_marksweep_par,sgen_marksweep_fixed,sgen_marksweep_fixed_par,sgen_copying,logging,remoting,shared_perfcounters";
+		#push @configureparams, "--enable-minimal=jit,profiler,com";
+		
 		push @configureparams, "mono_cv_uscore=yes";
 		push @configureparams, "cv_mono_sizeof_sunpath=104";
 		push @configureparams, "ac_cv_func_posix_getpwuid_r=yes";
 		push @configureparams, "ac_cv_func_backtrace_symbols=no";
 		push @configureparams, "ac_cv_func_finite=no";
 		push @configureparams, "ac_cv_header_curses_h=no";
+
+		
+		#push @configureparams, "ac_cv_func_fstatat=no";
+		#push @configureparams, "ac_cv_func_readlinkat=no";
 
 		#die("Testing\n");
 	}
@@ -1053,7 +1075,7 @@ if ($artifact)
 	
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
-	if ($android)
+	if ($android || $iphone)
 	{
 		# Nothing to do
 	}
