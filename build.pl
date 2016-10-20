@@ -55,6 +55,7 @@ my $android=0;
 my $androidArch = "";
 my $iphone=0;
 my $iphoneArch = "";
+my $iphoneCross=0;
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -87,6 +88,7 @@ GetOptions(
 	'androidarch=s'=>\$androidArch,
 	'iphone=i'=>\$iphone,
 	'iphonearch=s'=>\$iphoneArch,
+	'iphonecross=i'=>\$iphoneCross,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -113,7 +115,7 @@ if ($iphoneArch ne "")
 }
 
 my $isDesktopBuild = 1;
-if ($android || $iphone)
+if ($android || $iphone || $iphoneCross)
 {
 	$isDesktopBuild = 0;
 
@@ -422,6 +424,10 @@ if ($build)
 
 		# TODO by Mike : What to do about this stuff?
 		#system("perl", "-pi", "-e", "'s/#define HAVE_STRNDUP 1//'", "eglib/config.h") eq 0 or die ("failed to tweak eglib/config.h\n");
+	}
+	elsif ($iphoneCross)
+	{
+		die("not implemented yet\n");
 	}
 	elsif ($android)
 	{
@@ -963,6 +969,10 @@ if ($artifact)
 		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneArch";
 		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneArch.txt";
 	}
+	elsif ($iphoneCross)
+	{
+		die("Not implemented yet\n");
+	}
 	elsif ($android)
 	{
 		$embedDirArchDestination = "$embedDirRoot/android/$androidArch";
@@ -1011,6 +1021,10 @@ if ($artifact)
 		print ">>> Copying libmonosgen-2.0\n";
 		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
 	}
+	elsif ($iphoneCross)
+	{
+		die("Not implemented yet\n");
+	}
 	elsif ($android)
 	{
 		print ">>> Copying libmonosgen-2.0\n";
@@ -1057,7 +1071,7 @@ if ($artifact)
 	
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
-	if ($android || $iphone)
+	if ($android || $iphone || $iphoneCross)
 	{
 		# Nothing to do
 	}
@@ -1089,6 +1103,12 @@ if ($artifact)
 		system("cp", "$monoprefix/bin/mono-2.0.dll", "$distDirArchBin/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
 		system("cp", "$monoprefix/bin/mono-2.0.pdb", "$distDirArchBin/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
 		system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
+	}
+
+	# cross compiler directory setup
+	if ($iphoneCross)
+	{
+		die("Not implemented yet\n");
 	}
 	
 	# Not all build configurations output to the distro dir, so only chmod it if it exists
