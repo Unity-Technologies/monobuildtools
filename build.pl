@@ -326,6 +326,8 @@ if ($build)
 	{
 		my $iosSdkVersion = "9.3";
 		my $macSdkVersion = "10.6";
+		my $iphoneOsMinVersion = "3.0";
+		my $iosDarwinVersion = "9";
 		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
 		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk";
 
@@ -342,14 +344,22 @@ if ($build)
 		}
 
 		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
-		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
-		$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
+
+		# TODO by Mike : this `$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include` doesn't exist, so it must not be doing anything.
+		# clean up if it ends up being something that is not needed, rather than something that needs fixed
+		#$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
+		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
+
+		# TODO by Mike : this `$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include` doesn't exist, so it must not be doing anything.
+		# clean up if it ends up being something that is not needed, rather than something that needs fixed
+		#$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/lib/gcc/arm-apple-darwin9/4.2.1/include:$iosSdkRoot/usr/include";
+		$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
 
 		$ENV{CC} = "gcc -arch $iphoneArch";
 		$ENV{CXX} = "g++ -arch $iphoneArch";
 		$ENV{LD} = $ENV{CC};
 
-		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DZ_PREFIX -DPLATFORM_IPHONE -DARM_FPU_VFP=1 -miphoneos-version-min=3.0 -mno-thumb -fvisibility=hidden -Os -isysroot $iosSdkRoot";
+		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DZ_PREFIX -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -fvisibility=hidden -Os -isysroot $iosSdkRoot";
 		$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
 		$ENV{CPPFLAGS} = $ENV{CXXFLAGS};
 
@@ -367,7 +377,7 @@ if ($build)
 		print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
 		print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
 
-		push @configureparams, "--host=arm-apple-darwin9";
+		push @configureparams, "--host=arm-apple-darwin$iosDarwinVersion";
 
 		push @configureparams, "--with-sigaltstack=no";
 		push @configureparams, "--disable-shared-handles";
@@ -383,7 +393,7 @@ if ($build)
 		push @configureparams, "ac_cv_func_finite=no";
 		push @configureparams, "ac_cv_header_curses_h=no";
 
-		die("Testing\n");
+		#die("Testing\n");
 	}
 	elsif ($android)
 	{
