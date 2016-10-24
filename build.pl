@@ -56,6 +56,7 @@ my $androidArch = "";
 my $iphone=0;
 my $iphoneArch = "";
 my $iphoneCross=0;
+my $iphoneSimulator=0;
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -89,6 +90,7 @@ GetOptions(
 	'iphone=i'=>\$iphone,
 	'iphonearch=s'=>\$iphoneArch,
 	'iphonecross=i'=>\$iphoneCross,
+	'iphonesimulator=i'=>\$iphoneSimulator,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -115,7 +117,7 @@ if ($iphoneArch ne "")
 }
 
 my $isDesktopBuild = 1;
-if ($android || $iphone || $iphoneCross)
+if ($android || $iphone || $iphoneCross || $iphoneSimulator)
 {
 	$isDesktopBuild = 0;
 
@@ -479,6 +481,10 @@ if ($build)
 		# HACK
 		system("cp", "$monoroot/external/buildscripts/build_includes/$crossOffsetHeader","$monoroot/.") eq 0 or die ("failed copying $crossOffsetHeader\n");
 
+	}
+	elsif ($$iphoneSimulator)
+	{
+		die("Not Implemented\n");
 	}
 	elsif ($android)
 	{
@@ -1027,6 +1033,10 @@ if ($artifact)
 		$crossCompilerDestination = "$buildsroot/crosscompiler/iphone";
 		$versionsOutputFile = "$buildsroot/versions-iphone-xcompiler.txt";
 	}
+	elsif ($iphoneSimulator)
+	{
+		die("Not Implemented\n");
+	}
 	elsif ($android)
 	{
 		$embedDirArchDestination = "$embedDirRoot/android/$androidArch";
@@ -1080,6 +1090,10 @@ if ($artifact)
 	{
 		# Nothing to do
 	}
+	elsif ($iphoneSimulator)
+	{
+		die("Not Implemented\n");
+	}
 	elsif ($android)
 	{
 		print ">>> Copying libmonosgen-2.0\n";
@@ -1126,7 +1140,7 @@ if ($artifact)
 	
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
-	if ($android || $iphone || $iphoneCross)
+	if ($android || $iphone || $iphoneCross || $iphoneSimulator)
 	{
 		# Nothing to do
 	}
