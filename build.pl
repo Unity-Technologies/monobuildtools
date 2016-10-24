@@ -1025,6 +1025,7 @@ if ($artifact)
 	elsif ($iphoneCross)
 	{
 		$crossCompilerDestination = "$buildsroot/crosscompiler/iphone";
+		$versionsOutputFile = "$buildsroot/versions-iphone-xcompiler.txt";
 	}
 	elsif ($android)
 	{
@@ -1077,7 +1078,7 @@ if ($artifact)
 	}
 	elsif ($iphoneCross)
 	{
-		die("Not implemented yet\n");
+		# Nothing to do
 	}
 	elsif ($android)
 	{
