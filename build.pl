@@ -228,8 +228,8 @@ if ($build)
 				die("failed to checkout mono build dependencies\n");
 			}
 
-			# now that the directory exists we can clean up the path
-			$externalBuildDeps = abs_path($externalBuildDeps);
+			# Only clean up if the dir exists.   Otherwise abs_path will return empty string
+			$externalBuildDeps = abs_path($externalBuildDeps) if (-d $externalBuildDeps);
 		}
 		
 		if (-d "$existingExternalMono")
