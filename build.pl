@@ -429,58 +429,59 @@ if ($build)
 	{
 		if ($runningOnWindows)
 		{
-			die("This build is not supported on Windows\n");
+			die("Not implemented\n");
 		}
+		else
+		{
+			my $crossOffsetHeader = "arm-apple-darwin10.h";
 
-		my $crossOffsetHeader = "arm-apple-darwin10.h";
+			$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP -mmacosx-version-min=$macversion";
+			$ENV{CXXFLAGS} = "-mmacosx-version-min=$macversion -stdlib=libc++";
+			$ENV{CPPFLAGS} = "$ENV{CFLAGS} -mmacosx-version-min=$macversion";
 
-		$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP -mmacosx-version-min=$macversion";
-		$ENV{CXXFLAGS} = "-mmacosx-version-min=$macversion -stdlib=libc++";
-		$ENV{CPPFLAGS} = "$ENV{CFLAGS} -mmacosx-version-min=$macversion";
+			$ENV{CC} = "$macSdkPath/../usr/bin/clang -arch i386";
+			$ENV{CXX} = "$macSdkPath/../usr/bin/clang++ -arch i386";
+			$ENV{CPP} = "$ENV{CC} -E";
+			$ENV{LD} = $ENV{CC};
+			$ENV{LDFLAGS} = "-stdlib=libc++";
+			$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$macversion -isysroot $macSdkPath";
 
-		$ENV{CC} = "$macSdkPath/../usr/bin/clang -arch i386";
-		$ENV{CXX} = "$macSdkPath/../usr/bin/clang++ -arch i386";
-		$ENV{CPP} = "$ENV{CC} -E";
-		$ENV{LD} = $ENV{CC};
-		$ENV{LDFLAGS} = "-stdlib=libc++";
-		$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$macversion -isysroot $macSdkPath";
+			print "\n";
+			print ">>> Environment:\n";
+			print ">>> \tCC = $ENV{CC}\n";
+			print ">>> \tCXX = $ENV{CXX}\n";
+			print ">>> \tLD = $ENV{LD}\n";
+			print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+			print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+			print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+			print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+			#print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
+			#print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
+			print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
 
-		print "\n";
-		print ">>> Environment:\n";
-		print ">>> \tCC = $ENV{CC}\n";
-		print ">>> \tCXX = $ENV{CXX}\n";
-		print ">>> \tLD = $ENV{LD}\n";
-		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
-		print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
-		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
-		print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
-		#print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
-		#print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
-		print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
+			push @configureparams, "--with-sigaltstack=no";
+			push @configureparams, "--disable-shared-handles";
+			push @configureparams, "--with-tls=pthread";
 
-		push @configureparams, "--with-sigaltstack=no";
-		push @configureparams, "--disable-shared-handles";
-		push @configureparams, "--with-tls=pthread";
+			push @configureparams, "--target=arm-darwin";
+			push @configureparams, "--with-macversion=$macversion";
 
-		push @configureparams, "--target=arm-darwin";
-		push @configureparams, "--with-macversion=$macversion";
+			# TODO by Mike : Left off here.  This file doesn't exist.  We have to call something to generate it.  Here is what xamarin is doing
+			# define GenerateCrossOffsets
+			# $(3)/$(1).h: .stamp-configure-$(3) target7/mono/arch/arm/arm_dpimacros.h targetwatch/mono/arch/arm/arm_dpimacros.h $(4)/tools/offsets-tool/.stamp-clone $(4)/tools/offsets-tool/MonoAotOffsetsDumper.exe
+			# 	$(Q) MONO_PATH=$(4)/tools/offsets-tool/CppSharp \
+			# 	$(SYSTEM_MONO) $(4)/tools/offsets-tool/MonoAotOffsetsDumper.exe --abi $(1) --out $(2) --mono $(abspath $(4)) --maccore $(abspath $(TOP))
+			# endef
+			push @configureparams, "--with-cross-offsets=$crossOffsetHeader";
+			
+			#push @configureparams, "--with-llvm=../llvm/usr";
 
-		# TODO by Mike : Left off here.  This file doesn't exist.  We have to call something to generate it.  Here is what xamarin is doing
-		# define GenerateCrossOffsets
-		# $(3)/$(1).h: .stamp-configure-$(3) target7/mono/arch/arm/arm_dpimacros.h targetwatch/mono/arch/arm/arm_dpimacros.h $(4)/tools/offsets-tool/.stamp-clone $(4)/tools/offsets-tool/MonoAotOffsetsDumper.exe
-		# 	$(Q) MONO_PATH=$(4)/tools/offsets-tool/CppSharp \
-		# 	$(SYSTEM_MONO) $(4)/tools/offsets-tool/MonoAotOffsetsDumper.exe --abi $(1) --out $(2) --mono $(abspath $(4)) --maccore $(abspath $(TOP))
-		# endef
-		push @configureparams, "--with-cross-offsets=$crossOffsetHeader";
-		
-		#push @configureparams, "--with-llvm=../llvm/usr";
+			# TODO by Mike : What to do about this ?
+			#perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
 
-		# TODO by Mike : What to do about this ?
-		#perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
-
-		# HACK
-		system("cp", "$monoroot/external/buildscripts/build_includes/$crossOffsetHeader","$monoroot/.") eq 0 or die ("failed copying $crossOffsetHeader\n");
-
+			# HACK
+			system("cp", "$monoroot/external/buildscripts/build_includes/$crossOffsetHeader","$monoroot/.") eq 0 or die ("failed copying $crossOffsetHeader\n");
+		}
 	}
 	elsif ($$iphoneSimulator)
 	{
