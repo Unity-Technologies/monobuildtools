@@ -455,8 +455,6 @@ if ($build)
 			print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
 			print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
 			print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
-			#print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
-			#print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
 			print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
 
 			push @configureparams, "--with-sigaltstack=no";
@@ -483,8 +481,53 @@ if ($build)
 			system("cp", "$monoroot/external/buildscripts/build_includes/$crossOffsetHeader","$monoroot/.") eq 0 or die ("failed copying $crossOffsetHeader\n");
 		}
 	}
-	elsif ($$iphoneSimulator)
+	elsif ($iphoneSimulator)
 	{
+		if ($runningOnWindows)
+		{
+			die("This build is not supported on Windows\n");
+		}
+
+		my $iosSdkVersion = "9.3";
+		my $iosSimMinVersion = "4.3";
+		
+		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
+		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneSimulator$iosSdkVersion.sdk";
+		my $iosSimArch = "x86_64";
+		$iosSimArch = "i386" if ($arch32);
+
+		print(">>> iOS Sim Build Environment = $iosBuildEnvDir\n");
+		print(">>> iOS Sim SDK Version = $iosSdkVersion\n");
+		print(">>> iOS Sim SDK Root = $iosSdkRoot\n");
+		print(">>> iOS Sim Arch = $iosSimArch\n");
+
+		if (! -d "$iosBuildEnvDir/builds")
+		{
+			print(">>> Unzipping ios build toolchain\n");
+			system('unzip', '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
+		}
+
+		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
+
+		$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE=1 -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
+		$ENV{CFLAGS} = "-arch $iosSimArch $ENV{MACSDKOPTIONS}";
+		$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
+		$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
+		$ENV{CC} = "$iosSdkRoot/usr/bin/clang -arch i386";
+		$ENV{CXX} = "$iosSdkRoot/usr/bin/clang++ -arch i386";
+
+		print "\n";
+		print ">>> Environment:\n";
+		print ">>> \tCC = $ENV{CC}\n";
+		print ">>> \tCXX = $ENV{CXX}\n";
+		print ">>> \tLD = $ENV{LD}\n";
+		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+		print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+		print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
+
+		# TODO setup configure args
+
 		die("Not Implemented\n");
 	}
 	elsif ($android)
