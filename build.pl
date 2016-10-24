@@ -430,6 +430,8 @@ if ($build)
 			die("This build is not supported on Windows\n");
 		}
 
+		my $crossOffsetHeader = "arm-apple-darwin10.h";
+
 		$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP -mmacosx-version-min=$macversion";
 		$ENV{CXXFLAGS} = "-mmacosx-version-min=$macversion -stdlib=libc++";
 		$ENV{CPPFLAGS} = "$ENV{CFLAGS} -mmacosx-version-min=$macversion";
@@ -467,12 +469,16 @@ if ($build)
 		# 	$(Q) MONO_PATH=$(4)/tools/offsets-tool/CppSharp \
 		# 	$(SYSTEM_MONO) $(4)/tools/offsets-tool/MonoAotOffsetsDumper.exe --abi $(1) --out $(2) --mono $(abspath $(4)) --maccore $(abspath $(TOP))
 		# endef
-		push @configureparams, "--with-cross-offsets=arm-apple-darwin10.h";
+		push @configureparams, "--with-cross-offsets=$crossOffsetHeader";
 		
 		#push @configureparams, "--with-llvm=../llvm/usr";
 
 		# TODO by Mike : What to do about this ?
 		#perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
+
+		# HACK
+		system("cp", "$monoroot/external/buildscripts/build_includes/$crossOffsetHeader","$monoroot/.") eq 0 or die ("failed copying $crossOffsetHeader\n");
+
 	}
 	elsif ($android)
 	{
