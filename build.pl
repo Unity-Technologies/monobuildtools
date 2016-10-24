@@ -1015,6 +1015,8 @@ if ($artifact)
 	my $embedDirArchDestination = "";
 	my $distDirArchBin = "";
 	my $versionsOutputFile = "";
+	my $crossCompilerRoot = "$buildsroot/crosscompiler";
+	my $crossCompilerDestination = "";
 	if ($iphone)
 	{
 		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneArch";
@@ -1022,7 +1024,7 @@ if ($artifact)
 	}
 	elsif ($iphoneCross)
 	{
-		die("Not implemented yet\n");
+		$crossCompilerDestination = "$buildsroot/crosscompiler/iphone";
 	}
 	elsif ($android)
 	{
@@ -1064,6 +1066,7 @@ if ($artifact)
 
 	system("mkdir -p $embedDirArchDestination") if ($embedDirArchDestination ne "");
 	system("mkdir -p $distDirArchBin") if ($distDirArchBin ne "");
+	system("mkdir -p $crossCompilerDestination") if ($crossCompilerDestination ne "");
 
 	# embedruntimes directory setup
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
@@ -1159,7 +1162,8 @@ if ($artifact)
 	# cross compiler directory setup
 	if ($iphoneCross)
 	{
-		die("Not implemented yet\n");
+		print ">>> Copying mono-xcompiler\n";
+		system("cp", "$monoroot/mono/mini/mono","$crossCompilerDestination/mono-xcompiler") eq 0 or die ("failed copying mono-xcompiler\n");
 	}
 	
 	# Not all build configurations output to the distro dir, so only chmod it if it exists
