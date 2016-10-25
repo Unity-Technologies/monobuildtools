@@ -520,7 +520,7 @@ if ($build)
 
 		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
 
-		$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE=1 -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
+		$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE=1 -g -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
 		$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
 		$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
 		$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
