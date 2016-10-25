@@ -354,7 +354,7 @@ if ($build)
 		if (! -d $macSdkPath)
 		{
 			print(">>> Unzipping mac build toolchain\n");
-			system('unzip', '-qd', "$macBuildEnvDir", "$macBuildEnvDir/builds.zip");
+			system("$externalBuildDeps/unzip", '-qd', "$macBuildEnvDir", "$macBuildEnvDir/builds.zip");
 		}
 	}
 
@@ -379,7 +379,7 @@ if ($build)
 		if (! -d "$iosBuildEnvDir/builds")
 		{
 			print(">>> Unzipping ios build toolchain\n");
-			system('unzip', '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
+			system("$externalBuildDeps/unzip", '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
 		}
 
 		$ENV{PATH} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin:$iosSdkRoot/usr/bin:$ENV{PATH}";
@@ -515,7 +515,7 @@ if ($build)
 		if (! -d "$iosBuildEnvDir/builds")
 		{
 			print(">>> Unzipping ios build toolchain\n");
-			system('unzip', '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
+			system("$externalBuildDeps/unzip", '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
 		}
 
 		$ENV{PATH} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin:$iosSdkRoot/usr/bin:$ENV{PATH}";
