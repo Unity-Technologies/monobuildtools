@@ -382,12 +382,12 @@ if ($build)
 			system('unzip', '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
 		}
 
-		$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
+		$ENV{PATH} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin:$iosSdkRoot/usr/bin:$ENV{PATH}";
 		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
 		$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
 
-		$ENV{CC} = "gcc -arch $iphoneArch";
-		$ENV{CXX} = "g++ -arch $iphoneArch";
+		$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/gcc -arch $iphoneArch";
+		$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/g++ -arch $iphoneArch";
 		$ENV{LD} = $ENV{CC};
 
 		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
@@ -518,14 +518,14 @@ if ($build)
 			system('unzip', '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
 		}
 
-		$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
+		$ENV{PATH} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin:$iosSdkRoot/usr/bin:$ENV{PATH}";
 
 		$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE=1 -g -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
 		$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
 		$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
 		$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
-		$ENV{CC} = "$macSdkPath/../usr/bin/clang -arch $iphoneSimulatorArch";
-		$ENV{CXX} = "$macSdkPath/../usr/bin/clang++ -arch $iphoneSimulatorArch";
+		$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/gcc -arch $iphoneSimulatorArch";
+		$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/g++ -arch $iphoneSimulatorArch";
 
 		print "\n";
 		print ">>> Environment:\n";
