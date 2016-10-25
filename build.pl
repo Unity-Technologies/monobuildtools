@@ -382,7 +382,7 @@ if ($build)
 			system('unzip', '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
 		}
 
-		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
+		$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
 		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
 		$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
 
@@ -518,7 +518,7 @@ if ($build)
 			system('unzip', '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip");
 		}
 
-		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
+		$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
 
 		$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE=1 -g -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
 		$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
