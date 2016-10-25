@@ -383,12 +383,14 @@ if ($build)
 		}
 
 		$ENV{PATH} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin:$iosSdkRoot/usr/bin:$ENV{PATH}";
+		$ENV{PATH} = "$externalBuildDeps/built-tools/bin:$ENV{PATH}";
+
 		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
 		$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
 
-		$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/gcc -arch $iphoneArch";
-		$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/g++ -arch $iphoneArch";
-		$ENV{LD} = $ENV{CC};
+		$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -arch $iphoneArch";
+		$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -arch $iphoneArch";
+		$ENV{LD} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld";
 
 		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
 		$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
