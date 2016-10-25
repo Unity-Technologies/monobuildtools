@@ -57,6 +57,7 @@ my $iphone=0;
 my $iphoneArch = "";
 my $iphoneCross=0;
 my $iphoneSimulator=0;
+my $iphoneSimulatorArch="";
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -114,6 +115,18 @@ if ($androidArch ne "")
 if ($iphoneArch ne "")
 {
 	$iphone = 1;
+}
+
+if($iphoneSimulator)
+{
+	if ($arch32)
+	{
+		$iphoneSimulatorArch = "i386";
+	}
+	else
+	{
+		$iphoneSimulatorArch = "x86_64";
+	}
 }
 
 my $isDesktopBuild = 1;
@@ -492,14 +505,12 @@ if ($build)
 		my $iosSimMinVersion = "4.3";
 		
 		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
-		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneSimulator$iosSdkVersion.sdk";
-		my $iosSimArch = "x86_64";
-		$iosSimArch = "i386" if ($arch32);
+		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator$iosSdkVersion.sdk";
 
 		print(">>> iOS Sim Build Environment = $iosBuildEnvDir\n");
 		print(">>> iOS Sim SDK Version = $iosSdkVersion\n");
 		print(">>> iOS Sim SDK Root = $iosSdkRoot\n");
-		print(">>> iOS Sim Arch = $iosSimArch\n");
+		print(">>> iOS Sim Arch = $iphoneSimulatorArch\n");
 
 		if (! -d "$iosBuildEnvDir/builds")
 		{
@@ -510,11 +521,11 @@ if ($build)
 		$ENV{PATH} = "iosSdkRoot/usr/bin:$ENV{PATH}";
 
 		$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE=1 -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
-		$ENV{CFLAGS} = "-arch $iosSimArch $ENV{MACSDKOPTIONS}";
+		$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
 		$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
 		$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
-		$ENV{CC} = "$iosSdkRoot/usr/bin/clang -arch i386";
-		$ENV{CXX} = "$iosSdkRoot/usr/bin/clang++ -arch i386";
+		$ENV{CC} = "$macSdkPath/../usr/bin/clang -arch $iphoneSimulatorArch";
+		$ENV{CXX} = "$macSdkPath/../usr/bin/clang++ -arch $iphoneSimulatorArch";
 
 		print "\n";
 		print ">>> Environment:\n";
@@ -526,9 +537,19 @@ if ($build)
 		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
 		print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
 
-		# TODO setup configure args
+		push @configureparams, "--host=$iphoneSimulatorArch-apple-darwin$darwinVersion";
 
-		die("Not Implemented\n");
+		push @configureparams, "--with-tls=pthread";
+		push @configureparams, "--disable-boehm";
+
+		push @configureparams, "--without-ikvm-native";;
+		push @configureparams, "--disable-executables";
+		push @configureparams, "--disable-visibility-hidden";
+		
+		push @configureparams, "--enable-minimal=com,remoting,shared_perfcounters";
+		
+		push @configureparams, "mono_cv_uscore=yes";
+		push @configureparams, "ac_cv_func_clock_nanosleep=no";
 	}
 	elsif ($android)
 	{
@@ -1079,7 +1100,8 @@ if ($artifact)
 	}
 	elsif ($iphoneSimulator)
 	{
-		die("Not Implemented\n");
+		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneSimulatorArch";
+		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneSimulatorArch.txt";
 	}
 	elsif ($android)
 	{
@@ -1136,7 +1158,8 @@ if ($artifact)
 	}
 	elsif ($iphoneSimulator)
 	{
-		die("Not Implemented\n");
+		print ">>> Copying libmonosgen-2.0\n";
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
 	}
 	elsif ($android)
 	{
