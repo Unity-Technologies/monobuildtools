@@ -358,23 +358,15 @@ if ($build)
 		}
 	}
 
-	if ($iphone)
+	if ($iphone || $iphoneSimulator)
 	{
 		if ($runningOnWindows)
 		{
 			die("This build is not supported on Windows\n");
 		}
 
-		my $iosSdkVersion = "9.3";
-		my $iphoneOsMinVersion = "3.0";
-		
 		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
-		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk";
-
-		print(">>> iOS Build Environment = $iosBuildEnvDir\n");
-		print(">>> iOS SDK Version = $iosSdkVersion\n");
-		print(">>> iOS SDK Root = $iosSdkRoot\n");
-		print(">>> iPhone Arch = $iphoneArch\n");
+		my $iosXcodeDefaultToolchainRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain";
 
 		if (! -d "$iosBuildEnvDir/builds")
 		{
@@ -382,63 +374,126 @@ if ($build)
 			system("$externalBuildDeps/unzip", '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip") eq 0 or die ("failed unzipping ios build toolchain\n");
 		}
 
-		$ENV{PATH} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin:$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin:$iosSdkRoot/usr/bin:$ENV{PATH}";
+		$ENV{PATH} = "$iosXcodeDefaultToolchainRoot/usr/bin:$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin:$ENV{PATH}";
+		# Need to keep our libtool in front
 		$ENV{PATH} = "$externalBuildDeps/built-tools/bin:$ENV{PATH}";
 
-		$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
-		$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
+		if ($iphone)
+		{
+			my $iosSdkVersion = "9.3";
+			my $iphoneOsMinVersion = "3.0";
+			my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk";
 
-		$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -arch $iphoneArch";
-		$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -arch $iphoneArch";
-		$ENV{LD} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld";
+			print(">>> iOS Build Environment = $iosBuildEnvDir\n");
+			print(">>> iOS SDK Version = $iosSdkVersion\n");
+			print(">>> iOS SDK Root = $iosSdkRoot\n");
+			print(">>> iPhone Arch = $iphoneArch\n");
 
-		$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
-		$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
-		$ENV{CPPFLAGS} = $ENV{CXXFLAGS};
+			$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
 
-		$ENV{LDFLAGS} = "-arch $iphoneArch -liconv -lobjc -lc++ -Wl,-syslibroot,$iosSdkRoot";
+			$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
+			$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
 
-		print "\n";
-		print ">>> Environment:\n";
-		print ">>> \tCC = $ENV{CC}\n";
-		print ">>> \tCXX = $ENV{CXX}\n";
-		print ">>> \tLD = $ENV{LD}\n";
-		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
-		print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
-		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
-		print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
-		print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
-		print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
+			$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -arch $iphoneArch";
+			$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -arch $iphoneArch";
+			$ENV{LD} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld";
 
-		push @configureparams, "--host=arm-apple-darwin$darwinVersion";
+			$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
+			$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
+			$ENV{CPPFLAGS} = $ENV{CXXFLAGS};
 
-		push @configureparams, "--with-sigaltstack=no";
-		push @configureparams, "--disable-shared-handles";
-		push @configureparams, "--with-tls=pthread";
-		push @configureparams, "--disable-boehm";
+			$ENV{LDFLAGS} = "-arch $iphoneArch -liconv -lobjc -lc++ -Wl,-syslibroot,$iosSdkRoot";
 
-		push @configureparams, "--enable-llvm-runtime";
-		push @configureparams, "--with-bitcode=yes";
+			print "\n";
+			print ">>> Environment:\n";
+			print ">>> \tCC = $ENV{CC}\n";
+			print ">>> \tCXX = $ENV{CXX}\n";
+			print ">>> \tLD = $ENV{LD}\n";
+			print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+			print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+			print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+			print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+			print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
+			print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
 
-		push @configureparams, "--with-lazy-gc-thread-creation=yes";
-		push @configureparams, "--without-ikvm-native";
-		push @configureparams, "--enable-icall-export";
-		push @configureparams, "--disable-icall-tables";
-		push @configureparams, "--disable-executables";
-		push @configureparams, "--disable-visibility-hidden";
-		push @configureparams, "--enable-dtrace=no";
-		
-		push @configureparams, "--enable-minimal=ssa,com,jit,reflection_emit_save,reflection_emit,portability,assembly_remapping,attach,verifier,full_messages,appdomains,security,sgen_remset,sgen_marksweep_par,sgen_marksweep_fixed,sgen_marksweep_fixed_par,sgen_copying,logging,remoting,shared_perfcounters";
-		
-		push @configureparams, "mono_cv_uscore=yes";
-		push @configureparams, "cv_mono_sizeof_sunpath=104";
-		push @configureparams, "ac_cv_func_posix_getpwuid_r=yes";
-		push @configureparams, "ac_cv_func_backtrace_symbols=no";
-		push @configureparams, "ac_cv_func_finite=no";
-		push @configureparams, "ac_cv_header_curses_h=no";
+			push @configureparams, "--host=arm-apple-darwin$darwinVersion";
 
-		# TODO by Mike : What to do about this stuff?
-		#system("perl", "-pi", "-e", "'s/#define HAVE_STRNDUP 1//'", "eglib/config.h") eq 0 or die ("failed to tweak eglib/config.h\n");
+			push @configureparams, "--with-sigaltstack=no";
+			push @configureparams, "--disable-shared-handles";
+			push @configureparams, "--with-tls=pthread";
+			push @configureparams, "--disable-boehm";
+
+			push @configureparams, "--enable-llvm-runtime";
+			push @configureparams, "--with-bitcode=yes";
+
+			push @configureparams, "--with-lazy-gc-thread-creation=yes";
+			push @configureparams, "--without-ikvm-native";
+			push @configureparams, "--enable-icall-export";
+			push @configureparams, "--disable-icall-tables";
+			push @configureparams, "--disable-executables";
+			push @configureparams, "--disable-visibility-hidden";
+			push @configureparams, "--enable-dtrace=no";
+			
+			push @configureparams, "--enable-minimal=ssa,com,jit,reflection_emit_save,reflection_emit,portability,assembly_remapping,attach,verifier,full_messages,appdomains,security,sgen_remset,sgen_marksweep_par,sgen_marksweep_fixed,sgen_marksweep_fixed_par,sgen_copying,logging,remoting,shared_perfcounters";
+			
+			push @configureparams, "mono_cv_uscore=yes";
+			push @configureparams, "cv_mono_sizeof_sunpath=104";
+			push @configureparams, "ac_cv_func_posix_getpwuid_r=yes";
+			push @configureparams, "ac_cv_func_backtrace_symbols=no";
+			push @configureparams, "ac_cv_func_finite=no";
+			push @configureparams, "ac_cv_header_curses_h=no";
+
+			# TODO by Mike : What to do about this stuff?
+			#system("perl", "-pi", "-e", "'s/#define HAVE_STRNDUP 1//'", "eglib/config.h") eq 0 or die ("failed to tweak eglib/config.h\n");
+		}
+		elsif ($iphoneSimulator)
+		{
+			my $iosSdkVersion = "9.3";
+			my $iosSimMinVersion = "4.3";
+			my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator$iosSdkVersion.sdk";
+
+			print(">>> iOS Sim Build Environment = $iosBuildEnvDir\n");
+			print(">>> iOS Sim SDK Version = $iosSdkVersion\n");
+			print(">>> iOS Sim SDK Root = $iosSdkRoot\n");
+			print(">>> iOS Sim Arch = $iphoneSimulatorArch\n");
+
+			$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
+
+			$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE=1 -g -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
+			$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
+			$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
+			$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
+			$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/gcc -arch $iphoneSimulatorArch";
+			$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/g++ -arch $iphoneSimulatorArch";
+
+			print "\n";
+			print ">>> Environment:\n";
+			print ">>> \tCC = $ENV{CC}\n";
+			print ">>> \tCXX = $ENV{CXX}\n";
+			print ">>> \tLD = $ENV{LD}\n";
+			print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+			print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+			print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+			print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
+
+			push @configureparams, "--host=$iphoneSimulatorArch-apple-darwin$darwinVersion";
+
+			push @configureparams, "--with-tls=pthread";
+			push @configureparams, "--disable-boehm";
+
+			push @configureparams, "--without-ikvm-native";;
+			push @configureparams, "--disable-executables";
+			push @configureparams, "--disable-visibility-hidden";
+			
+			push @configureparams, "--enable-minimal=com,remoting,shared_perfcounters";
+			
+			push @configureparams, "mono_cv_uscore=yes";
+			push @configureparams, "ac_cv_func_clock_nanosleep=no";
+		}
+		else
+		{
+			die("This should not be hit\n");
+		}
 	}
 	elsif ($iphoneCross)
 	{
@@ -495,63 +550,6 @@ if ($build)
 			# HACK
 			system("cp", "$monoroot/external/buildscripts/build_includes/$crossOffsetHeader","$monoroot/.") eq 0 or die ("failed copying $crossOffsetHeader\n");
 		}
-	}
-	elsif ($iphoneSimulator)
-	{
-		if ($runningOnWindows)
-		{
-			die("This build is not supported on Windows\n");
-		}
-
-		my $iosSdkVersion = "9.3";
-		my $iosSimMinVersion = "4.3";
-		
-		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
-		my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator$iosSdkVersion.sdk";
-
-		print(">>> iOS Sim Build Environment = $iosBuildEnvDir\n");
-		print(">>> iOS Sim SDK Version = $iosSdkVersion\n");
-		print(">>> iOS Sim SDK Root = $iosSdkRoot\n");
-		print(">>> iOS Sim Arch = $iphoneSimulatorArch\n");
-
-		if (! -d "$iosBuildEnvDir/builds")
-		{
-			print(">>> Unzipping ios build toolchain\n");
-			system("$externalBuildDeps/unzip", '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip") eq 0 or die ("failed unzipping ios build toolchain\n");
-		}
-
-		$ENV{PATH} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin:$iosSdkRoot/usr/bin:$ENV{PATH}";
-
-		$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE=1 -g -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
-		$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
-		$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
-		$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
-		$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/gcc -arch $iphoneSimulatorArch";
-		$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/g++ -arch $iphoneSimulatorArch";
-
-		print "\n";
-		print ">>> Environment:\n";
-		print ">>> \tCC = $ENV{CC}\n";
-		print ">>> \tCXX = $ENV{CXX}\n";
-		print ">>> \tLD = $ENV{LD}\n";
-		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
-		print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
-		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
-		print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
-
-		push @configureparams, "--host=$iphoneSimulatorArch-apple-darwin$darwinVersion";
-
-		push @configureparams, "--with-tls=pthread";
-		push @configureparams, "--disable-boehm";
-
-		push @configureparams, "--without-ikvm-native";;
-		push @configureparams, "--disable-executables";
-		push @configureparams, "--disable-visibility-hidden";
-		
-		push @configureparams, "--enable-minimal=com,remoting,shared_perfcounters";
-		
-		push @configureparams, "mono_cv_uscore=yes";
-		push @configureparams, "ac_cv_func_clock_nanosleep=no";
 	}
 	elsif ($android)
 	{
