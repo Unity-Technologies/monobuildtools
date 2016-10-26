@@ -6,6 +6,7 @@
 BASEDIR=$(dirname $0)
 
 # Note : Not Implemented yet.  Script is here to make the katana build pass so that the mono build artifact is created
-#  Uncomment the line below when ready to implement
+#  Uncomment the line below when ready to implement.  Remove the mkdir
+mkdir builds
 
 #perl "$BASEDIR/build_ios_xwin.pl" "$@" || exit 1
