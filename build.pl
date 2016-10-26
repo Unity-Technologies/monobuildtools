@@ -320,6 +320,11 @@ if ($build)
 
 	if ($android)
 	{
+		if (!(-d $externalBuildDeps))
+		{
+			die("mono build deps are required and the directory was not found : $externalBuildDeps\n");
+		}
+
 		my $ndkVersion = "r10e";
 		my $isArmArch = 1;
 		my $toolchainName = "";
