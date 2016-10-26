@@ -330,7 +330,7 @@ if ($build)
 		my $toolchainName = "";
 		my $platformRootPostfix = "";
 		my $useKraitPatch = 1;
-		my $kraitPatchPath = abs_path("$monoroot/../../android_krait_signal_handler/build");
+		my $kraitPatchPath = "$monoroot/../../android_krait_signal_handler/build";
 		my $toolChainExtension = "";
 		my $useBuildDepsForNDK = 1;
 
