@@ -580,7 +580,8 @@ if ($build)
 			}
 
 			chdir("$kraitPatchPath") eq 1 or die ("failed to chdir to krait patch directory\n");
-			system("perl", "build.pl") eq 0 or die ('failing to build Krait patch');
+			system('$ANDROID_NDK_ROOT/ndk-build clean') eq 0 or die ('failing to clean Krait patch');
+			system('$ANDROID_NDK_ROOT/ndk-build') eq 0 or die ('failing to build Krait patch');
 			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 
