@@ -504,7 +504,7 @@ if ($build)
 		}
 		else
 		{
-			my $crossOffsetHeader = "arm-apple-darwin10.h";
+			my $abi = "arm-apple-darwin10";
 
 			$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP -mmacosx-version-min=$macversion";
 			$ENV{CXXFLAGS} = "-mmacosx-version-min=$macversion -stdlib=libc++";
@@ -534,22 +534,59 @@ if ($build)
 
 			push @configureparams, "--target=arm-darwin";
 			push @configureparams, "--with-macversion=$macversion";
-
-			# TODO by Mike : Left off here.  This file doesn't exist.  We have to call something to generate it.  Here is what xamarin is doing
-			# define GenerateCrossOffsets
-			# $(3)/$(1).h: .stamp-configure-$(3) target7/mono/arch/arm/arm_dpimacros.h targetwatch/mono/arch/arm/arm_dpimacros.h $(4)/tools/offsets-tool/.stamp-clone $(4)/tools/offsets-tool/MonoAotOffsetsDumper.exe
-			# 	$(Q) MONO_PATH=$(4)/tools/offsets-tool/CppSharp \
-			# 	$(SYSTEM_MONO) $(4)/tools/offsets-tool/MonoAotOffsetsDumper.exe --abi $(1) --out $(2) --mono $(abspath $(4)) --maccore $(abspath $(TOP))
-			# endef
-			push @configureparams, "--with-cross-offsets=$crossOffsetHeader";
+			push @configureparams, "--with-cross-offsets=$abi.h";
 			
 			#push @configureparams, "--with-llvm=../llvm/usr";
 
 			# TODO by Mike : What to do about this ?
 			#perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
 
+			my @mcsArgs = ();
+			push @mcsArgs, "$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.cs";
+			push @mcsArgs, "$monoroot/mcs/class/Mono.Options/Mono.Options/Options.cs";
+			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.AST.dll";
+			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.Generator.dll";
+			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.Parser.CSharp.dll";
+			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.dll";
+			push @mcsArgs, "/debug";
+			push @mcsArgs, "/nowarn:0436";
+			push @mcsArgs, "/out:$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.exe";
+
+			print ">>> Compiling MonoAotOffsetDumper : $existingExternalMono/builds/bin/mcs @mcsArgs\n";
+			system("$existingExternalMono/builds/bin/mcs", @mcsArgs) eq 0 or die("failed to compile MonoAotOffsetsDumper\n");
+
+			my @monoArgs = ();
+			push @monoArgs, "$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.exe";
+			push @monoArgs, "--abi";
+			push @monoArgs, "$abi";
+			push @monoArgs, "--out";
+			push @monoArgs, "$monoroot";
+			push @monoArgs, "--mono";
+			push @monoArgs, "$monoroot";
+			push @monoArgs, "--maccore";
+			push @monoArgs, "$monoroot";
+
+			system("cp -r $externalBuildDeps/CppSharpBinaries/. $monoroot/tools/offsets-tool") eq 0 or die("failed copying etc folder\n");
+
+			my $monoToUse = "$monoroot/builds/monodistribution/bin/mono";
+			# TODO by Mike : Need to switch back to using mono build deps (or have to build mono runtime first)
+			#my $monoToUse = "$existingExternalMono/builds/bin/mono";
+
+			$ENV{MONO_PATH} = "$externalBuildDeps/CppSharpBinaries";
+			chdir("$monoroot/tools/offsets-tool");
+			print ">>> Running MonoAotOffsetDumper : arch -i386 $monoToUse @monoArgs\n";
+			system("arch", "-i386", "$monoToUse", @monoArgs) eq 0 or die("failed to run MonoAotOffsetsDumper\n");
+			chdir("$monoroot");
+
+			if (!(-f "$monoroot/$abi.h"))
+			{
+				die("Failed to generate offset header : $monoroot/$abi.h")
+			}
+
+			#die("testing\n");
+
 			# HACK
-			system("cp", "$monoroot/external/buildscripts/build_includes/$crossOffsetHeader","$monoroot/.") eq 0 or die ("failed copying $crossOffsetHeader\n");
+			#system("cp", "$monoroot/external/buildscripts/build_includes/$crossOffsetHeader","$monoroot/.") eq 0 or die ("failed copying $crossOffsetHeader\n");
 		}
 	}
 	elsif ($android)
