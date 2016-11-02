@@ -5,7 +5,6 @@ use File::Basename;
 use File::Path;
 use lib ('external/buildscripts', "../../Tools/perl_lib","perl_lib", 'external/buildscripts/perl_lib');
 use Tools qw(InstallNameTool);
-use PrepareAndroidSDK;
 
 print ">>> PATH in Build All = $ENV{PATH}\n\n";
 
