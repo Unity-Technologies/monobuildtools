@@ -213,7 +213,10 @@ if ($build)
 	my $platformflags = '';
 	my $host = '';
 	my $mcs = '';
-	
+
+	my $iphoneCrossAbi = "arm-apple-darwin10";
+	my $iphoneCrossMonoBinToUse = "$monoroot/builds/monodistribution/bin";
+
 	my @configureparams = ();
 
 	# TODO by Mike : Add back.  The android build script was using it
@@ -504,9 +507,7 @@ if ($build)
 		}
 		else
 		{
-			my $abi = "arm-apple-darwin10";
-
-			$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP -mmacosx-version-min=$macversion";
+			$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP -DMONOTOUCH -mmacosx-version-min=$macversion";
 			$ENV{CXXFLAGS} = "-mmacosx-version-min=$macversion -stdlib=libc++";
 			$ENV{CPPFLAGS} = "$ENV{CFLAGS} -mmacosx-version-min=$macversion";
 
@@ -534,9 +535,17 @@ if ($build)
 
 			push @configureparams, "--target=arm-darwin";
 			push @configureparams, "--with-macversion=$macversion";
-			push @configureparams, "--with-cross-offsets=$abi.h";
+			push @configureparams, "--with-cross-offsets=$iphoneCrossAbi.h";
+
+			# New ones trying out
+			push @configureparams, "--disable-boehm";
+			push @configureparams, "--build=i386-apple-darwin10";
+			push @configureparams, "--disable-libraries";
+			push @configureparams, "--enable-icall-symbol-map";
+			push @configureparams, "--enable-minimal=com,remoting";
 			
-			#push @configureparams, "--with-llvm=../llvm/usr";
+			#push @configureparams, "--enable-llvm";
+			#push @configureparams, "--with-llvm=llvm/usr";
 
 			# TODO by Mike : What to do about this ?
 			#perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
@@ -552,41 +561,14 @@ if ($build)
 			push @mcsArgs, "/nowarn:0436";
 			push @mcsArgs, "/out:$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.exe";
 
-			print ">>> Compiling MonoAotOffsetDumper : $existingExternalMono/builds/bin/mcs @mcsArgs\n";
-			system("$existingExternalMono/builds/bin/mcs", @mcsArgs) eq 0 or die("failed to compile MonoAotOffsetsDumper\n");
+			print ">>> Compiling MonoAotOffsetDumper : $iphoneCrossMonoBinToUse/mcs @mcsArgs\n";
+			system("$iphoneCrossMonoBinToUse/mcs", @mcsArgs) eq 0 or die("failed to compile MonoAotOffsetsDumper\n");
 
-			my @monoArgs = ();
-			push @monoArgs, "$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.exe";
-			push @monoArgs, "--abi";
-			push @monoArgs, "$abi";
-			push @monoArgs, "--out";
-			push @monoArgs, "$monoroot";
-			push @monoArgs, "--mono";
-			push @monoArgs, "$monoroot";
-			push @monoArgs, "--maccore";
-			push @monoArgs, "$monoroot";
-
-			system("cp -r $externalBuildDeps/CppSharpBinaries/. $monoroot/tools/offsets-tool") eq 0 or die("failed copying etc folder\n");
-
-			my $monoToUse = "$monoroot/builds/monodistribution/bin/mono";
-			# TODO by Mike : Need to switch back to using mono build deps (or have to build mono runtime first)
-			#my $monoToUse = "$existingExternalMono/builds/bin/mono";
-
-			$ENV{MONO_PATH} = "$externalBuildDeps/CppSharpBinaries";
-			chdir("$monoroot/tools/offsets-tool");
-			print ">>> Running MonoAotOffsetDumper : arch -i386 $monoToUse @monoArgs\n";
-			system("arch", "-i386", "$monoToUse", @monoArgs) eq 0 or die("failed to run MonoAotOffsetsDumper\n");
-			chdir("$monoroot");
-
-			if (!(-f "$monoroot/$abi.h"))
+			# clean up any pre-existing offset header just in case
+			if (-f "$monoroot/$iphoneCrossAbi.h")
 			{
-				die("Failed to generate offset header : $monoroot/$abi.h")
+				system("rm", "-rf", "$iphoneCrossAbi.h");
 			}
-
-			#die("testing\n");
-
-			# HACK
-			#system("cp", "$monoroot/external/buildscripts/build_includes/$crossOffsetHeader","$monoroot/.") eq 0 or die ("failed copying $crossOffsetHeader\n");
 		}
 	}
 	elsif ($android)
@@ -1000,6 +982,31 @@ if ($build)
 
 			print("\n>>> Calling make clean in mono\n");
 			system("make","clean") eq 0 or die ("failed to make clean\n");
+		}
+
+		# this step needs to run after configure
+		if ($iphoneCross)
+		{
+			# This step generates the arm_dpimacros.h file, which is needed by the offset dumper
+			chdir("$monoroot/mono/arch/arm");
+			system("make") eq 0 or die("failed to make in $monoroot/mono/arch/arm\n");
+			chdir("$monoroot");
+
+			my @monoArgs = ();
+			push @monoArgs, "$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.exe";
+			push @monoArgs, "--abi";
+			push @monoArgs, "$iphoneCrossAbi";
+			push @monoArgs, "--out";
+			push @monoArgs, "$monoroot";
+			push @monoArgs, "--mono";
+			push @monoArgs, "$monoroot";
+			push @monoArgs, "--maccore";
+			push @monoArgs, "$monoroot";
+
+			$ENV{MONO_PATH} = "$externalBuildDeps/CppSharpBinaries";
+			# Need to use 32bit mono because there is a native CppSharp dylib that will be used and there's only a 32bit version of it
+			print ">>> Running MonoAotOffsetDumper : arch -i386 $iphoneCrossMonoBinToUse/mono @monoArgs\n";
+			system("arch", "-i386", "$iphoneCrossMonoBinToUse/mono", @monoArgs) eq 0 or die("failed to run MonoAotOffsetsDumper\n");
 		}
 
 		print("\n>>> Calling make\n");
