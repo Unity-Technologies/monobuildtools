@@ -50,6 +50,8 @@ my $winPerl = "";
 my $winMonoRoot = "";
 my $msBuildVersion = "14.0";
 my $buildDeps = "";
+my $android=0;
+my $androidArch = "";
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -78,6 +80,8 @@ GetOptions(
 	'checkoutonthefly=i'=>\$checkoutOnTheFly,
 	'builddeps=s'=>\$buildDeps,
 	'forcedefaultbuilddeps=i'=>\$forceDefaultBuildDeps,
+	'android=i'=>\$android,
+	'androidarch=s'=>\$androidArch,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -93,6 +97,23 @@ chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
 print(">>> Mono Revision = $monoRevision\n");
 print(">>> Build Scripts Revision = $buildScriptsRevision\n");
 
+if ($androidArch ne "")
+{
+	$android = 1;
+}
+
+my $isDesktopBuild = 1;
+if ($android)
+{
+	$isDesktopBuild = 0;
+
+	# Disable building of the class libraries by default when building the android runtime
+	# since we don't care about a class library build in this situation (as of writing this at least)
+	# but only if the test flag is not set.  If the test flag was set, we'd need to build the classlibs 
+	# in order to run the tests
+	$disableMcs = 1 if(!($test));
+}
+
 # Do any settings agnostic per-platform stuff
 my $externalBuildDeps = "";
 
@@ -105,10 +126,15 @@ else
 	$externalBuildDeps = "$monoroot/../../mono-build-deps/build";
 }
 
+# Only clean up the path if the directory exists, if it doesn't exist,
+# abs_path ends up returning an empty string
+$externalBuildDeps = abs_path($externalBuildDeps) if (-d $externalBuildDeps);
+
 my $existingExternalMonoRoot = "$externalBuildDeps/mono";
 my $existingExternalMono = "";
 my $monoHostArch = "";
 my $monoprefix = "$monoroot/tmp";
+my $runningOnWindows=0;
 if($^O eq "linux")
 {
 	$monoHostArch = $arch32 ? "i686" : "x86_64";
@@ -132,6 +158,7 @@ else
 {
 	$monoHostArch = "i686";
 	$existingExternalMono = "$existingExternalMonoRoot/win";
+	$runningOnWindows = 1;
 	
 	# We only care about an existing mono if we need to build.
 	# So only do this path clean up if we are building.
@@ -147,6 +174,12 @@ else
 	}
 }
 
+if ($runningOnWindows)
+{
+	# Fixes a line ending issue that happens on windows when we try to run autogen.sh
+	$ENV{'SHELLOPTS'} = "igncr";
+}
+
 print(">>> Existing Mono = $existingMonoRootPath\n");
 print(">>> Mono Arch = $monoHostArch\n");
 
@@ -157,14 +190,21 @@ if ($build)
 	my $mcs = '';
 	
 	my @configureparams = ();
+
+	# TODO by Mike : Add back.  The android build script was using it
 	#push @configureparams, "--cache-file=$cachefile";
 	
 	push @configureparams, "--disable-mcs-build" if($disableMcs);
 	push @configureparams, "--with-glib=embedded";
 	push @configureparams, "--disable-nls";  #this removes the dependency on gettext package
-	push @configureparams, "--prefix=$monoprefix";
-	push @configureparams, "--with-monotouch=no";
+	push @configureparams, "--disable-btls";  #this removes the dependency on cmake to build btls for now
 	push @configureparams, "--with-mcs-docs=no";
+	push @configureparams, "--prefix=$monoprefix";
+
+	if ($isDesktopBuild)
+	{
+		push @configureparams, "--with-monotouch=no";
+	}
 	
 	if ($existingMonoRootPath eq "")
 	{
@@ -187,6 +227,9 @@ if ($build)
 			{
 				die("failed to checkout mono build dependencies\n");
 			}
+
+			# Only clean up if the dir exists.   Otherwise abs_path will return empty string
+			$externalBuildDeps = abs_path($externalBuildDeps) if (-d $externalBuildDeps);
 		}
 		
 		if (-d "$existingExternalMono")
@@ -217,8 +260,345 @@ if ($build)
 	{
 		die("Existing mono not found at : $existingMonoRootPath\n");
 	}
-	
-	if($^O eq "linux")
+
+	if ($externalBuildDeps ne "")
+	{
+		print "\n";
+		print ">>> Building autoconf, automake, and libtool if needed...\n";
+		my $autoconfVersion = "2.69";
+		my $automakeVersion = "1.15";
+		my $libtoolVersion = "2.4.6";
+		my $autoconfDir = "$externalBuildDeps/autoconf-$autoconfVersion";
+		my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
+		my $libtoolDir = "$externalBuildDeps/libtool-$libtoolVersion";
+		my $builtToolsDir = "$externalBuildDeps/built-tools";
+
+		$ENV{PATH} = "$builtToolsDir/bin:$ENV{PATH}";
+
+		if (!(-d "$autoconfDir"))
+		{
+			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+			system("tar xzf autoconf-$autoconfVersion.tar.gz") eq 0  or die ("failed to extract autoconf\n");
+
+			chdir("$autoconfDir") eq 1 or die ("failed to chdir to autoconf directory\n");
+			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure autoconf\n");
+			system("make") eq 0 or die ("failed to make autoconf\n");
+			system("make install") eq 0 or die ("failed to make install autoconf\n");
+
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+		}
+
+		if (!(-d "$automakeDir"))
+		{
+			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+			system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
+
+			chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
+			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
+			system("make") eq 0 or die ("failed to make automake\n");
+			system("make install") eq 0 or die ("failed to make install automake\n");
+
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+		}
+
+		if (!(-d "$libtoolDir"))
+		{
+			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
+			system("tar xzf libtool-$libtoolVersion.tar.gz") eq 0  or die ("failed to extract libtool\n");
+		
+			chdir("$libtoolDir") eq 1 or die ("failed to chdir to libtool directory\n");
+			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure libtool\n");
+			system("make") eq 0 or die ("failed to make libtool\n");
+			system("make install") eq 0 or die ("failed to make install libtool\n");
+
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+		}
+
+		$ENV{'LIBTOOLIZE'} = "$builtToolsDir/bin/libtoolize";
+		$ENV{'LIBTOOL'} = "$builtToolsDir/bin/libtool";
+	}
+
+	if ($android)
+	{
+		if (!(-d $externalBuildDeps))
+		{
+			die("mono build deps are required and the directory was not found : $externalBuildDeps\n");
+		}
+
+		my $ndkVersion = "r10e";
+		my $isArmArch = 1;
+		my $toolchainName = "";
+		my $platformRootPostfix = "";
+		my $useKraitPatch = 1;
+		my $kraitPatchPath = "$monoroot/../../android_krait_signal_handler/build";
+		my $toolChainExtension = "";
+
+		$isArmArch = 0 if ($androidArch eq "x86");
+		
+		$ENV{ANDROID_PLATFORM} = "android-9";
+		$ENV{GCC_VERSION} = "4.8";
+
+		if ($isArmArch)
+		{
+			$ENV{GCC_PREFIX} = "arm-linux-androideabi-";
+			$toolchainName = "$ENV{GCC_PREFIX}$ENV{GCC_VERSION}";
+			$platformRootPostfix = "arm";
+		}
+		else
+		{
+			$ENV{GCC_PREFIX} = "i686-linux-android-";
+			$toolchainName = "x86-$ENV{GCC_VERSION}";
+			$platformRootPostfix = "x86";
+			$useKraitPatch = 0;
+		}
+
+		if ($^O eq "linux")
+		{
+			$ENV{HOST_ENV} = "linux";
+		}
+		elsif ($^O eq 'darwin')
+		{
+			$ENV{HOST_ENV} = "darwin";
+		}
+		else
+		{
+			$ENV{HOST_ENV} = "windows";
+		}
+
+		print "\n";
+		print(">>> Android Platform = $ENV{ANDROID_PLATFORM}\n");
+		print(">>> Android NDK Version = $ndkVersion\n");
+		print(">>> Android GCC Prefix = $ENV{GCC_PREFIX}\n");
+		print(">>> Android GCC Version = $ENV{GCC_VERSION}\n");
+
+		my $ndkName = "";
+		if($^O eq "linux")
+		{
+			$ndkName = "android-ndk-$ndkVersion-linux-x86.bin";
+		}
+		elsif($^O eq "darwin")
+		{
+			$ndkName = "android-ndk-$ndkVersion-darwin-x86_64.bin";
+		}
+		else
+		{
+			$ndkName = "android-ndk-$ndkVersion-windows-x86.exe";
+		}
+
+		my $depsNdkArchive = "$externalBuildDeps/$ndkName";
+		my $depsNdkFinal = "$externalBuildDeps/android-ndk-$ndkVersion";
+
+		print(">>> Android NDK Archive = $depsNdkArchive\n");
+		print(">>> Android NDK Extraction Destination = $depsNdkFinal\n");
+		print("\n");
+
+		$ENV{ANDROID_NDK_ROOT} = "$depsNdkFinal";
+
+		if (-d $depsNdkFinal)
+		{
+			print(">>> Android NDK already extracted\n");
+		}
+		else
+		{
+			print(">>> Android NDK needs to be extracted\n");
+
+			if ($runningOnWindows)
+			{
+				my $sevenZip = "$externalBuildDeps/7z/win64/7za.exe";
+				my $winDepsNdkArchive = `cygpath -w $depsNdkArchive`;
+				my $winDepsNdkExtract = `cygpath -w $externalBuildDeps`;
+
+				# clean up trailing new lines that end up in the output from cygpath.  If left, they cause problems down the line
+				# for 7zip
+				$winDepsNdkArchive =~ s/\n+$//;
+				$winDepsNdkExtract =~ s/\n+$//;
+
+				system($sevenZip, "x", "$winDepsNdkArchive", "-o$winDepsNdkExtract");
+			}
+			else
+			{
+				my ($name,$path,$suffix) = fileparse($depsNdkArchive, qr/\.[^.]*/);
+
+				print(">>> Android NDK Extension = $suffix\n");
+
+				# Versions after r11 use .zip extension.  Currently we use r10e, but let's support the .zip extension in case
+				# we upgrade down the road
+				if (lc $suffix eq '.zip')
+				{
+					system("unzip", "-q", $depsNdkArchive, "-d", $externalBuildDeps);
+				}
+				elsif (lc $suffix eq '.bin')
+				{	chmod(0755, $depsNdkArchive);
+					system($depsNdkArchive, "-o$externalBuildDeps");
+				}
+				else
+				{
+					die "Unknown file extension '" . $suffix . "'\n";
+				}
+			}
+		}
+
+		if (!(-f "$ENV{ANDROID_NDK_ROOT}/ndk-build"))
+		{
+			die("Something went wrong with the NDK extraction\n");
+		}
+
+		my $androidNdkRoot = $ENV{ANDROID_NDK_ROOT};
+		my $androidPlatformRoot = "$androidNdkRoot/platforms/$ENV{ANDROID_PLATFORM}/arch-$platformRootPostfix";
+		my $androidToolchain = "$androidNdkRoot/toolchains/$toolchainName/prebuilt/$ENV{HOST_ENV}";
+
+		if (!(-d "$androidToolchain"))
+		{
+			if (-d "$androidToolchain-x86")
+			{
+				$androidToolchain = "$androidToolchain-x86";
+			}
+			else
+			{
+				$androidToolchain = "$androidToolchain-x86_64";
+			}
+		}
+
+		if ($runningOnWindows)
+		{
+			$toolChainExtension = ".exe";
+
+			$androidPlatformRoot = `cygpath -w $androidPlatformRoot`;
+			# clean up trailing new lines that end up in the output from cygpath.
+			$androidPlatformRoot =~ s/\n+$//;
+			# Switch over to forward slashes.  They propagate down the toolchain correctly
+			$androidPlatformRoot =~ s/\\/\//g;
+
+			# this will get passed as a path to the linker, so we need to windows-ify the path
+			$kraitPatchPath = `cygpath -w $kraitPatchPath`;
+			$kraitPatchPath =~ s/\n+$//;
+			$kraitPatchPath =~ s/\\/\//g;
+		}
+
+		print(">>> Android Arch = $androidArch\n");
+		print(">>> Android NDK Root = $androidNdkRoot\n");
+		print(">>> Android Platform Root = $androidPlatformRoot\n");
+		print(">>> Android Toolchain = $androidToolchain\n");
+
+		if (!(-d "$androidToolchain"))
+		{
+			die("Failed to locate android toolchain\n");
+		}
+
+		if (!(-d "$androidPlatformRoot"))
+		{
+			die("Failed to locate android platform root\n");
+		}
+
+		if ("$androidArch" eq 'armv5')
+		{
+			$ENV{CFLAGS} = "-DARM_FPU_NONE=1 -march=armv5te -mtune=xscale -msoft-float";
+		}
+		elsif ("$androidArch" eq 'armv6_vfp')
+		{
+			$ENV{CFLAGS} = "-DARM_FPU_VFP=1  -march=armv6 -mtune=xscale -msoft-float -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1";
+		}
+		elsif ("$androidArch" eq 'armv7a')
+		{
+			$ENV{CFLAGS} = "-DARM_FPU_VFP=1  -march=armv7-a -mfloat-abi=softfp -mfpu=vfp -DHAVE_ARMV6=1";
+			$ENV{LDFLAGS} = "-Wl,--fix-cortex-a8";
+		}
+		elsif ("$androidArch" eq 'x86')
+		{
+			$ENV{LDFLAGS} = "-lgcc"
+		}
+		else
+		{
+			die("Unsupported android arch : $androidArch\n");
+		}
+
+		if ($isArmArch)
+		{
+			$ENV{CFLAGS} = "-funwind-tables $ENV{CFLAGS}";
+			$ENV{LDFLAGS} = "-Wl,-rpath-link=$androidPlatformRoot/usr/lib $ENV{LDFLAGS}";
+		}
+
+		$ENV{PATH} = "$androidToolchain/bin:$ENV{PATH}";
+		$ENV{CC} = "$androidToolchain/bin/$ENV{GCC_PREFIX}gcc$toolChainExtension --sysroot=$androidPlatformRoot";
+		$ENV{CXX} = "$androidToolchain/bin/$ENV{GCC_PREFIX}g++$toolChainExtension --sysroot=$androidPlatformRoot";
+		$ENV{CPP} = "$androidToolchain/bin/$ENV{GCC_PREFIX}cpp$toolChainExtension";
+		$ENV{CXXCPP} = "$androidToolchain/bin/$ENV{GCC_PREFIX}cpp$toolChainExtension";
+		$ENV{CPATH} = "$androidPlatformRoot/usr/include";
+		$ENV{LD} = "$androidToolchain/bin/$ENV{GCC_PREFIX}ld$toolChainExtension";
+		$ENV{AS} = "$androidToolchain/bin/$ENV{GCC_PREFIX}as$toolChainExtension";
+		$ENV{AR} = "$androidToolchain/bin/$ENV{GCC_PREFIX}ar$toolChainExtension";
+		$ENV{RANLIB} = "$androidToolchain/bin/$ENV{GCC_PREFIX}ranlib$toolChainExtension";
+		$ENV{STRIP} = "$androidToolchain/bin/$ENV{GCC_PREFIX}strip$toolChainExtension";
+
+		$ENV{CFLAGS} = "-DANDROID -DPLATFORM_ANDROID -DLINUX -D__linux__ -DHAVE_USR_INCLUDE_MALLOC_H -DPAGE_SIZE=0x1000 -D_POSIX_PATH_MAX=256 -DS_IWRITE=S_IWUSR -DHAVE_PTHREAD_MUTEX_TIMEDLOCK -fpic -g -ffunction-sections -fdata-sections $ENV{CFLAGS}";
+		$ENV{CXXFLAGS} = $ENV{CFLAGS};
+		$ENV{CPPFLAGS} = $ENV{CFLAGS};
+
+		if ($useKraitPatch)
+		{
+			$ENV{LDFLAGS} = "-Wl,--wrap,sigaction -L$kraitPatchPath/obj/local/armeabi -lkrait-signal-handler $ENV{LDFLAGS}";
+		}
+
+		$ENV{LDFLAGS} = "-Wl,--no-undefined -Wl,--gc-sections -ldl -lm -llog -lc $ENV{LDFLAGS}";
+
+		print "\n";
+		print ">>> Environment:\n";
+		print ">>> \tCC = $ENV{CC}\n";
+		print ">>> \tCXX = $ENV{CXX}\n";
+		print ">>> \tCPP = $ENV{CPP}\n";
+		print ">>> \tCXXCPP = $ENV{CXXCPP}\n";
+		print ">>> \tCPATH = $ENV{CPATH}\n";
+		print ">>> \tLD = $ENV{LD}\n";
+		print ">>> \tAS = $ENV{AS}\n";
+		print ">>> \tAR = $ENV{AR}\n";
+		print ">>> \tRANLIB = $ENV{RANLIB}\n";
+		print ">>> \tSTRIP = $ENV{STRIP}\n";
+		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+		print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+		print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+
+		if ($useKraitPatch)
+		{
+			my $kraitPatchRepo = "git://github.com/Unity-Technologies/krait-signal-handler.git";
+			if (-d "$kraitPatchPath")
+			{
+				print ">>> Krait patch repository already cloned"
+			}
+			else
+			{
+				system("git", "clone", "--branch", "master", "$kraitPatchRepo", "$kraitPatchPath") eq 0 or die ('failing cloning Krait patch');
+			}
+
+			chdir("$kraitPatchPath") eq 1 or die ("failed to chdir to krait patch directory\n");
+			system('$ANDROID_NDK_ROOT/ndk-build clean') eq 0 or die ('failing to clean Krait patch');
+			system('$ANDROID_NDK_ROOT/ndk-build') eq 0 or die ('failing to build Krait patch');
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+		}
+
+		if ($isArmArch)
+		{
+			push @configureparams, "--host=armv5-linux-androideabi";
+		}
+		elsif ("$androidArch" eq 'x86')
+		{
+			push @configureparams, "--host=i686-linux-android";
+		}
+		else
+		{
+			die("Unsupported android arch : $androidArch\n");
+		}
+
+		push @configureparams, "--disable-parallel-mark";
+		push @configureparams, "--disable-shared-handles";
+		push @configureparams, "--with-sigaltstack=no";
+		push @configureparams, "--with-tls=pthread";
+		push @configureparams, "--disable-boehm";
+		push @configureparams, "--disable-visibility-hidden";
+		push @configureparams, "mono_cv_uscore=yes";
+		push @configureparams, "ac_cv_header_zlib_h=no" if($runningOnWindows);
+	}
+	elsif($^O eq "linux")
 	{
 		push @configureparams, "--host=$monoHostArch-pc-linux-gnu";
 		
@@ -281,64 +661,6 @@ if ($build)
 		$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
 		$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
 		$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$macBuildEnvDir/builds/usr/include -mmacosx-version-min=$macversion -isysroot $sdkPath";
-
-		if ($externalBuildDeps ne "")
-		{
-			print "\n";
-			print ">>> Building autoconf, automake, and libtool if needed...\n";
-			my $autoconfVersion = "2.69";
-			my $automakeVersion = "1.15";
-			my $libtoolVersion = "2.4.6";
-			my $autoconfDir = "$externalBuildDeps/autoconf-$autoconfVersion";
-			my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
-			my $libtoolDir = "$externalBuildDeps/libtool-$libtoolVersion";
-			my $builtToolsDir = "$externalBuildDeps/built-tools";
-
-			$ENV{PATH} = "$builtToolsDir/bin:$ENV{PATH}";
-
-			if (!(-d "$autoconfDir"))
-			{
-				chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
-				system("tar xzf autoconf-$autoconfVersion.tar.gz") eq 0  or die ("failed to extract autoconf\n");
-
-				chdir("$autoconfDir") eq 1 or die ("failed to chdir to autoconf directory\n");
-				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure autoconf\n");
-				system("make") eq 0 or die ("failed to make autoconf\n");
-				system("make install") eq 0 or die ("failed to make install autoconf\n");
-
-				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
-			}
-
-			if (!(-d "$automakeDir"))
-			{
-				chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
-				system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
-
-				chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
-				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
-				system("make") eq 0 or die ("failed to make automake\n");
-				system("make install") eq 0 or die ("failed to make install automake\n");
-
-				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
-
-			}
-
-			if (!(-d "$libtoolDir"))
-			{
-				chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
-				system("tar xzf libtool-$libtoolVersion.tar.gz") eq 0  or die ("failed to extract libtool\n");
-			
-				chdir("$libtoolDir") eq 1 or die ("failed to chdir to libtool directory\n");
-				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure libtool\n");
-				system("make") eq 0 or die ("failed to make libtool\n");
-				system("make install") eq 0 or die ("failed to make install libtool\n");
-
-				chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
-			}
-
-			$ENV{'LIBTOOLIZE'} = "$builtToolsDir/bin/libtoolize";
-			$ENV{'LIBTOOL'} = "$builtToolsDir/bin/libtool";
-		}
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -Os" if not $debug; #optimize for size
@@ -368,10 +690,7 @@ if ($build)
 		print "\n";
 	}
 	else
-	{
-		# Fixes a line ending issue that happens on windows when we try to run autogen.sh
-		$ENV{'SHELLOPTS'} = "igncr";
-			
+	{			
 		push @configureparams, "--host=$monoHostArch-pc-mingw32";
 	}
 
@@ -415,32 +734,55 @@ if ($build)
 			system('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status');
 
 			print("\n>>> Calling autogen in mono\n");
-			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');
-			
+			print("\n");
+			print("\n>>> Configure parameters are : @configureparams\n");
+			print("\n");	
+			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');			
 			print("\n>>> Calling make clean in mono\n");
 			system("make","clean") eq 0 or die ("failed to make clean\n");
 		}
-		
+
 		print("\n>>> Calling make\n");
 		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
 		
-		print("\n>>> Calling make install\n");
-		system("make install") eq 0 or die ("Failed to make install\n");
+		if ($isDesktopBuild)
+		{
+			print("\n>>> Calling make install\n");
+			system("make install") eq 0 or die ("Failed to make install\n");
+		}
+		else
+		{
+			if ($disableMcs)
+			{
+				print(">>> Skipping make install.  We don't need to run this step when building the runtime on non-desktop platforms.\n");
+			}
+			else
+			{
+				# Note by Mike : make install on Windows for android runtime runs into more cygwin path issues.  The one I hit was related to ranlib.exe being passed cygwin linux paths
+				# and as a result not being able to find stuff.  The previous build scripts didn't run make install for android or iOS, so I think we are fine to skip this step.
+				# However, if we were to build the class libs for these cases, then we probably would need to run make install.  If that day comes, we'll have to figure out what to do here.
+				print(">>> Attempting to build class libs for a non-desktop platform.  The `make install` step is probably needed, but it has cygwin path related problems on Windows for android\n");
+				die("Blocking this code path until we need it.  It probably should be looked at more closely before letting it proceed\n");
+			}
+		}
 	}
 	
-	if ($^O eq "cygwin")
+	if ($isDesktopBuild)
 	{
-		system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS\n');
+		if ($^O eq "cygwin")
+		{
+			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS\n');
+			
+			# Copy over the VS built stuff that we want to use instead into the prefix directory
+			my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
+			my $config = $debug ? "Debug" : "Release";
+			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
+			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
+			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
+		}
 		
-		# Copy over the VS built stuff that we want to use instead into the prefix directory
-		my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
-		my $config = $debug ? "Debug" : "Release";
-		system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
-		system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
-		system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
+		system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 	}
-	
-	system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 }
 else
 {
@@ -522,7 +864,12 @@ if ($artifact)
 	my $embedDirArchDestination = "";
 	my $distDirArchBin = "";
 	my $versionsOutputFile = "";
-	if($^O eq "linux")
+	if ($android)
+	{
+		$embedDirArchDestination = "$embedDirRoot/android/$androidArch";
+		$versionsOutputFile = "$buildsroot/versions-android-$androidArch.txt";
+	}
+	elsif($^O eq "linux")
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/linux32" : "$embedDirRoot/linux64";
 		$distDirArchBin = $arch32 ? "$distdir/bin-linux32" : "$distdir/bin-linux64";
@@ -554,15 +901,21 @@ if ($artifact)
 		print(">>> Cleaning $distDirArchBin\n");
 		rmtree($distDirArchBin);
 	}
-	
-	system("mkdir -p $embedDirArchDestination");
-	system("mkdir -p $distDirArchBin");
-	
+
+	system("mkdir -p $embedDirArchDestination") if ($embedDirArchDestination ne "");
+	system("mkdir -p $distDirArchBin") if ($distDirArchBin ne "");
+
 	# embedruntimes directory setup
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
-	if($^O eq "linux")
+	if ($android)
 	{
-		print ">>> Copying libmono.so\n";
+		print ">>> Copying libmonosgen-2.0\n";
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+	}
+	elsif($^O eq "linux")
+	{
+		print ">>> Copying libmonosgen-2.0\n";
 		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
 		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
 
@@ -579,7 +932,7 @@ if ($artifact)
 	elsif($^O eq 'darwin')
 	{
 		# embedruntimes directory setup
- 		print ">>> Hardlinking libmono.dylib\n";
+ 		print ">>> Hardlinking libmonosgen-2.0\n";
 
 		system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.dylib","$embedDirArchDestination/libmonoboehm-2.0.dylib") eq 0 or die ("failed symlinking libmonoboehm-2.0.dylib\n");
 		system("ln","-f", "$monoroot/mono/mini/.libs/libmonosgen-2.0.dylib","$embedDirArchDestination/libmonosgen-2.0.dylib") eq 0 or die ("failed symlinking libmonosgen-2.0.dylib\n");
@@ -600,7 +953,11 @@ if ($artifact)
 	
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
-	if($^O eq "linux")
+	if ($android)
+	{
+		# Nothing to do
+	}
+	elsif($^O eq "linux")
 	{
 		my $distDirArchEtc = $arch32 ? "$distdir/etc-linux32" : "$distdir/etc-linux64";
 
@@ -630,12 +987,16 @@ if ($artifact)
 		system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
 	}
 	
-	system("chmod", "-R", "755", $distDirArchBin);
+	# Not all build configurations output to the distro dir, so only chmod it if it exists
+	system("chmod", "-R", "755", $distDirArchBin) if (-d "$distDirArchBin");
 	
 	# Output version information
 	print(">>> Creating version file : $versionsOutputFile\n");
 	system("echo \"mono-version =\" > $versionsOutputFile");
-	system("$distDirArchBin/mono --version >> $versionsOutputFile");
+
+	# Not all build configurations output to the distro dir, only try to output version info if there is a distro dir
+	system("$distDirArchBin/mono --version >> $versionsOutputFile") if (-d "$distDirArchBin");
+
 	system("echo \"unity-mono-revision = $monoRevision\" >> $versionsOutputFile");
 	system("echo \"unity-mono-build-scripts-revision = $buildScriptsRevision\" >> $versionsOutputFile");
 	my $tmp = `date`;
