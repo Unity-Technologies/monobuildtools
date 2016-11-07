@@ -406,9 +406,7 @@ if ($build)
 			$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -arch $iphoneArch";
 			$ENV{LD} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld";
 
-			# TODO by Mike : Should -DMONOTOUCH be in the list?
-
-			$ENV{CFLAGS} = "-DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
+			$ENV{CFLAGS} = "-DMONOTOUCH -DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
 			
 			# Unity defines
 			$ENV{CFLAGS} = "-DPLATFORM_IPHONE $ENV{CFLAGS}";
@@ -443,7 +441,6 @@ if ($build)
 			push @configureparams, "--with-lazy-gc-thread-creation=yes";
 			push @configureparams, "--without-ikvm-native";
 			push @configureparams, "--enable-icall-export";
-			#push @configureparams, "--disable-icall-tables";
 			push @configureparams, "--disable-executables";
 			push @configureparams, "--disable-visibility-hidden";
 			push @configureparams, "--enable-dtrace=no";
@@ -470,9 +467,7 @@ if ($build)
 
 			$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
 
-			# TODO by Mike : Should -DMONOTOUCH be in the list?
-
-			$ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE=1 -g -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
+			$ENV{MACSDKOPTIONS} = "-DMONOTOUCH -D_XOPEN_SOURCE=1 -g -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
 			$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
 			$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
 			$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
@@ -516,8 +511,7 @@ if ($build)
 		}
 		else
 		{
-			# TODO by Mike : Should -DMONOTOUCH be in the list?
-			$ENV{CFLAGS} = "-DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP  -mmacosx-version-min=$macversion";
+			$ENV{CFLAGS} = "-DMONOTOUCH -DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP  -mmacosx-version-min=$macversion";
 			$ENV{CXXFLAGS} = "-mmacosx-version-min=$macversion -stdlib=libc++";
 			$ENV{CPPFLAGS} = "$ENV{CFLAGS} -mmacosx-version-min=$macversion";
 
