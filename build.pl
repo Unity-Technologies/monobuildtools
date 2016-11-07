@@ -349,7 +349,7 @@ if ($build)
 
 	my $macSdkPath = "";
 	my $macversion = '10.8';
-	my $darwinVersion = "9";
+	my $darwinVersion = "10";
 	if ($^O eq 'darwin')
 	{
 		if ($sdk eq '')
@@ -456,9 +456,6 @@ if ($build)
 			push @configureparams, "ac_cv_func_backtrace_symbols=no";
 			push @configureparams, "ac_cv_func_finite=no";
 			push @configureparams, "ac_cv_header_curses_h=no";
-
-			# TODO by Mike : What to do about this stuff?
-			#system("perl", "-pi", "-e", "'s/#define HAVE_STRNDUP 1//'", "eglib/config.h") eq 0 or die ("failed to tweak eglib/config.h\n");
 		}
 		elsif ($iphoneSimulator)
 		{
@@ -559,9 +556,6 @@ if ($build)
 			
 			#push @configureparams, "--enable-llvm";
 			#push @configureparams, "--with-llvm=llvm/usr";
-
-			# TODO by Mike : What to do about this ?
-			#perl -pi -e 's/#define HAVE_STRNDUP 1//' eglib/config.h
 
 			my @mcsArgs = ();
 			push @mcsArgs, "$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.cs";
@@ -1301,7 +1295,14 @@ if ($artifact)
 	if ($iphoneCross)
 	{
 		print ">>> Copying mono-xcompiler\n";
-		system("cp", "$monoroot/mono/mini/mono","$crossCompilerDestination/mono-xcompiler") eq 0 or die ("failed copying mono-xcompiler\n");
+		if($runningOnWindows)
+		{
+			die("Not implemented\n");
+		}
+		else
+		{
+			system("cp", "$monoroot/mono/mini/mono","$crossCompilerDestination/mono-xcompiler") eq 0 or die ("failed copying mono-xcompiler\n");
+		}
 	}
 	
 	# Not all build configurations output to the distro dir, so only chmod it if it exists
