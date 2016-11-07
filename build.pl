@@ -5,7 +5,6 @@ use File::Basename;
 use File::Path;
 use lib ('external/buildscripts', "../../Tools/perl_lib","perl_lib", 'external/buildscripts/perl_lib');
 use Tools qw(InstallNameTool);
-use PrepareAndroidSDK;
 
 print ">>> PATH in Build All = $ENV{PATH}\n\n";
 
@@ -153,7 +152,9 @@ else
 	$externalBuildDeps = "$monoroot/../../mono-build-deps/build";
 }
 
-$externalBuildDeps = abs_path($externalBuildDeps);
+# Only clean up the path if the directory exists, if it doesn't exist,
+# abs_path ends up returning an empty string
+$externalBuildDeps = abs_path($externalBuildDeps) if (-d $externalBuildDeps);
 
 my $existingExternalMonoRoot = "$externalBuildDeps/mono";
 my $existingExternalMono = "";
@@ -255,6 +256,9 @@ if ($build)
 			{
 				die("failed to checkout mono build dependencies\n");
 			}
+
+			# Only clean up if the dir exists.   Otherwise abs_path will return empty string
+			$externalBuildDeps = abs_path($externalBuildDeps) if (-d $externalBuildDeps);
 		}
 		
 		if (-d "$existingExternalMono")
@@ -582,14 +586,18 @@ if ($build)
 	}
 	elsif ($android)
 	{
+		if (!(-d $externalBuildDeps))
+		{
+			die("mono build deps are required and the directory was not found : $externalBuildDeps\n");
+		}
+
 		my $ndkVersion = "r10e";
 		my $isArmArch = 1;
 		my $toolchainName = "";
 		my $platformRootPostfix = "";
 		my $useKraitPatch = 1;
-		my $kraitPatchPath = abs_path("$monoroot/../../android_krait_signal_handler/build");
+		my $kraitPatchPath = "$monoroot/../../android_krait_signal_handler/build";
 		my $toolChainExtension = "";
-		my $useBuildDepsForNDK = 1;
 
 		$isArmArch = 0 if ($androidArch eq "x86");
 		
@@ -629,83 +637,76 @@ if ($build)
 		print(">>> Android GCC Prefix = $ENV{GCC_PREFIX}\n");
 		print(">>> Android GCC Version = $ENV{GCC_VERSION}\n");
 
-		if ($useBuildDepsForNDK)
+		my $ndkName = "";
+		if($^O eq "linux")
 		{
-			my $ndkName = "";
-			if($^O eq "linux")
-			{
-				$ndkName = "android-ndk-$ndkVersion-linux-x86.bin";
-			}
-			elsif($^O eq "darwin")
-			{
-				$ndkName = "android-ndk-$ndkVersion-darwin-x86_64.bin";
-			}
-			else
-			{
-				$ndkName = "android-ndk-$ndkVersion-windows-x86.exe";
-			}
-
-			my $depsNdkArchive = "$externalBuildDeps/$ndkName";
-			my $depsNdkFinal = "$externalBuildDeps/android-ndk-$ndkVersion";
-
-			print(">>> Android NDK Archive = $depsNdkArchive\n");
-			print(">>> Android NDK Extraction Destination = $depsNdkFinal\n");
-			print("\n");
-
-			$ENV{ANDROID_NDK_ROOT} = "$depsNdkFinal";
-
-			if (-d $depsNdkFinal)
-			{
-				print(">>> Android NDK already extracted\n");
-			}
-			else
-			{
-				print(">>> Android NDK needs to be extracted\n");
-
-				if ($runningOnWindows)
-				{
-					my $sevenZip = "$externalBuildDeps/7z/win64/7za.exe";
-					my $winDepsNdkArchive = `cygpath -w $depsNdkArchive`;
-					my $winDepsNdkExtract = `cygpath -w $externalBuildDeps`;
-
-					# clean up trailing new lines that end up in the output from cygpath.  If left, they cause problems down the line
-					# for 7zip
-					$winDepsNdkArchive =~ s/\n+$//;
-					$winDepsNdkExtract =~ s/\n+$//;
-
-					system($sevenZip, "x", "$winDepsNdkArchive", "-o$winDepsNdkExtract");
-				}
-				else
-				{
-					my ($name,$path,$suffix) = fileparse($depsNdkArchive, qr/\.[^.]*/);
-
-					print(">>> Android NDK Extension = $suffix\n");
-
-					# Versions after r11 use .zip extension.  Currently we use r10e, but let's support the .zip extension in case
-					# we upgrade down the road
-					if (lc $suffix eq '.zip')
-					{
-						system("unzip", "-q", $depsNdkArchive, "-d", $externalBuildDeps);
-					}
-					elsif (lc $suffix eq '.bin')
-					{	chmod(0755, $depsNdkArchive);
-						system($depsNdkArchive, "-o$externalBuildDeps");
-					}
-					else
-					{
-						die "Unknown file extension '" . $suffix . "'\n";
-					}
-				}
-			}
-
-			if (!(-f "$ENV{ANDROID_NDK_ROOT}/ndk-build"))
-			{
-				die("Something went wrong with the NDK extraction\n");
-			}
+			$ndkName = "android-ndk-$ndkVersion-linux-x86.bin";
+		}
+		elsif($^O eq "darwin")
+		{
+			$ndkName = "android-ndk-$ndkVersion-darwin-x86_64.bin";
 		}
 		else
 		{
-			PrepareAndroidSDK::GetAndroidSDK("", "", $ndkVersion, "envsetup.sh", $externalBuildDeps, $monoroot);
+			$ndkName = "android-ndk-$ndkVersion-windows-x86.exe";
+		}
+
+		my $depsNdkArchive = "$externalBuildDeps/$ndkName";
+		my $depsNdkFinal = "$externalBuildDeps/android-ndk-$ndkVersion";
+
+		print(">>> Android NDK Archive = $depsNdkArchive\n");
+		print(">>> Android NDK Extraction Destination = $depsNdkFinal\n");
+		print("\n");
+
+		$ENV{ANDROID_NDK_ROOT} = "$depsNdkFinal";
+
+		if (-d $depsNdkFinal)
+		{
+			print(">>> Android NDK already extracted\n");
+		}
+		else
+		{
+			print(">>> Android NDK needs to be extracted\n");
+
+			if ($runningOnWindows)
+			{
+				my $sevenZip = "$externalBuildDeps/7z/win64/7za.exe";
+				my $winDepsNdkArchive = `cygpath -w $depsNdkArchive`;
+				my $winDepsNdkExtract = `cygpath -w $externalBuildDeps`;
+
+				# clean up trailing new lines that end up in the output from cygpath.  If left, they cause problems down the line
+				# for 7zip
+				$winDepsNdkArchive =~ s/\n+$//;
+				$winDepsNdkExtract =~ s/\n+$//;
+
+				system($sevenZip, "x", "$winDepsNdkArchive", "-o$winDepsNdkExtract");
+			}
+			else
+			{
+				my ($name,$path,$suffix) = fileparse($depsNdkArchive, qr/\.[^.]*/);
+
+				print(">>> Android NDK Extension = $suffix\n");
+
+				# Versions after r11 use .zip extension.  Currently we use r10e, but let's support the .zip extension in case
+				# we upgrade down the road
+				if (lc $suffix eq '.zip')
+				{
+					system("unzip", "-q", $depsNdkArchive, "-d", $externalBuildDeps);
+				}
+				elsif (lc $suffix eq '.bin')
+				{	chmod(0755, $depsNdkArchive);
+					system($depsNdkArchive, "-o$externalBuildDeps");
+				}
+				else
+				{
+					die "Unknown file extension '" . $suffix . "'\n";
+				}
+			}
+		}
+
+		if (!(-f "$ENV{ANDROID_NDK_ROOT}/ndk-build"))
+		{
+			die("Something went wrong with the NDK extraction\n");
 		}
 
 		my $androidNdkRoot = $ENV{ANDROID_NDK_ROOT};
@@ -836,7 +837,8 @@ if ($build)
 			}
 
 			chdir("$kraitPatchPath") eq 1 or die ("failed to chdir to krait patch directory\n");
-			system("perl", "build.pl") eq 0 or die ('failing to build Krait patch');
+			system('$ANDROID_NDK_ROOT/ndk-build clean') eq 0 or die ('failing to clean Krait patch');
+			system('$ANDROID_NDK_ROOT/ndk-build') eq 0 or die ('failing to build Krait patch');
 			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 
