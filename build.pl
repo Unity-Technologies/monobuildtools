@@ -52,6 +52,11 @@ my $msBuildVersion = "14.0";
 my $buildDeps = "";
 my $android=0;
 my $androidArch = "";
+my $iphone=0;
+my $iphoneArch = "";
+my $iphoneCross=0;
+my $iphoneSimulator=0;
+my $iphoneSimulatorArch="";
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -82,6 +87,10 @@ GetOptions(
 	'forcedefaultbuilddeps=i'=>\$forceDefaultBuildDeps,
 	'android=i'=>\$android,
 	'androidarch=s'=>\$androidArch,
+	'iphone=i'=>\$iphone,
+	'iphonearch=s'=>\$iphoneArch,
+	'iphonecross=i'=>\$iphoneCross,
+	'iphonesimulator=i'=>\$iphoneSimulator,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -102,8 +111,25 @@ if ($androidArch ne "")
 	$android = 1;
 }
 
+if ($iphoneArch ne "")
+{
+	$iphone = 1;
+}
+
+if($iphoneSimulator)
+{
+	if ($arch32)
+	{
+		$iphoneSimulatorArch = "i386";
+	}
+	else
+	{
+		$iphoneSimulatorArch = "x86_64";
+	}
+}
+
 my $isDesktopBuild = 1;
-if ($android)
+if ($android || $iphone || $iphoneCross || $iphoneSimulator)
 {
 	$isDesktopBuild = 0;
 
@@ -188,7 +214,10 @@ if ($build)
 	my $platformflags = '';
 	my $host = '';
 	my $mcs = '';
-	
+
+	my $iphoneCrossAbi = "arm-apple-darwin10";
+	my $iphoneCrossMonoBinToUse = "$monoroot/builds/monodistribution/bin";
+
 	my @configureparams = ();
 
 	# TODO by Mike : Add back.  The android build script was using it
@@ -318,7 +347,232 @@ if ($build)
 		$ENV{'LIBTOOL'} = "$builtToolsDir/bin/libtool";
 	}
 
-	if ($android)
+	my $macSdkPath = "";
+	my $macversion = '10.8';
+	my $darwinVersion = "10";
+	if ($^O eq 'darwin')
+	{
+		if ($sdk eq '')
+		{
+			$sdk='10.11';
+		}
+
+		my $macBuildEnvDir = "$externalBuildDeps/MacBuildEnvironment";
+		$macSdkPath = "$macBuildEnvDir/builds/MacOSX$sdk.sdk";
+		if (! -d $macSdkPath)
+		{
+			print(">>> Unzipping mac build toolchain\n");
+			system("$externalBuildDeps/unzip", '-qd', "$macBuildEnvDir", "$macBuildEnvDir/builds.zip") eq 0 or die ("failed unzipping mac build toolchain\n");
+		}
+	}
+
+	if ($iphone || $iphoneSimulator)
+	{
+		if ($runningOnWindows)
+		{
+			die("This build is not supported on Windows\n");
+		}
+
+		my $iosBuildEnvDir = "$externalBuildDeps/iOSBuildEnvironment";
+		my $iosXcodeDefaultToolchainRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain";
+
+		if (! -d "$iosBuildEnvDir/builds")
+		{
+			print(">>> Unzipping ios build toolchain\n");
+			system("$externalBuildDeps/unzip", '-qd', "$iosBuildEnvDir/builds", "$iosBuildEnvDir/builds.zip") eq 0 or die ("failed unzipping ios build toolchain\n");
+		}
+
+		$ENV{PATH} = "$iosXcodeDefaultToolchainRoot/usr/bin:$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin:$ENV{PATH}";
+		# Need to keep our libtool in front
+		$ENV{PATH} = "$externalBuildDeps/built-tools/bin:$ENV{PATH}";
+
+		if ($iphone)
+		{
+			my $iosSdkVersion = "9.3";
+			my $iphoneOsMinVersion = "3.0";
+			my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$iosSdkVersion.sdk";
+
+			print(">>> iOS Build Environment = $iosBuildEnvDir\n");
+			print(">>> iOS SDK Version = $iosSdkVersion\n");
+			print(">>> iOS SDK Root = $iosSdkRoot\n");
+			print(">>> iPhone Arch = $iphoneArch\n");
+
+			$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
+
+			$ENV{C_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
+			$ENV{CPLUS_INCLUDE_PATH} = "$iosSdkRoot/usr/include";
+
+			$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -arch $iphoneArch";
+			$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -arch $iphoneArch";
+			$ENV{LD} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld";
+
+			$ENV{CFLAGS} = "-gdwarf-2 -DSMALL_CONFIG -DDISABLE_POLICY_EVIDENCE=1 -DDISABLE_PROCESS_HANDLING=1 -DHAVE_LARGE_FILE_SUPPORT=1 -DMONOTOUCH -DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -Wl,-application_extension -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
+			
+			# Unity defines
+			$ENV{CFLAGS} = "-DPLATFORM_IPHONE $ENV{CFLAGS}";
+
+			$ENV{CXXFLAGS} = "$ENV{CFLAGS} -U__powerpc__ -U__i386__ -D__arm__";
+			$ENV{CPPFLAGS} = $ENV{CXXFLAGS};
+
+			$ENV{LDFLAGS} = "-arch $iphoneArch -liconv -lobjc -lc++ -Wl,-syslibroot,$iosSdkRoot";
+
+			print "\n";
+			print ">>> Environment:\n";
+			print ">>> \tCC = $ENV{CC}\n";
+			print ">>> \tCXX = $ENV{CXX}\n";
+			print ">>> \tLD = $ENV{LD}\n";
+			print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+			print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+			print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+			print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+			print ">>> \tCPLUS_INCLUDE_PATH = $ENV{CPLUS_INCLUDE_PATH}\n";
+			print ">>> \tC_INCLUDE_PATH = $ENV{C_INCLUDE_PATH}\n";
+
+			push @configureparams, "--host=arm-apple-darwin$darwinVersion";
+
+			push @configureparams, "--with-sigaltstack=no";
+			push @configureparams, "--disable-shared-handles";
+			push @configureparams, "--with-tls=pthread";
+			push @configureparams, "--disable-boehm";
+
+			push @configureparams, "--enable-llvm-runtime";
+			push @configureparams, "--with-bitcode=yes";
+
+			push @configureparams, "--with-lazy-gc-thread-creation=yes";
+			push @configureparams, "--without-ikvm-native";
+			push @configureparams, "--enable-icall-export";
+			push @configureparams, "--disable-executables";
+			push @configureparams, "--disable-visibility-hidden";
+			push @configureparams, "--enable-dtrace=no";
+			
+			push @configureparams, "--enable-minimal=ssa,com,jit,reflection_emit_save,reflection_emit,portability,assembly_remapping,attach,verifier,full_messages,appdomains,security,sgen_remset,sgen_marksweep_par,sgen_marksweep_fixed,sgen_marksweep_fixed_par,sgen_copying,logging,remoting,shared_perfcounters";
+			
+			push @configureparams, "mono_cv_uscore=yes";
+			push @configureparams, "cv_mono_sizeof_sunpath=104";
+			push @configureparams, "ac_cv_func_posix_getpwuid_r=yes";
+			push @configureparams, "ac_cv_func_backtrace_symbols=no";
+			push @configureparams, "ac_cv_func_finite=no";
+			push @configureparams, "ac_cv_header_curses_h=no";
+		}
+		elsif ($iphoneSimulator)
+		{
+			my $iosSdkVersion = "9.3";
+			my $iosSimMinVersion = "4.3";
+			my $iosSdkRoot = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator$iosSdkVersion.sdk";
+
+			print(">>> iOS Sim Build Environment = $iosBuildEnvDir\n");
+			print(">>> iOS Sim SDK Version = $iosSdkVersion\n");
+			print(">>> iOS Sim SDK Root = $iosSdkRoot\n");
+			print(">>> iOS Sim Arch = $iphoneSimulatorArch\n");
+
+			$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
+
+			$ENV{MACSDKOPTIONS} = "-DMONOTOUCH -D_XOPEN_SOURCE=1 -g -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
+			$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
+			$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
+			$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
+			$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/gcc -arch $iphoneSimulatorArch";
+			$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/g++ -arch $iphoneSimulatorArch";
+
+			print "\n";
+			print ">>> Environment:\n";
+			print ">>> \tCC = $ENV{CC}\n";
+			print ">>> \tCXX = $ENV{CXX}\n";
+			print ">>> \tLD = $ENV{LD}\n";
+			print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+			print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+			print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+			print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
+
+			push @configureparams, "--host=$iphoneSimulatorArch-apple-darwin$darwinVersion";
+
+			push @configureparams, "--with-tls=pthread";
+			push @configureparams, "--disable-boehm";
+
+			push @configureparams, "--without-ikvm-native";;
+			push @configureparams, "--disable-executables";
+			push @configureparams, "--disable-visibility-hidden";
+			
+			push @configureparams, "--enable-minimal=com,remoting,shared_perfcounters";
+			
+			push @configureparams, "mono_cv_uscore=yes";
+			push @configureparams, "ac_cv_func_clock_nanosleep=no";
+		}
+		else
+		{
+			die("This should not be hit\n");
+		}
+	}
+	elsif ($iphoneCross)
+	{
+		if ($runningOnWindows)
+		{
+			die("Not implemented\n");
+		}
+		else
+		{
+			$ENV{CFLAGS} = "-DMONOTOUCH -DARM_FPU_VFP=1 -DUSE_MUNMAP -DPLATFORM_IPHONE_XCOMP  -mmacosx-version-min=$macversion";
+			$ENV{CXXFLAGS} = "-mmacosx-version-min=$macversion -stdlib=libc++";
+			$ENV{CPPFLAGS} = "$ENV{CFLAGS} -mmacosx-version-min=$macversion";
+
+			$ENV{CC} = "$macSdkPath/../usr/bin/clang -arch i386";
+			$ENV{CXX} = "$macSdkPath/../usr/bin/clang++ -arch i386";
+			$ENV{CPP} = "$ENV{CC} -E";
+			$ENV{LD} = $ENV{CC};
+			$ENV{LDFLAGS} = "-stdlib=libc++";
+			$ENV{MACSDKOPTIONS} = "-mmacosx-version-min=$macversion -isysroot $macSdkPath";
+
+			print "\n";
+			print ">>> Environment:\n";
+			print ">>> \tCC = $ENV{CC}\n";
+			print ">>> \tCXX = $ENV{CXX}\n";
+			print ">>> \tLD = $ENV{LD}\n";
+			print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+			print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+			print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+			print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+			print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
+
+			push @configureparams, "--with-sigaltstack=no";
+			push @configureparams, "--disable-shared-handles";
+			push @configureparams, "--with-tls=pthread";
+
+			push @configureparams, "--target=arm-darwin";
+			push @configureparams, "--with-macversion=$macversion";
+			push @configureparams, "--with-cross-offsets=$iphoneCrossAbi.h";
+
+			# New ones trying out
+			push @configureparams, "--disable-boehm";
+			push @configureparams, "--build=i386-apple-darwin10";
+			push @configureparams, "--disable-libraries";
+			push @configureparams, "--enable-icall-symbol-map";
+			push @configureparams, "--enable-minimal=com,remoting";
+			
+			#push @configureparams, "--enable-llvm";
+			#push @configureparams, "--with-llvm=llvm/usr";
+
+			my @mcsArgs = ();
+			push @mcsArgs, "$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.cs";
+			push @mcsArgs, "$monoroot/mcs/class/Mono.Options/Mono.Options/Options.cs";
+			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.AST.dll";
+			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.Generator.dll";
+			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.Parser.CSharp.dll";
+			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.dll";
+			push @mcsArgs, "/debug";
+			push @mcsArgs, "/nowarn:0436";
+			push @mcsArgs, "/out:$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.exe";
+
+			print ">>> Compiling MonoAotOffsetDumper : $iphoneCrossMonoBinToUse/mcs @mcsArgs\n";
+			system("$iphoneCrossMonoBinToUse/mcs", @mcsArgs) eq 0 or die("failed to compile MonoAotOffsetsDumper\n");
+
+			# clean up any pre-existing offset header just in case
+			if (-f "$monoroot/$iphoneCrossAbi.h")
+			{
+				system("rm", "-rf", "$iphoneCrossAbi.h");
+			}
+		}
+	}
+	elsif ($android)
 	{
 		if (!(-d $externalBuildDeps))
 		{
@@ -642,25 +896,10 @@ if ($build)
 		}
 		
 		$mcs = "EXTERNAL_MCS=$existingMonoRootPath/bin/mcs";
-		
-		if ($sdk eq '')
-		{
-			$sdk='10.11';
-		}
-		
-		my $macversion = '10.8';
 
-		my $macBuildEnvDir = "$externalBuildDeps/MacBuildEnvironment";
-		my $sdkPath = "$macBuildEnvDir/builds/MacOSX$sdk.sdk";
-		if (! -d $sdkPath)
-		{
-			print("Unzipping mac build toolchain\n");
-			system('unzip', '-qd', "$macBuildEnvDir", "$macBuildEnvDir/builds.zip");
-		}
-
-		$ENV{'CC'} = "$sdkPath/../usr/bin/clang";
-		$ENV{'CXX'} = "$sdkPath/../usr/bin/clang++";
-		$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$macBuildEnvDir/builds/usr/include -mmacosx-version-min=$macversion -isysroot $sdkPath";
+		$ENV{'CC'} = "$macSdkPath/../usr/bin/clang";
+		$ENV{'CXX'} = "$macSdkPath/../usr/bin/clang++";
+		$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$macBuildEnvDir/builds/usr/include -mmacosx-version-min=$macversion -isysroot $macSdkPath";
 		
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -Os" if not $debug; #optimize for size
@@ -736,10 +975,37 @@ if ($build)
 			print("\n>>> Calling autogen in mono\n");
 			print("\n");
 			print("\n>>> Configure parameters are : @configureparams\n");
-			print("\n");	
-			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');			
+			print("\n");
+
+			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');
+
 			print("\n>>> Calling make clean in mono\n");
 			system("make","clean") eq 0 or die ("failed to make clean\n");
+		}
+
+		# this step needs to run after configure
+		if ($iphoneCross)
+		{
+			# This step generates the arm_dpimacros.h file, which is needed by the offset dumper
+			chdir("$monoroot/mono/arch/arm");
+			system("make") eq 0 or die("failed to make in $monoroot/mono/arch/arm\n");
+			chdir("$monoroot");
+
+			my @monoArgs = ();
+			push @monoArgs, "$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.exe";
+			push @monoArgs, "--abi";
+			push @monoArgs, "$iphoneCrossAbi";
+			push @monoArgs, "--out";
+			push @monoArgs, "$monoroot";
+			push @monoArgs, "--mono";
+			push @monoArgs, "$monoroot";
+			push @monoArgs, "--maccore";
+			push @monoArgs, "$monoroot";
+
+			$ENV{MONO_PATH} = "$externalBuildDeps/CppSharpBinaries";
+			# Need to use 32bit mono because there is a native CppSharp dylib that will be used and there's only a 32bit version of it
+			print ">>> Running MonoAotOffsetDumper : arch -i386 $iphoneCrossMonoBinToUse/mono @monoArgs\n";
+			system("arch", "-i386", "$iphoneCrossMonoBinToUse/mono", @monoArgs) eq 0 or die("failed to run MonoAotOffsetsDumper\n");
 		}
 
 		print("\n>>> Calling make\n");
@@ -864,7 +1130,24 @@ if ($artifact)
 	my $embedDirArchDestination = "";
 	my $distDirArchBin = "";
 	my $versionsOutputFile = "";
-	if ($android)
+	my $crossCompilerRoot = "$buildsroot/crosscompiler";
+	my $crossCompilerDestination = "";
+	if ($iphone)
+	{
+		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneArch";
+		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneArch.txt";
+	}
+	elsif ($iphoneCross)
+	{
+		$crossCompilerDestination = "$buildsroot/crosscompiler/iphone";
+		$versionsOutputFile = "$buildsroot/versions-iphone-xcompiler.txt";
+	}
+	elsif ($iphoneSimulator)
+	{
+		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneSimulatorArch";
+		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneSimulatorArch.txt";
+	}
+	elsif ($android)
 	{
 		$embedDirArchDestination = "$embedDirRoot/android/$androidArch";
 		$versionsOutputFile = "$buildsroot/versions-android-$androidArch.txt";
@@ -904,10 +1187,25 @@ if ($artifact)
 
 	system("mkdir -p $embedDirArchDestination") if ($embedDirArchDestination ne "");
 	system("mkdir -p $distDirArchBin") if ($distDirArchBin ne "");
+	system("mkdir -p $crossCompilerDestination") if ($crossCompilerDestination ne "");
 
 	# embedruntimes directory setup
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
-	if ($android)
+	if ($iphone)
+	{
+		print ">>> Copying libmonosgen-2.0\n";
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+	}
+	elsif ($iphoneCross)
+	{
+		# Nothing to do
+	}
+	elsif ($iphoneSimulator)
+	{
+		print ">>> Copying libmonosgen-2.0\n";
+		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+	}
+	elsif ($android)
 	{
 		print ">>> Copying libmonosgen-2.0\n";
 		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
@@ -953,7 +1251,7 @@ if ($artifact)
 	
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
-	if ($android)
+	if ($android || $iphone || $iphoneCross || $iphoneSimulator)
 	{
 		# Nothing to do
 	}
@@ -985,6 +1283,20 @@ if ($artifact)
 		system("cp", "$monoprefix/bin/mono-2.0.dll", "$distDirArchBin/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
 		system("cp", "$monoprefix/bin/mono-2.0.pdb", "$distDirArchBin/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
 		system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
+	}
+
+	# cross compiler directory setup
+	if ($iphoneCross)
+	{
+		print ">>> Copying mono-xcompiler\n";
+		if($runningOnWindows)
+		{
+			die("Not implemented\n");
+		}
+		else
+		{
+			system("cp", "$monoroot/mono/mini/mono","$crossCompilerDestination/mono-xcompiler") eq 0 or die ("failed copying mono-xcompiler\n");
+		}
 	}
 	
 	# Not all build configurations output to the distro dir, so only chmod it if it exists
