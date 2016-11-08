@@ -51,6 +51,8 @@ if ($xcomp)
 		system("cp", "$monoroot/builds/monodistribution/bin-osx-tmp-i386/mono", "$monoroot/builds/monodistribution/bin/.") eq 0 or die ("failed to copy mono over from bin-osx-tmp-i386 to bin\n");
 		system("chmod", "+x", "$monoroot/builds/monodistribution/bin/mono") eq 0 or die("Failed to chmod mono\n");
 
+		# Need to clean up the tmp build folder so that we don't pollute the final artifact
+		rmtree("$monoroot/builds/monodistribution/bin-osx-tmp-i386");
 	}
 
 	print ">>> Building iphone cross compiler\n";
