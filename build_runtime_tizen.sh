@@ -4,4 +4,11 @@
 # easier to add this 
 
 # Note : Not Implemented yet.  Script is here to make the katana build pass so that the mono build artifact is created
-mkdir builds
+if [ -d builds ]; then
+	echo "Skip making builds directory.  Already exists"
+else
+	mkdir builds
+fi
+
+touch builds/dummy_tizen.txt
+
