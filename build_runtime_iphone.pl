@@ -53,6 +53,7 @@ if ($xcomp)
 
 		# Need to clean up the tmp build folder so that we don't pollute the final artifact
 		rmtree("$monoroot/builds/monodistribution/bin-osx-tmp-i386");
+		rmtree("$monoroot/builds/embedruntimes/bin-osx-tmp-i386");
 	}
 
 	print ">>> Building iphone cross compiler\n";
