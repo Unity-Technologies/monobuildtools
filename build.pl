@@ -434,6 +434,7 @@ if ($build)
 			push @configureparams, "--disable-shared-handles";
 			push @configureparams, "--with-tls=pthread";
 			push @configureparams, "--disable-boehm";
+			push @configureparams, "--with-monotouch";
 
 			push @configureparams, "--enable-llvm-runtime";
 			push @configureparams, "--with-bitcode=yes";
@@ -541,7 +542,7 @@ if ($build)
 			push @configureparams, "--with-macversion=$macversion";
 			push @configureparams, "--with-cross-offsets=$iphoneCrossAbi.h";
 
-			# New ones trying out
+			push @configureparams, "--with-monotouch";
 			push @configureparams, "--disable-boehm";
 			push @configureparams, "--build=i386-apple-darwin10";
 			push @configureparams, "--disable-libraries";
