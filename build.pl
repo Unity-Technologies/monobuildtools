@@ -542,7 +542,6 @@ if ($build)
 			push @configureparams, "--with-macversion=$macversion";
 			push @configureparams, "--with-cross-offsets=$iphoneCrossAbi.h";
 
-			push @configureparams, "--with-monotouch";
 			push @configureparams, "--disable-boehm";
 			push @configureparams, "--build=i386-apple-darwin10";
 			push @configureparams, "--disable-libraries";
