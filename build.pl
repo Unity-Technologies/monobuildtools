@@ -472,8 +472,8 @@ if ($build)
 			$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
 			$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
 			$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
-			$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/gcc -arch $iphoneSimulatorArch";
-			$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/g++ -arch $iphoneSimulatorArch";
+			$ENV{CC} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/gcc";
+			$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/usr/bin/g++";
 
 			print "\n";
 			print ">>> Environment:\n";
