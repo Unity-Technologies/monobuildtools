@@ -229,9 +229,6 @@ if ($build)
 
 	my @configureparams = ();
 
-	# TODO by Mike : Add back.  The android build script was using it
-	#push @configureparams, "--cache-file=$cachefile";
-	
 	push @configureparams, "--disable-mcs-build" if($disableMcs);
 	push @configureparams, "--with-glib=embedded";
 	push @configureparams, "--disable-nls";  #this removes the dependency on gettext package
@@ -247,6 +244,8 @@ if ($build)
 	if ($aotProfile)
 	{
 		push @configureparams, "--with-unity_aot=yes";
+		#push @configureparams, "--with-mobile_static=yes";
+
 		
 		if ($disableNormalProfile)
 		{
@@ -406,6 +405,8 @@ if ($build)
 		# Need to keep our libtool in front
 		$ENV{PATH} = "$externalBuildDeps/built-tools/bin:$ENV{PATH}";
 
+		push @configureparams, "--cache-file=iphone-$iphoneArch.cache";
+
 		if ($iphone)
 		{
 			my $iosSdkVersion = "9.3";
@@ -553,6 +554,8 @@ if ($build)
 			print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
 			print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
 			print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
+
+			push @configureparams, "--cache-file=iphone-cross.cache";
 
 			push @configureparams, "--with-sigaltstack=no";
 			push @configureparams, "--disable-shared-handles";
@@ -863,6 +866,8 @@ if ($build)
 			die("Unsupported android arch : $androidArch\n");
 		}
 
+		push @configureparams, "--cache-file=android-$androidArch.cache";
+
 		push @configureparams, "--disable-parallel-mark";
 		push @configureparams, "--disable-shared-handles";
 		push @configureparams, "--with-sigaltstack=no";
@@ -949,8 +954,14 @@ if ($build)
 		print "\n";
 	}
 	else
-	{			
+	{
 		push @configureparams, "--host=$monoHostArch-pc-mingw32";
+	}
+
+	if ($isDesktopBuild)
+	{
+		my $cacheArch = $arch32 ? "i386" : "x86_64";
+		push @configureparams, "--cache-file=desktop-$cacheArch.cache";
 	}
 
 	print ">>> Existing Mono : $existingMonoRootPath\n\n";
