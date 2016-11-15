@@ -39,6 +39,7 @@ my $debug=0;
 my $disableMcs=0;
 my $buildUsAndBoo=0;
 my $artifactsCommon=0;
+my $artifactsRuntime=1;
 my $runRuntimeTests=1;
 my $runClasslibTests=1;
 my $checkoutOnTheFly=0;
@@ -57,12 +58,16 @@ my $iphoneArch = "";
 my $iphoneCross=0;
 my $iphoneSimulator=0;
 my $iphoneSimulatorArch="";
-my $aotProfile=0;
+my $aotProfile="";
 my $disableNormalProfile=0;
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
 my $shortPrefix=0;
+
+# Disabled by default for now.  causes more problems than it's worth when actively making changes to the build scripts.
+# Would be okay to turn on once the build scripts stabilze and you just want to rebuild code changes
+my $enableCacheFile=0;
 
 print(">>> Build All Args = @ARGV\n");
 
@@ -72,6 +77,7 @@ GetOptions(
 	'test=i'=>\$test,
 	'artifact=i'=>\$artifact,
 	'artifactscommon=i'=>\$artifactsCommon,
+	'artifactsruntime=i'=>\$artifactsRuntime,
 	'debug=i'=>\$debug,
 	'disablemcs=i'=>\$disableMcs,
 	'buildusandboo=i'=>\$buildUsAndBoo,
@@ -95,8 +101,9 @@ GetOptions(
 	'iphonearch=s'=>\$iphoneArch,
 	'iphonecross=i'=>\$iphoneCross,
 	'iphonesimulator=i'=>\$iphoneSimulator,
-	'aotprofile=i'=>\$aotProfile,
+	'aotprofile=s'=>\$aotProfile,
 	'disablenormalprofile=i'=>\$disableNormalProfile,
+	'enablecachefile=i'=>\$enableCacheFile,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -241,12 +248,10 @@ if ($build)
 		push @configureparams, "--with-monotouch=no";
 	}
 
-	if ($aotProfile)
+	if ($aotProfile ne "")
 	{
-		push @configureparams, "--with-unity_aot=yes";
-		#push @configureparams, "--with-mobile_static=yes";
+		push @configureparams, "--with-$aotProfile=yes";
 
-		
 		if ($disableNormalProfile)
 		{
 			push @configureparams, "--with-profile4=no";
@@ -405,7 +410,7 @@ if ($build)
 		# Need to keep our libtool in front
 		$ENV{PATH} = "$externalBuildDeps/built-tools/bin:$ENV{PATH}";
 
-		push @configureparams, "--cache-file=iphone-$iphoneArch.cache";
+		push @configureparams, "--cache-file=iphone-$iphoneArch.cache" if ($enableCacheFile);
 
 		if ($iphone)
 		{
@@ -555,7 +560,7 @@ if ($build)
 			print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
 			print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
 
-			push @configureparams, "--cache-file=iphone-cross.cache";
+			push @configureparams, "--cache-file=iphone-cross.cache" if ($enableCacheFile);
 
 			push @configureparams, "--with-sigaltstack=no";
 			push @configureparams, "--disable-shared-handles";
@@ -866,7 +871,7 @@ if ($build)
 			die("Unsupported android arch : $androidArch\n");
 		}
 
-		push @configureparams, "--cache-file=android-$androidArch.cache";
+		push @configureparams, "--cache-file=android-$androidArch.cache" if ($enableCacheFile);
 
 		push @configureparams, "--disable-parallel-mark";
 		push @configureparams, "--disable-shared-handles";
@@ -961,7 +966,7 @@ if ($build)
 	if ($isDesktopBuild)
 	{
 		my $cacheArch = $arch32 ? "i386" : "x86_64";
-		push @configureparams, "--cache-file=desktop-$cacheArch.cache";
+		push @configureparams, "--cache-file=desktop-$cacheArch.cache" if ($enableCacheFile);
 	}
 
 	print ">>> Existing Mono : $existingMonoRootPath\n\n";
@@ -1109,38 +1114,56 @@ if ($artifact)
 		{
 			system("mkdir -p $distdir") eq 0 or die("failed to make directory $distdir\n");
 		}
-		
-		system("cp -R $addtoresultsdistdir/. $distdir/") eq 0 or die ("Failed copying $addtoresultsdistdir to $distdir\n");
-		
+
 		$File::Copy::Recursive::CopyLink = 0;  #make sure we copy files as files and not as symlinks, as TC unfortunately doesn't pick up symlinks.
 
 		my $distdirlibmono = "$distdir/lib/mono";
-		system("cp -r $monoprefix/lib/mono $distdir/lib");
-		
-		if($^O ne 'darwin')
+
+		if (not $disableNormalProfile)
 		{
-			# On OSX we build a universal binary for 32-bit and 64-bit in the mono executable. The class library build
-			# only creates the 64-bit slice, so we don't want to end up with a single slice binary in the output.
-			# If we do, it will step on the universal binary produced but the OSX runtime build.
-			system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder\n");
+			print(">>> Creating normal profile artifacts...\n");
+			system("cp -R $addtoresultsdistdir/. $distdir/") eq 0 or die ("Failed copying $addtoresultsdistdir to $distdir\n");
+
+			system("cp -r $monoprefix/lib/mono $distdir/lib");
+			
+			if($^O ne 'darwin')
+			{
+				# On OSX we build a universal binary for 32-bit and 64-bit in the mono executable. The class library build
+				# only creates the 64-bit slice, so we don't want to end up with a single slice binary in the output.
+				# If we do, it will step on the universal binary produced but the OSX runtime build.
+				system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder\n");
+			}
+			system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder\n");
+
+			system("cp -R $externalBuildDeps/reference-assemblies/unity $distdirlibmono/unity");
+	 		system("cp -R $externalBuildDeps/reference-assemblies/unity_web $distdirlibmono/unity_web");
+
+	 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/2.0-api");
+	 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/2.0-api");
+
+	 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.0-api");
+	 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.0-api");
+
+			system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.5-api");
+			system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.5-api");
+
+			# now remove nunit from a couple places (but not all, we need some of them)
+			system("rm -rf $distdirlibmono/2.0/nunit*");
+			system("rm -rf $distdirlibmono/gac/nunit*");
 		}
-		system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder\n");
 
-		system("cp -R $externalBuildDeps/reference-assemblies/unity $distdirlibmono/unity");
- 		system("cp -R $externalBuildDeps/reference-assemblies/unity_web $distdirlibmono/unity_web");
+		if ($aotProfile ne "")
+		{
+			print(">>> Creating $aotProfile profile artifacts...\n");
+			my $builtAotProfileDir = "$monoroot/mcs/class/lib/$aotProfile";
 
- 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/2.0-api");
- 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/2.0-api");
+			if (!(-d "$distdirlibmono"))
+			{
+				system("mkdir -p $distdirlibmono") eq 0 or die("failed to make directory $distdirlibmono\n");
+			}
 
- 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.0-api");
- 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.0-api");
-
-		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.5-api");
-		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.5-api");
-
-		# now remove nunit from a couple places (but not all, we need some of them)
-		system("rm -rf $distdirlibmono/2.0/nunit*");
-		system("rm -rf $distdirlibmono/gac/nunit*");
+			system("cp -r $builtAotProfileDir $distdirlibmono/") eq 0 or die("Failed copying $builtAotProfileDir to $distdirlibmono");
+		}
 		
 		if (-f "$monoroot/ZippedClasslibs.tar.gz")
 		{
@@ -1163,10 +1186,18 @@ if ($artifact)
 	my $versionsOutputFile = "";
 	my $crossCompilerRoot = "$buildsroot/crosscompiler";
 	my $crossCompilerDestination = "";
+
+	my $versionsFileNamePostFix = "";
+
+	if ($aotProfile ne "" && $disableNormalProfile)
+	{
+		$versionsFileNamePostFix = "-profile-$aotProfile";
+	}
+
 	if ($iphone)
 	{
 		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneArch";
-		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneArch.txt";
+		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneArch$versionsFileNamePostFix.txt";
 	}
 	elsif ($iphoneCross)
 	{
@@ -1176,33 +1207,33 @@ if ($artifact)
 	elsif ($iphoneSimulator)
 	{
 		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneSimulatorArch";
-		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneSimulatorArch.txt";
+		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneSimulatorArch$versionsFileNamePostFix.txt";
 	}
 	elsif ($android)
 	{
 		$embedDirArchDestination = "$embedDirRoot/android/$androidArch";
-		$versionsOutputFile = "$buildsroot/versions-android-$androidArch.txt";
+		$versionsOutputFile = "$buildsroot/versions-android-$androidArch$versionsFileNamePostFix.txt";
 	}
 	elsif($^O eq "linux")
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/linux32" : "$embedDirRoot/linux64";
 		$distDirArchBin = $arch32 ? "$distdir/bin-linux32" : "$distdir/bin-linux64";
-		$versionsOutputFile = $arch32 ? "$buildsroot/versions-linux32.txt" : "$buildsroot/versions-linux64.txt";
+		$versionsOutputFile = $arch32 ? "$buildsroot/versions-linux32$versionsFileNamePostFix.txt" : "$buildsroot/versions-linux64$versionsFileNamePostFix.txt";
 	}
 	elsif($^O eq 'darwin')
 	{
 		# Note these tmp directories will get merged into a single 'osx' directory later by a parent script
 		$embedDirArchDestination = "$embedDirRoot/osx-tmp-$monoHostArch";
 		$distDirArchBin = "$distdir/bin-osx-tmp-$monoHostArch";
-		$versionsOutputFile = $arch32 ? "$buildsroot/versions-osx32.txt" : "$buildsroot/versions-osx64.txt";
+		$versionsOutputFile = $arch32 ? "$buildsroot/versions-osx32$versionsFileNamePostFix.txt" : "$buildsroot/versions-osx64$versionsFileNamePostFix.txt";
 	}
 	else
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/win32" : "$embedDirRoot/win64";
 		$distDirArchBin = $arch32 ? "$distdir/bin" : "$distdir/bin-x64";
-		$versionsOutputFile = $arch32 ? "$buildsroot/versions-win32.txt" : "$buildsroot/versions-win64.txt";
+		$versionsOutputFile = $arch32 ? "$buildsroot/versions-win32$versionsFileNamePostFix.txt" : "$buildsroot/versions-win64$versionsFileNamePostFix.txt";
 	}
-	
+
 	# Make sure the directory for our architecture is clean before we copy stuff into it
 	if (-d "$embedDirArchDestination")
 	{
@@ -1216,104 +1247,107 @@ if ($artifact)
 		rmtree($distDirArchBin);
 	}
 
-	system("mkdir -p $embedDirArchDestination") if ($embedDirArchDestination ne "");
-	system("mkdir -p $distDirArchBin") if ($distDirArchBin ne "");
-	system("mkdir -p $crossCompilerDestination") if ($crossCompilerDestination ne "");
+	if ($artifactsRuntime)
+	{
+		system("mkdir -p $embedDirArchDestination") if ($embedDirArchDestination ne "");
+		system("mkdir -p $distDirArchBin") if ($distDirArchBin ne "");
+		system("mkdir -p $crossCompilerDestination") if ($crossCompilerDestination ne "");
 
-	# embedruntimes directory setup
-	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
-	if ($iphone)
-	{
-		print ">>> Copying libmonosgen-2.0\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
-	}
-	elsif ($iphoneCross)
-	{
-		# Nothing to do
-	}
-	elsif ($iphoneSimulator)
-	{
-		print ">>> Copying libmonosgen-2.0\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
-	}
-	elsif ($android)
-	{
-		print ">>> Copying libmonosgen-2.0\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
-		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
-	}
-	elsif($^O eq "linux")
-	{
-		print ">>> Copying libmonosgen-2.0\n";
-		system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
-		system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
-
-		print ">>> Copying libMonoPosixHelper.so\n";
-		system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so\n");
-		
-		if ($buildMachine)
+		# embedruntimes directory setup
+		print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
+		if ($iphone)
 		{
-			system("strip $embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die("failed to strip libmonoboehm-2.0.so (shared)\n");
-			system("strip $embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die("failed to strip libmonosgen-2.0.so (shared)\n");
-			system("strip $embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die("failed to strip libMonoPosixHelper (shared)\n");
+			print ">>> Copying libmonosgen-2.0\n";
+			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
 		}
-	}
-	elsif($^O eq 'darwin')
-	{
-		# embedruntimes directory setup
- 		print ">>> Hardlinking libmonosgen-2.0\n";
-
-		system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.dylib","$embedDirArchDestination/libmonoboehm-2.0.dylib") eq 0 or die ("failed symlinking libmonoboehm-2.0.dylib\n");
-		system("ln","-f", "$monoroot/mono/mini/.libs/libmonosgen-2.0.dylib","$embedDirArchDestination/libmonosgen-2.0.dylib") eq 0 or die ("failed symlinking libmonosgen-2.0.dylib\n");
-		 
-		print "Hardlinking libMonoPosixHelper.dylib\n";
-		system("ln","-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$embedDirArchDestination/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib\n");
-	
-		InstallNameTool("$embedDirArchDestination/libmonoboehm-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonoboehm-2.0.dylib");
-		InstallNameTool("$embedDirArchDestination/libmonosgen-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.dylib");
-		InstallNameTool("$embedDirArchDestination/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libMonoPosixHelper.dylib");
-	}
-	else
-	{
-		# embedruntimes directory setup
-		system("cp", "$monoprefix/bin/mono-2.0.dll", "$embedDirArchDestination/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
-		system("cp", "$monoprefix/bin/mono-2.0.pdb", "$embedDirArchDestination/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
-	}
-	
-	# monodistribution directory setup
-	print(">>> Creating monodistribution directory\n");
-	if ($android || $iphone || $iphoneCross || $iphoneSimulator)
-	{
-		# Nothing to do
-	}
-	elsif($^O eq "linux")
-	{
-		my $distDirArchEtc = $arch32 ? "$distdir/etc-linux32" : "$distdir/etc-linux64";
-
-		if (-d "$distDirArchEtc")
+		elsif ($iphoneCross)
 		{
-			print(">>> Cleaning $distDirArchEtc\n");
-			rmtree($distDirArchEtc);
+			# Nothing to do
+		}
+		elsif ($iphoneSimulator)
+		{
+			print ">>> Copying libmonosgen-2.0\n";
+			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+		}
+		elsif ($android)
+		{
+			print ">>> Copying libmonosgen-2.0\n";
+			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
+			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+		}
+		elsif($^O eq "linux")
+		{
+			print ">>> Copying libmonosgen-2.0\n";
+			system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
+			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
+
+			print ">>> Copying libMonoPosixHelper.so\n";
+			system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so\n");
+			
+			if ($buildMachine)
+			{
+				system("strip $embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die("failed to strip libmonoboehm-2.0.so (shared)\n");
+				system("strip $embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die("failed to strip libmonosgen-2.0.so (shared)\n");
+				system("strip $embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die("failed to strip libMonoPosixHelper (shared)\n");
+			}
+		}
+		elsif($^O eq 'darwin')
+		{
+			# embedruntimes directory setup
+	 		print ">>> Hardlinking libmonosgen-2.0\n";
+
+			system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.dylib","$embedDirArchDestination/libmonoboehm-2.0.dylib") eq 0 or die ("failed symlinking libmonoboehm-2.0.dylib\n");
+			system("ln","-f", "$monoroot/mono/mini/.libs/libmonosgen-2.0.dylib","$embedDirArchDestination/libmonosgen-2.0.dylib") eq 0 or die ("failed symlinking libmonosgen-2.0.dylib\n");
+			 
+			print "Hardlinking libMonoPosixHelper.dylib\n";
+			system("ln","-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$embedDirArchDestination/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib\n");
+		
+			InstallNameTool("$embedDirArchDestination/libmonoboehm-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonoboehm-2.0.dylib");
+			InstallNameTool("$embedDirArchDestination/libmonosgen-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.dylib");
+			InstallNameTool("$embedDirArchDestination/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libMonoPosixHelper.dylib");
+		}
+		else
+		{
+			# embedruntimes directory setup
+			system("cp", "$monoprefix/bin/mono-2.0.dll", "$embedDirArchDestination/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
+			system("cp", "$monoprefix/bin/mono-2.0.pdb", "$embedDirArchDestination/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
 		}
 		
-		system("mkdir -p $distDirArchBin");
-		system("mkdir -p $distDirArchEtc");
-		system("mkdir -p $distDirArchEtc/mono");
-		
-		system("ln", "-f", "$monoroot/mono/mini/mono-boehm","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable\n");
-		system("ln", "-f", "$monoroot/tools/pedump/pedump","$distDirArchBin/pedump") eq 0 or die("failed symlinking pedump executable\n");
-		system('cp', "$monoroot/data/config","$distDirArchEtc/mono/config") eq 0 or die("failed to copy config\n");
-	}
-	elsif($^O eq 'darwin')
-	{
-		system("ln", "-f", "$monoroot/mono/mini/mono","$distDirArchBin/mono") eq 0 or die("failed hardlinking mono executable\n");
-		system("ln", "-f", "$monoroot/tools/pedump/pedump","$distDirArchBin/pedump") eq 0 or die("failed hardlinking pedump executable\n");
-	}
-	else
-	{
-		system("cp", "$monoprefix/bin/mono-2.0.dll", "$distDirArchBin/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
-		system("cp", "$monoprefix/bin/mono-2.0.pdb", "$distDirArchBin/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
-		system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
+		# monodistribution directory setup
+		print(">>> Creating monodistribution directory\n");
+		if ($android || $iphone || $iphoneCross || $iphoneSimulator)
+		{
+			# Nothing to do
+		}
+		elsif($^O eq "linux")
+		{
+			my $distDirArchEtc = $arch32 ? "$distdir/etc-linux32" : "$distdir/etc-linux64";
+
+			if (-d "$distDirArchEtc")
+			{
+				print(">>> Cleaning $distDirArchEtc\n");
+				rmtree($distDirArchEtc);
+			}
+			
+			system("mkdir -p $distDirArchBin");
+			system("mkdir -p $distDirArchEtc");
+			system("mkdir -p $distDirArchEtc/mono");
+			
+			system("ln", "-f", "$monoroot/mono/mini/mono-boehm","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable\n");
+			system("ln", "-f", "$monoroot/tools/pedump/pedump","$distDirArchBin/pedump") eq 0 or die("failed symlinking pedump executable\n");
+			system('cp', "$monoroot/data/config","$distDirArchEtc/mono/config") eq 0 or die("failed to copy config\n");
+		}
+		elsif($^O eq 'darwin')
+		{
+			system("ln", "-f", "$monoroot/mono/mini/mono","$distDirArchBin/mono") eq 0 or die("failed hardlinking mono executable\n");
+			system("ln", "-f", "$monoroot/tools/pedump/pedump","$distDirArchBin/pedump") eq 0 or die("failed hardlinking pedump executable\n");
+		}
+		else
+		{
+			system("cp", "$monoprefix/bin/mono-2.0.dll", "$distDirArchBin/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
+			system("cp", "$monoprefix/bin/mono-2.0.pdb", "$distDirArchBin/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
+			system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
+		}
 	}
 
 	# cross compiler directory setup
