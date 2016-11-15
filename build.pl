@@ -60,6 +60,7 @@ my $iphoneSimulatorArch="";
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
+my $shortPrefix=0;
 
 print(">>> Build All Args = @ARGV\n");
 
@@ -79,6 +80,7 @@ GetOptions(
 	'sdk=s'=>\$sdk,
 	'existingmono=s'=>\$existingMonoRootPath,
 	'skipmonomake=i'=>\$skipMonoMake,
+	'shortprefix=i'=>\$shortPrefix,
 	'winperl=s'=>\$winPerl,
 	'winmonoroot=s'=>\$winMonoRoot,
 	'msbuildversion=s'=>\$msBuildVersion,
@@ -178,7 +180,10 @@ elsif($^O eq 'darwin')
 	# adding them to our final gcc invocation to make the bundle).
 	# Lucas noticed that I was lacking a Mono prefix, and having a long
 	# one would give us space, so here is this silly looong prefix.
-	$monoprefix = "$monoroot/tmp/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting";
+	if (not $shortPrefix)
+	{
+		$monoprefix = "$monoroot/tmp/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting/scripting";
+	}
 }
 else
 {
