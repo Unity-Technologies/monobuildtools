@@ -59,6 +59,7 @@ my $iphoneCross=0;
 my $iphoneSimulator=0;
 my $iphoneSimulatorArch="";
 my $aotProfile="";
+my $aotProfileDestName="";
 my $disableNormalProfile=0;
 
 # Handy troubleshooting/niche options
@@ -102,6 +103,7 @@ GetOptions(
 	'iphonecross=i'=>\$iphoneCross,
 	'iphonesimulator=i'=>\$iphoneSimulator,
 	'aotprofile=s'=>\$aotProfile,
+	'aotprofiledestname=s'=>\$aotProfileDestName,
 	'disablenormalprofile=i'=>\$disableNormalProfile,
 	'enablecachefile=i'=>\$enableCacheFile,
 ) or die ("illegal cmdline options");
@@ -118,6 +120,13 @@ chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
 
 print(">>> Mono Revision = $monoRevision\n");
 print(">>> Build Scripts Revision = $buildScriptsRevision\n");
+
+# Optionally, Let the mono profile name be decoupled from the final profile directory name we use in the final build
+# if a different name was not specified, use the same name as the mono profile
+if ($aotProfile ne "" && aotProfileDestName eq "")
+{
+	$aotProfileDestName = $aotProfile;
+}
 
 if ($androidArch ne "")
 {
@@ -1162,7 +1171,7 @@ if ($artifact)
 				system("mkdir -p $distdirlibmono") eq 0 or die("failed to make directory $distdirlibmono\n");
 			}
 
-			system("cp -r $builtAotProfileDir $distdirlibmono/") eq 0 or die("Failed copying $builtAotProfileDir to $distdirlibmono");
+			system("cp -r $builtAotProfileDir $distdirlibmono/$aotProfileDestName") eq 0 or die("Failed copying $builtAotProfileDir to $distdirlibmono/$aotProfileDestName");
 		}
 		
 		if (-f "$monoroot/ZippedClasslibs.tar.gz")
@@ -1191,7 +1200,7 @@ if ($artifact)
 
 	if ($aotProfile ne "" && $disableNormalProfile)
 	{
-		$versionsFileNamePostFix = "-profile-$aotProfile";
+		$versionsFileNamePostFix = "-profile-$aotProfileDestName";
 	}
 
 	if ($iphone)

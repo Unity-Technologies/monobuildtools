@@ -22,4 +22,16 @@ GetOptions(
    'shortprefix=i'=>\$shortPrefix,
 ) or die ("illegal cmdline options");
 
-system("perl", "$buildScriptsRoot/build.pl", "--build=$build", "--clean=$clean", "--artifact=1", "--artifactscommon=1", "--artifactsruntime=0", "--aotprofile=mobile_static", "--forcedefaultbuilddeps=1", "--shortprefix=$shortPrefix", "--disablenormalprofile=$disableNormalProfile") eq 0 or die ("Failed builidng aot profile\n");
+system(
+	"perl",
+	"$buildScriptsRoot/build.pl",
+	"--build=$build",
+	"--clean=$clean",
+	"--artifact=1",
+	"--artifactscommon=1",
+	"--artifactsruntime=0",
+	"--aotprofile=mobile_static",
+	"--aotprofiledestname=unity_aot",
+	"--forcedefaultbuilddeps=1",
+	"--shortprefix=$shortPrefix",
+	"--disablenormalprofile=$disableNormalProfile") eq 0 or die ("Failed builidng aot profile\n");
