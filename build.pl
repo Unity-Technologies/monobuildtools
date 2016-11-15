@@ -57,6 +57,8 @@ my $iphoneArch = "";
 my $iphoneCross=0;
 my $iphoneSimulator=0;
 my $iphoneSimulatorArch="";
+my $aotProfile=0;
+my $disableNormalProfile=0;
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -93,6 +95,8 @@ GetOptions(
 	'iphonearch=s'=>\$iphoneArch,
 	'iphonecross=i'=>\$iphoneCross,
 	'iphonesimulator=i'=>\$iphoneSimulator,
+	'aotprofile=i'=>\$aotProfile,
+	'disablenormalprofile=i'=>\$disableNormalProfile,
 ) or die ("illegal cmdline options");
 
 print ">>> Mono checkout = $monoroot\n";
@@ -238,6 +242,16 @@ if ($build)
 	if ($isDesktopBuild)
 	{
 		push @configureparams, "--with-monotouch=no";
+	}
+
+	if ($aotProfile)
+	{
+		die("Not Implemented\n");
+		
+		if ($disableNormalProfile)
+		{
+			die("Not Implemented\n");
+		}
 	}
 	
 	if ($existingMonoRootPath eq "")
