@@ -246,11 +246,12 @@ if ($build)
 
 	if ($aotProfile)
 	{
-		die("Not Implemented\n");
+		push @configureparams, "--with-unity_aot=yes";
 		
 		if ($disableNormalProfile)
 		{
-			die("Not Implemented\n");
+			push @configureparams, "--with-profile4=no";
+			push @configureparams, "--with-profile4_x=no";
 		}
 	}
 	
