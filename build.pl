@@ -422,7 +422,7 @@ if ($build)
 		push @configureparams, "--cache-file=iphone-$iphoneArch.cache" if ($enableCacheFile);
 
 		my $iosMinimalCommon = "com,remoting,shared_perfcounters,appdomains";
-		my $iosCFlagsCommon = "-DMONOTOUCH -DHOST_IOS";
+		my $iosCFlagsCommon = "-DMONOTOUCH -DHOST_IOS -DDISABLE_POLICY_EVIDENCE=1 -DDISABLE_PROCESS_HANDLING=1";
 
 		push @configureparams, "--with-tls=pthread";
 		push @configureparams, "--disable-boehm";
@@ -450,7 +450,7 @@ if ($build)
 			$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -arch $iphoneArch";
 			$ENV{LD} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld";
 
-			$ENV{CFLAGS} = "$iosCFlagsCommon -gdwarf-2 -DSMALL_CONFIG -DDISABLE_POLICY_EVIDENCE=1 -DDISABLE_PROCESS_HANDLING=1 -DHAVE_LARGE_FILE_SUPPORT=1 -DHAVE_ARMV6=1 -DARM_FPU_VFP=1 -Wl,-application_extension -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
+			$ENV{CFLAGS} = "$iosCFlagsCommon -gdwarf-2 -DSMALL_CONFIG -DHAVE_LARGE_FILE_SUPPORT=1 -DHAVE_ARMV6=1 -DARM_FPU_VFP=1 -Wl,-application_extension -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
 			
 			# Unity defines
 			$ENV{CFLAGS} = "-DPLATFORM_IPHONE $ENV{CFLAGS}";
