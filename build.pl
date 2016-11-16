@@ -421,6 +421,15 @@ if ($build)
 
 		push @configureparams, "--cache-file=iphone-$iphoneArch.cache" if ($enableCacheFile);
 
+		my $iosMinimalCommon = "com,remoting,shared_perfcounters,appdomains";
+		my $iosCFlagsCommon = "-DMONOTOUCH -DHOST_IOS";
+
+		push @configureparams, "--with-tls=pthread";
+		push @configureparams, "--disable-boehm";
+		push @configureparams, "--without-ikvm-native";
+		push @configureparams, "--disable-executables";
+		push @configureparams, "--disable-visibility-hidden";
+
 		if ($iphone)
 		{
 			my $iosSdkVersion = "9.3";
@@ -441,7 +450,7 @@ if ($build)
 			$ENV{CXX} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang++ -arch $iphoneArch";
 			$ENV{LD} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld";
 
-			$ENV{CFLAGS} = "-gdwarf-2 -DSMALL_CONFIG -DDISABLE_POLICY_EVIDENCE=1 -DDISABLE_PROCESS_HANDLING=1 -DHAVE_LARGE_FILE_SUPPORT=1 -DMONOTOUCH -DHAVE_ARMV6=1 -DHOST_IOS -DARM_FPU_VFP=1 -Wl,-application_extension -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
+			$ENV{CFLAGS} = "$iosCFlagsCommon -gdwarf-2 -DSMALL_CONFIG -DDISABLE_POLICY_EVIDENCE=1 -DDISABLE_PROCESS_HANDLING=1 -DHAVE_LARGE_FILE_SUPPORT=1 -DHAVE_ARMV6=1 -DARM_FPU_VFP=1 -Wl,-application_extension -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
 			
 			# Unity defines
 			$ENV{CFLAGS} = "-DPLATFORM_IPHONE $ENV{CFLAGS}";
@@ -467,21 +476,16 @@ if ($build)
 
 			push @configureparams, "--with-sigaltstack=no";
 			push @configureparams, "--disable-shared-handles";
-			push @configureparams, "--with-tls=pthread";
-			push @configureparams, "--disable-boehm";
 			push @configureparams, "--with-monotouch";
 
 			push @configureparams, "--enable-llvm-runtime";
 			push @configureparams, "--with-bitcode=yes";
 
 			push @configureparams, "--with-lazy-gc-thread-creation=yes";
-			push @configureparams, "--without-ikvm-native";
 			push @configureparams, "--enable-icall-export";
-			push @configureparams, "--disable-executables";
-			push @configureparams, "--disable-visibility-hidden";
 			push @configureparams, "--enable-dtrace=no";
 			
-			push @configureparams, "--enable-minimal=ssa,com,jit,reflection_emit_save,reflection_emit,portability,assembly_remapping,attach,verifier,full_messages,appdomains,security,sgen_remset,sgen_marksweep_par,sgen_marksweep_fixed,sgen_marksweep_fixed_par,sgen_copying,logging,remoting,shared_perfcounters";
+			push @configureparams, "--enable-minimal=$iosMinimalCommon,ssa,jit,reflection_emit_save,reflection_emit,portability,assembly_remapping,attach,verifier,full_messages,security,sgen_remset,sgen_marksweep_par,sgen_marksweep_fixed,sgen_marksweep_fixed_par,sgen_copying,logging";
 			
 			push @configureparams, "mono_cv_uscore=yes";
 			push @configureparams, "cv_mono_sizeof_sunpath=104";
@@ -503,7 +507,7 @@ if ($build)
 
 			$ENV{PATH} = "$iosSdkRoot/usr/bin:$ENV{PATH}";
 
-			$ENV{MACSDKOPTIONS} = "-DMONOTOUCH -D_XOPEN_SOURCE=1 -g -O0 -DHOST_IOS -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
+			$ENV{MACSDKOPTIONS} = "$iosCFlagsCommon -D_XOPEN_SOURCE=1 -g -O0 -DTARGET_IPHONE_SIMULATOR -mios-simulator-version-min=$iosSimMinVersion -isysroot $iosSdkRoot";
 			$ENV{CFLAGS} = "-arch $iphoneSimulatorArch $ENV{MACSDKOPTIONS}";
 			$ENV{CXXFLAGS} = "$ENV{CFLAGS}";
 			$ENV{CPPFLAGS} = "$ENV{CFLAGS}";
@@ -521,15 +525,7 @@ if ($build)
 			print ">>> \tMACSDKOPTIONS = $ENV{MACSDKOPTIONS}\n";
 
 			push @configureparams, "--host=$iphoneSimulatorArch-apple-darwin$darwinVersion";
-
-			push @configureparams, "--with-tls=pthread";
-			push @configureparams, "--disable-boehm";
-
-			push @configureparams, "--without-ikvm-native";;
-			push @configureparams, "--disable-executables";
-			push @configureparams, "--disable-visibility-hidden";
-			
-			push @configureparams, "--enable-minimal=com,remoting,shared_perfcounters";
+			push @configureparams, "--enable-minimal=$iosMinimalCommon";
 			
 			push @configureparams, "mono_cv_uscore=yes";
 			push @configureparams, "ac_cv_func_clock_nanosleep=no";
