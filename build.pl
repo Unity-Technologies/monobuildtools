@@ -1090,6 +1090,18 @@ if ($build)
 		
 		system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 	}
+
+	if ($aotProfile ne "")
+	{
+		print(">>> Copying $aotProfile to prefix directory named $aotProfileDestName\n");
+		system("cp -r $monoroot/mcs/class/lib/$aotProfile $monoprefix/lib/mono/$aotProfileDestName") eq 0 or die("Failed copying $monoroot/mcs/class/lib/$aotProfile to $monoprefix/lib/mono/$aotProfileDestName");
+
+		# Clean up some stuff we don't need/want
+		system("rm -rf $monoprefix/lib/mono/$aotProfileDestName/.stamp");
+		system("rm -rf $monoprefix/lib/mono/$aotProfileDestName/bare");
+		system("rm -rf $monoprefix/lib/mono/$aotProfileDestName/plaincore");
+		system("rm -rf $monoprefix/lib/mono/$aotProfileDestName/secxml");
+	}
 }
 else
 {
@@ -1098,8 +1110,20 @@ else
 
 if ($buildUsAndBoo)
 {
-	print(">>> Building Unity Script and Boo...\n");
-	system("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix") eq 0 or die ("Failed builidng Unity Script and Boo\n");
+	if (not $disableNormalProfile)
+	{
+		print(">>> Building Unity Script and Boo...\n");
+		system("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix") eq 0 or die ("Failed builidng Unity Script and Boo\n");
+
+		if ($aotProfile ne "")
+		{
+			# Copy the *.Lang .dll's from Boo & US for our AOT profile.  We will have to trust they are compatible.  Actually running the boo compiler against the AOT profile is not currently practical because
+			# it depends on things like TypeBuilder which are not in the AOT profile
+			print(">>> Copying Unity Script and Boo *.Lang.dll's from 4.5 profile to $aotProfileDestName profile...\n");
+			system("cp $monoprefix/lib/mono/4.5/Boo.Lang.dll $monoprefix/lib/mono/$aotProfileDestName/.") eq 0 or die("Failed copying Boo.Lang.dll\n");
+			system("cp $monoprefix/lib/mono/4.5/UnityScript.Lang.dll $monoprefix/lib/mono/$aotProfileDestName/.") eq 0 or die("Failed copying Boo.Lang.dll\n");
+		}
+	}
 }
 else
 {
@@ -1157,19 +1181,6 @@ if ($artifact)
 			system("rm -rf $distdirlibmono/gac/nunit*");
 		}
 
-		if ($aotProfile ne "")
-		{
-			print(">>> Creating $aotProfile profile artifacts...\n");
-			my $builtAotProfileDir = "$monoroot/mcs/class/lib/$aotProfile";
-
-			if (!(-d "$distdirlibmono"))
-			{
-				system("mkdir -p $distdirlibmono") eq 0 or die("failed to make directory $distdirlibmono\n");
-			}
-
-			system("cp -r $builtAotProfileDir $distdirlibmono/$aotProfileDestName") eq 0 or die("Failed copying $builtAotProfileDir to $distdirlibmono/$aotProfileDestName");
-		}
-		
 		if (-f "$monoroot/ZippedClasslibs.tar.gz")
 		{
 			system("rm -f $monoroot/ZippedClasslibs.tar.gz") eq 0 or die("Failed to clean existing ZippedClasslibs.tar.gz\n");
