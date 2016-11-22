@@ -12,7 +12,9 @@ my $build = 1;
 my $clean = 1;
 
 # Handy troubleshooting/niche options
-my $shortPrefix = 0;
+
+# The prefix hack probably isn't needed anymore.  Let's disable it by default and see how things go
+my $shortPrefix = 1;
 
 GetOptions(
    "build=i"=>\$build,

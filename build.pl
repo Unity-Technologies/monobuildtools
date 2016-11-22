@@ -64,7 +64,9 @@ my $disableNormalProfile=0;
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
-my $shortPrefix=0;
+
+# The prefix hack probably isn't needed anymore.  Let's disable it by default and see how things go
+my $shortPrefix=1;
 
 # Disabled by default for now.  causes more problems than it's worth when actively making changes to the build scripts.
 # Would be okay to turn on once the build scripts stabilze and you just want to rebuild code changes
