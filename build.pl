@@ -1327,8 +1327,11 @@ if ($artifact)
 		else
 		{
 			# embedruntimes directory setup
-			system("cp", "$monoprefix/bin/mono-2.0.dll", "$embedDirArchDestination/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
-			system("cp", "$monoprefix/bin/mono-2.0.pdb", "$embedDirArchDestination/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
+			system("cp", "$monoprefix/bin/mono-2.0-boehm.dll", "$embedDirArchDestination/mono-2.0-boehm.dll") eq 0 or die ("failed copying mono-2.0-boehm.dll\n");
+			system("cp", "$monoprefix/bin/mono-2.0-boehm.pdb", "$embedDirArchDestination/mono-2.0-boehm.pdb") eq 0 or die ("failed copying mono-2.0-boehm.pdb\n");
+
+			system("cp", "$monoprefix/bin/mono-2.0-sgen.dll", "$embedDirArchDestination/mono-2.0-sgen.dll") eq 0 or die ("failed copying mono-2.0-sgen.dll\n");
+			system("cp", "$monoprefix/bin/mono-2.0-sgen.pdb", "$embedDirArchDestination/mono-2.0-sgen.pdb") eq 0 or die ("failed copying mono-2.0-sgen.pdb\n");
 		}
 		
 		# monodistribution directory setup
