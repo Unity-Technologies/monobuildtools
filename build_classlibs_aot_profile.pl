@@ -10,6 +10,7 @@ my $buildScriptsRoot = "$monoroot/external/buildscripts";
 
 my $build = 1;
 my $clean = 1;
+my $disableNormalProfile = 1;
 
 # Handy troubleshooting/niche options
 
@@ -19,6 +20,7 @@ my $shortPrefix = 1;
 GetOptions(
    "build=i"=>\$build,
    "clean=i"=>\$clean,
+   'disablenormalprofile=i'=>\$disableNormalProfile,
    'shortprefix=i'=>\$shortPrefix,
 ) or die ("illegal cmdline options");
 
@@ -29,8 +31,9 @@ system(
 	"--clean=$clean",
 	"--artifact=1",
 	"--artifactscommon=1",
+	"--artifactsruntime=0",
 	"--aotprofile=mobile_static",
 	"--aotprofiledestname=unity_aot",
-	"--buildusandboo=1",
 	"--forcedefaultbuilddeps=1",
-	"--shortprefix=$shortPrefix") eq 0 or die ("Failed builidng mono\n");
+	"--shortprefix=$shortPrefix",
+	"--disablenormalprofile=$disableNormalProfile") eq 0 or die ("Failed builidng aot profile\n");
