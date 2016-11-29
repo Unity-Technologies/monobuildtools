@@ -82,9 +82,6 @@ if ($clean)
 {
 	print(">>> Cleaning $monoprefix\n");
 	rmtree($monoprefix);
-
-	print(">>> Cleaning $buildsroot\n");
-	rmtree($buildsroot);
 }
 
 # *******************  Build Stage  **************************
