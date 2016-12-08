@@ -592,6 +592,7 @@ if ($build)
 			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.AST.dll";
 			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.Generator.dll";
 			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.Parser.CSharp.dll";
+			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.Parser.dll";
 			push @mcsArgs, "/r:$externalBuildDeps/CppSharpBinaries/CppSharp.dll";
 			push @mcsArgs, "/debug";
 			push @mcsArgs, "/nowarn:0436";
