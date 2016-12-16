@@ -1026,6 +1026,23 @@ if ($build)
 			system("make","clean") eq 0 or die ("failed to make clean\n");
 		}
 
+		print("\n>>> Calling make to build libmonoruntime-il2cpp.a for IL2CPP\n");
+		chdir("mono/metadata");
+		system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT\"") eq 0 or die ('Failed to make libmonoruntime-il2cpp.a for IL2CPP\n');
+		system("cp .libs/libmonoruntime.a libmonoruntime-il2cpp.a");
+		system("make clean");
+		system("mkdir .libs");
+		system("cp libmonoruntime-il2cpp.a .libs/");
+		chdir("$currentdir");
+		print("\n>>> Calling make to build libmonoutils-il2cpp.a for IL2CPP\n");
+		chdir("mono/utils");
+		system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT\"") eq 0 or die ('Failed to make libmonoutils-il2cpp.a for IL2CPP\n');
+		system("cp .libs/libmonoutils.a libmonoutils-il2cpp.a");
+		system("make clean");
+		system("mkdir .libs");
+		system("cp libmonoutils-il2cpp.a .libs/");
+		chdir("$currentdir");
+
 		# this step needs to run after configure
 		if ($iphoneCross)
 		{
@@ -1074,6 +1091,12 @@ if ($build)
 				die("Blocking this code path until we need it.  It probably should be looked at more closely before letting it proceed\n");
 			}
 		}
+		
+		print("\n>>> Calling make\n");
+		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
+
+		print("\n>>> Calling make install\n");
+		system("make install") eq 0 or die ("Failed to make install\n");
 	}
 	
 	if ($isDesktopBuild)
@@ -1311,6 +1334,12 @@ if ($artifact)
 		}
 		elsif($^O eq 'darwin')
 		{
+			print ">>> Hardlinking libmonoruntime-il2cpp.a for IL2CPP\n";
+			system("ln","-f", "$monoroot/mono/metadata/.libs/libmonoruntime-il2cpp.a","$embedDirArchDestination/libmonoruntime-il2cpp.a") eq 0 or die ("failed symlinking libmonoruntime-il2cpp.a\n");
+			system("ln","-f", "$monoroot/mono/io-layer/.libs/libwapi.a","$embedDirArchDestination/libwapi.a") eq 0 or die ("failed symlinking libwapi.a\n");
+			system("ln","-f", "$monoroot/mono/utils/.libs/libmonoutils-il2cpp.a","$embedDirArchDestination/libmonoutils-il2cpp.a") eq 0 or die ("failed symlinking libmonoutils-il2cpp.a\n");
+			system("ln","-f", "$monoroot/eglib/src/.libs/libeglib.a","$embedDirArchDestination/libeglib.a") eq 0 or die ("failed symlinking libeglib.a\n");
+
 			# embedruntimes directory setup
 	 		print ">>> Hardlinking libmonosgen-2.0\n";
 
