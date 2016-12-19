@@ -1049,6 +1049,24 @@ if ($build)
 			system("arch", "-i386", "$iphoneCrossMonoBinToUse/mono", @monoArgs) eq 0 or die("failed to run MonoAotOffsetsDumper\n");
 		}
 
+		print("\n>>> Calling make to build libmonoutils-il2cpp.a for IL2CPP\n");
+		chdir("mono/utils");
+		system("make mono-dtrace.h");
+		system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT\"") eq 0 or die ('Failed to make libmonoutils-il2cpp.a for IL2CPP\n');
+		system("cp .libs/libmonoutils.a libmonoutils-il2cpp.a");
+		system("make clean");
+		system("mkdir .libs");
+		system("cp libmonoutils-il2cpp.a .libs/");
+		chdir("$currentdir");
+		print("\n>>> Calling make to build libmonoruntime-il2cpp.a for IL2CPP\n");
+		chdir("mono/metadata");
+		system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT\"") eq 0 or die ('Failed to make libmonoruntime-il2cpp.a for IL2CPP\n');
+		system("cp .libs/libmonoruntime.a libmonoruntime-il2cpp.a");
+		system("make clean");
+		system("mkdir .libs");
+		system("cp libmonoruntime-il2cpp.a .libs/");
+		chdir("$currentdir");
+
 		print("\n>>> Calling make\n");
 		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
 		
