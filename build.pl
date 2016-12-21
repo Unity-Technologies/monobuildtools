@@ -1096,14 +1096,24 @@ if ($build)
 	{
 		if ($^O eq "cygwin")
 		{
-			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS\n');
+			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failed building mono with VS\n');
+		
+			# build the NO_JIT, IL2CPP-ON-MONO version of libmonoruntime
+			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--noJit=1", "--gc=boehm") eq 0 or die ('failed building NO JIT libmonoruntime boehm with VS\n');
+		
 			
 			# Copy over the VS built stuff that we want to use instead into the prefix directory
 			my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
 			my $config = $debug ? "Debug" : "Release";
+			my $noJitConfigDirName = $debug ? "NO-JIT-Debug" : "NO-JIT-Release";
 			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
 			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
 			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
+
+			 # copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$noJitConfigDirName/libmonoruntime-boehm-il2cpp.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT libmonoruntime-boehm-il2cpp.lib\n");
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$noJitConfigDirName/libmonoutils-il2cpp.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$noJitConfigDirName/eglib.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT eglib.lib\n");
 		}
 		
 		system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
@@ -1392,6 +1402,11 @@ if ($artifact)
 			system("cp", "$monoprefix/bin/mono-2.0.dll", "$distDirArchBin/mono-2.0.dll") eq 0 or die ("failed copying mono-2.0.dll\n");
 			system("cp", "$monoprefix/bin/mono-2.0.pdb", "$distDirArchBin/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
 			system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
+
+			# copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
+			system("cp", "$monoprefix/bin/libmonoruntime-boehm-il2cpp.lib", "$embedDirArchDestination/libmonoruntime-boehm-il2cpp.lib") eq 0 or die ("failed copying NO JIT libmonoruntime-boehm-il2cpp.lib\n");
+			system("cp", "$monoprefix/bin/libmonoutils-il2cpp.lib", "$embedDirArchDestination/libmonoutils-il2cpp.lib") eq 0 or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
+			system("cp", "$monoprefix/bin/eglib.lib", "$embedDirArchDestination/eglib.lib") eq 0 or die ("failed copying NO JIT eglib.lib\n");
 		}
 	}
 
