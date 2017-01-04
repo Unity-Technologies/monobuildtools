@@ -885,7 +885,6 @@ if ($build)
 		push @configureparams, "--disable-shared-handles";
 		push @configureparams, "--with-sigaltstack=no";
 		push @configureparams, "--with-tls=pthread";
-		push @configureparams, "--disable-boehm";
 		push @configureparams, "--disable-visibility-hidden";
 		push @configureparams, "mono_cv_uscore=yes";
 		push @configureparams, "ac_cv_header_zlib_h=no" if($runningOnWindows);
