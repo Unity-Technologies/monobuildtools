@@ -1289,9 +1289,11 @@ if ($artifact)
 		}
 		elsif ($android)
 		{
-			print ">>> Copying libmonosgen-2.0\n";
-			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
-			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+			for my $file ('libmonosgen-2.0.so','libmonosgen-2.0.a','libmonoboehm-2.0.so','libmonoboehm-2.0.a')
+			{
+				print ">>> Copying $file\n";
+				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
+			}
 		}
 		elsif($^O eq "linux")
 		{
