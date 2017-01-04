@@ -427,7 +427,6 @@ if ($build)
 		my $iosCFlagsCommon = "-DMONOTOUCH -DHOST_IOS -DDISABLE_POLICY_EVIDENCE=1 -DDISABLE_PROCESS_HANDLING=1";
 
 		push @configureparams, "--with-tls=pthread";
-		push @configureparams, "--disable-boehm";
 		push @configureparams, "--without-ikvm-native";
 		push @configureparams, "--disable-executables";
 		push @configureparams, "--disable-visibility-hidden";
@@ -577,7 +576,6 @@ if ($build)
 			push @configureparams, "--with-macversion=$macversion";
 			push @configureparams, "--with-cross-offsets=$iphoneCrossAbi.h";
 
-			push @configureparams, "--disable-boehm";
 			push @configureparams, "--build=i386-apple-darwin10";
 			push @configureparams, "--disable-libraries";
 			push @configureparams, "--enable-icall-symbol-map";
@@ -1275,8 +1273,11 @@ if ($artifact)
 		print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
 		if ($iphone)
 		{
-			print ">>> Copying libmonosgen-2.0\n";
-			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+			for my $file ('libmonosgen-2.0.a','libmonoboehm-2.0.a')
+			{
+				print ">>> Copying $file\n";
+				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
+			}
 		}
 		elsif ($iphoneCross)
 		{
@@ -1284,8 +1285,11 @@ if ($artifact)
 		}
 		elsif ($iphoneSimulator)
 		{
-			print ">>> Copying libmonosgen-2.0\n";
-			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.a","$embedDirArchDestination/libmonosgen-2.0.a") eq 0 or die ("failed copying libmonosgen-2.0.a\n");
+			for my $file ('libmonosgen-2.0.a','libmonoboehm-2.0.a')
+			{
+				print ">>> Copying $file\n";
+				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
+			}
 		}
 		elsif ($android)
 		{
