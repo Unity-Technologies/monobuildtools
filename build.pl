@@ -1349,6 +1349,12 @@ if ($artifact)
 		elsif($^O eq 'darwin')
 		{
 			# embedruntimes directory setup
+			print ">>> Hardlinking libmonoruntime-il2cpp.a for IL2CPP\n";
+			system("ln","-f", "$monoroot/mono/metadata/.libs/libmonoruntime-il2cpp.a","$embedDirArchDestination/libmonoruntime-il2cpp.a") eq 0 or die ("failed symlinking libmonoruntime-il2cpp.a\n");
+			system("ln","-f", "$monoroot/mono/io-layer/.libs/libwapi.a","$embedDirArchDestination/libwapi.a") eq 0 or die ("failed symlinking libwapi.a\n");
+			system("ln","-f", "$monoroot/mono/utils/.libs/libmonoutils-il2cpp.a","$embedDirArchDestination/libmonoutils-il2cpp.a") eq 0 or die ("failed symlinking libmonoutils-il2cpp.a\n");
+			system("ln","-f", "$monoroot/eglib/src/.libs/libeglib.a","$embedDirArchDestination/libeglib.a") eq 0 or die ("failed symlinking libeglib.a\n");
+
 	 		print ">>> Hardlinking libmonosgen-2.0\n";
 
 			system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.dylib","$embedDirArchDestination/libmonoboehm-2.0.dylib") eq 0 or die ("failed symlinking libmonoboehm-2.0.dylib\n");
