@@ -145,8 +145,7 @@ if ($build)
 		die("Existing mono not found at : $existingMonoRootPath\n");
 	}
 
-	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=boehm") eq 0 or die ('failing building mono boehm with VS\n');
-	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=sgen") eq 0 or die ('failing building mono sgen with VS\n');
+	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failing building mono with VS\n');
 
 	if (!(-d "$monoroot\\tmp"))
 	{
@@ -169,19 +168,10 @@ if ($build)
 	# Copy over the VS built stuff that we want to use instead into the prefix directory
 	my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
 	my $configDirName = $debug ? "Debug" : "Release";
-	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-boehm.exe", "$monoprefix/bin/.") or die ("failed copying mono-boehm.exe\n");
-	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-2.0-boehm.dll", "$monoprefix/bin/.") or die ("failed copying mono-2.0-boehm.dll\n");
-	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-2.0-boehm.pdb", "$monoprefix/bin/.") or die ("failed copying mono-2.0-boehm.pdb\n");
-
-	copy("$monoroot/msvc/build/sgen/$archNameForBuild/bin/$configDirName/mono-sgen.exe", "$monoprefix/bin/.") or die ("failed copying mono-sgen.exe\n");
-	copy("$monoroot/msvc/build/sgen/$archNameForBuild/bin/$configDirName/mono-2.0-sgen.dll", "$monoprefix/bin/.") or die ("failed copying mono-2.0-sgen.dll\n");
-	copy("$monoroot/msvc/build/sgen/$archNameForBuild/bin/$configDirName/mono-2.0-sgen.pdb", "$monoprefix/bin/.") or die ("failed copying mono-2.0-sgen.pdb\n");
-
-	# sgen as default exe
-	copy("$monoroot/msvc/build/sgen/$archNameForBuild/bin/$configDirName/mono-sgen.exe", "$monoprefix/bin/mono.exe") or die ("failed copying mono-sgen.exe to mono.exe\n");
-
-	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/MonoPosixHelper.dll", "$monoprefix/bin/.") or die ("failed copying MonoPosixHelper.dll\n");
-	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/MonoPosixHelper.pdb", "$monoprefix/bin/.") or die ("failed copying MonoPosixHelper.pdb\n");
+	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono.exe", "$monoprefix/bin/.") or die ("failed copying mono.exe\n");
+	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-2.0.dll", "$monoprefix/bin/.") or die ("failed copying mono-2.0.dll\n");
+	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-2.0.pdb", "$monoprefix/bin/.") or die ("failed copying mono-2.0.pdb\n");
+	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-2.0.ilk", "$monoprefix/bin/.") or die ("failed copying mono-2.0.ilk\n");
 
 	system("xcopy /y /f $addtoresultsdistdir\\bin\\*.* $monoprefix\\bin\\") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 }
@@ -239,29 +229,14 @@ if ($artifact)
 	
 	# embedruntimes directory setup
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
-	copy("$monoprefix/bin/mono-2.0-boehm.dll", "$embedDirArchDestination/.") or die ("failed copying mono-2.0-boehm.dll\n");
-	copy("$monoprefix/bin/mono-2.0-boehm.pdb", "$embedDirArchDestination/.") or die ("failed copying mono-2.0-boehm.pdb\n");
-
-	copy("$monoprefix/bin/mono-2.0-sgen.dll", "$embedDirArchDestination/.") or die ("failed copying mono-2.0-sgen.dll\n");
-	copy("$monoprefix/bin/mono-2.0-sgen.pdb", "$embedDirArchDestination/.") or die ("failed copying mono-2.0-sgen.pdb\n");
-
-	copy("$monoprefix/bin/MonoPosixHelper.dll", "$embedDirArchDestination/.") or die ("failed copying MonoPosixHelper.dll\n");
-	copy("$monoprefix/bin/MonoPosixHelper.pdb", "$embedDirArchDestination/.") or die ("failed copying MonoPosixHelper.pdb\n");
+	copy("$monoprefix/bin/mono-2.0.dll", "$embedDirArchDestination/mono-2.0.dll") or die ("failed copying mono-2.0.dll\n");
+	copy("$monoprefix/bin/mono-2.0.pdb", "$embedDirArchDestination/mono-2.0.pdb") or die ("failed copying mono-2.0.pdb\n");
 	
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
-	copy("$monoprefix/bin/mono-2.0-boehm.dll", "$distDirArchBin/.") or die ("failed copying mono-2.0-boehm.dll\n");
-	copy("$monoprefix/bin/mono-2.0-boehm.pdb", "$distDirArchBin/.") or die ("failed copying mono-2.0-boehm.pdb\n");
-
-	copy("$monoprefix/bin/mono-2.0-sgen.dll", "$distDirArchBin/.") or die ("failed copying mono-2.0-sgen.dll\n");
-	copy("$monoprefix/bin/mono-2.0-sgen.pdb", "$distDirArchBin/.") or die ("failed copying mono-2.0-sgen.pdb\n");
-
-	copy("$monoprefix/bin/mono-boehm.exe", "$distDirArchBin/.") or die ("failed copying mono-boehm.exe\n");
-	copy("$monoprefix/bin/mono-sgen.exe", "$distDirArchBin/.") or die ("failed copying mono-sgen.exe\n");
-	copy("$monoprefix/bin/mono.exe", "$distDirArchBin/.") or die ("failed copying mono.exe\n");
-
-	copy("$monoprefix/bin/MonoPosixHelper.dll", "$distDirArchBin/.") or die ("failed copying MonoPosixHelper.dll\n");
-	copy("$monoprefix/bin/MonoPosixHelper.pdb", "$distDirArchBin/.") or die ("failed copying MonoPosixHelper.pdb\n");
+	copy("$monoprefix/bin/mono-2.0.dll", "$distDirArchBin/mono-2.0.dll") or die ("failed copying mono-2.0.dll\n");
+	copy("$monoprefix/bin/mono-2.0.pdb", "$distDirArchBin/mono-2.0.pdb") or die ("failed copying mono-2.0.pdb\n");
+	copy("$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") or die ("failed copying mono.exe\n");
 	
 	# Output version information
 	print(">>> Creating version file : $versionsOutputFile\n");
