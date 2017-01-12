@@ -16,6 +16,7 @@ my $monoroot = abs_path($monoroot);
 my $buildscriptsdir = "$monoroot/external/buildscripts";
 my $addtoresultsdistdir = "$buildscriptsdir/add_to_build_results/monodistribution";
 my $buildsroot = "$monoroot/builds";
+my $includesroot = "$buildsroot/include";
 my $distdir = "$buildsroot/monodistribution";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
@@ -1366,6 +1367,10 @@ if ($artifact)
 			InstallNameTool("$embedDirArchDestination/libmonoboehm-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonoboehm-2.0.dylib");
 			InstallNameTool("$embedDirArchDestination/libmonosgen-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.dylib");
 			InstallNameTool("$embedDirArchDestination/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libMonoPosixHelper.dylib");
+
+			print ">>> Copying mono public headers\n";
+			system("mkdir -p $includesroot/mono");
+			system("cp -R $monoprefix/include/mono-2.0/mono $includesroot/mono");
 		}
 		else
 		{
