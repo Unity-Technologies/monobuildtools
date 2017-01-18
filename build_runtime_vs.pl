@@ -17,6 +17,7 @@ my $build = 0;
 my $clean = 0;
 my $arch32 = 0;
 my $debug = 0;
+my $noJit = 0;
 my $gc = "boehm";
 my $msBuildVersion = "";
 
@@ -26,21 +27,39 @@ GetOptions(
 	'arch32=i'=>\$arch32,
 	'debug=i'=>\$debug,
 	'msbuildversion=s'=>\$msBuildVersion,
+	'noJit=i'=>\$noJit,
 	'gc=s'=>\$gc,
 ) or die ("illegal cmdline options");
 
 if ($build)
 {
-	CompileVCProj("$monoroot/msvc/mono.sln");
+	if ($noJit)
+	{
+		CompileVCProj("$monoroot/msvc/libmonoruntime.vcxproj");
+		CompileVCProj("$monoroot/msvc/libmonoutils.vcxproj");
+	}
+	else
+	{
+		CompileVCProj("$monoroot/msvc/mono.sln");
+	}
 }
 
 sub CompileVCProj
 {
-	my $sln = shift(@_);
-	
+	my $sln = shift;
+	my $config;
+
 	my $msbuild = $ENV{"ProgramFiles(x86)"}."/MSBuild/$msBuildVersion/Bin/MSBuild.exe";
 	
-	my $config = $debug ? "Debug" : "Release";
+	if ($noJit)
+	{
+		$config = $debug ? "NO-JIT-Debug" : "NO-JIT-Release";
+		
+	}
+	else
+	{
+		$config = $debug ? "Debug" : "Release";
+	}
 	my $arch = $arch32 ? "Win32" : "x64";
 	my $target = $clean ? "/t:Clean,Build" :"/t:Build"; 
 	my $properties = "/p:Configuration=$config;Platform=$arch;MONO_TARGET_GC=$gc";

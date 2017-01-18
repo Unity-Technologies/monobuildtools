@@ -142,8 +142,9 @@ if ($build)
 		die("Existing mono not found at : $existingMonoRootPath\n");
 	}
 
-	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=boehm") eq 0 or die ('failing building mono boehm with VS\n');
-	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=sgen") eq 0 or die ('failing building mono sgen with VS\n');
+	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=boehm") eq 0 or die ('failed building mono boehm with VS\n');
+	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=sgen") eq 0 or die ('failed building mono sgen with VS\n');
+    system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--noJit=1",  "--gc=boehm") eq 0 or die ('failed building NO JIT libmonoruntime boehm with VS\n');
 
 	if (!(-d "$monoroot\\tmp"))
 	{
@@ -166,6 +167,8 @@ if ($build)
 	# Copy over the VS built stuff that we want to use instead into the prefix directory
 	my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
 	my $configDirName = $debug ? "Debug" : "Release";
+	my $noJitConfigDirName = $debug ? "NO-JIT-Debug" : "NO-JIT-Release";
+
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-boehm.exe", "$monoprefix/bin/.") or die ("failed copying mono-boehm.exe\n");
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-2.0-boehm.dll", "$monoprefix/bin/.") or die ("failed copying mono-2.0-boehm.dll\n");
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-2.0-boehm.pdb", "$monoprefix/bin/.") or die ("failed copying mono-2.0-boehm.pdb\n");
@@ -179,6 +182,11 @@ if ($build)
 
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/MonoPosixHelper.dll", "$monoprefix/bin/.") or die ("failed copying MonoPosixHelper.dll\n");
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/MonoPosixHelper.pdb", "$monoprefix/bin/.") or die ("failed copying MonoPosixHelper.pdb\n");
+
+	# copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
+	copy("$monoroot/msvc/build/boehm/$archNameForBuild/lib/$noJitConfigDirName/libmonoruntime-boehm-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoruntime-boehm-il2cpp.lib\n");
+	copy("$monoroot/msvc/build/boehm/$archNameForBuild/lib/$noJitConfigDirName/libmonoutils-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
+	copy("$monoroot/msvc/build/boehm/$archNameForBuild/lib/$noJitConfigDirName/eglib.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT eglib.lib\n");
 
 	system("xcopy /y /f $addtoresultsdistdir\\bin\\*.* $monoprefix\\bin\\") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 }
@@ -245,6 +253,11 @@ if ($artifact)
 	copy("$monoprefix/bin/MonoPosixHelper.dll", "$embedDirArchDestination/.") or die ("failed copying MonoPosixHelper.dll\n");
 	copy("$monoprefix/bin/MonoPosixHelper.pdb", "$embedDirArchDestination/.") or die ("failed copying MonoPosixHelper.pdb\n");
 	
+	# copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
+	copy("$monoprefix/bin/libmonoruntime-boehm-il2cpp.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT libmonoruntime-boehm-il2cpp.lib\n");
+	copy("$monoprefix/bin/libmonoutils-il2cpp.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
+	copy("$monoprefix/bin/eglib.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT eglib.lib\n");
+
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
 	copy("$monoprefix/bin/mono-2.0-boehm.dll", "$distDirArchBin/.") or die ("failed copying mono-2.0-boehm.dll\n");
@@ -260,6 +273,7 @@ if ($artifact)
 	copy("$monoprefix/bin/MonoPosixHelper.dll", "$distDirArchBin/.") or die ("failed copying MonoPosixHelper.dll\n");
 	copy("$monoprefix/bin/MonoPosixHelper.pdb", "$distDirArchBin/.") or die ("failed copying MonoPosixHelper.pdb\n");
 	
+
 	# Output version information
 	print(">>> Creating version file : $versionsOutputFile\n");
 	open(my $fh, '>', $versionsOutputFile) or die "Could not open file '$versionsOutputFile' $!";
