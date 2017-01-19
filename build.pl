@@ -1026,13 +1026,16 @@ if ($build)
 		}
 		
 		# this step needs to run after configure
-		if ($iphoneCross)
+		if ($iphoneCross || $iphone || $android)
 		{
 			# This step generates the arm_dpimacros.h file, which is needed by the offset dumper
 			chdir("$monoroot/mono/arch/arm");
 			system("make") eq 0 or die("failed to make in $monoroot/mono/arch/arm\n");
 			chdir("$monoroot");
+		}
 
+		if ($iphoneCross)
+		{
 			my @monoArgs = ();
 			push @monoArgs, "$monoroot/tools/offsets-tool/MonoAotOffsetsDumper.exe";
 			push @monoArgs, "--abi";
