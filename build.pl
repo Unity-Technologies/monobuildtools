@@ -1081,7 +1081,6 @@ if ($build)
 		push @configureparams, "--disable-visibility-hidden";
 		push @configureparams, "--disable-executables";
 		push @configureparams, "--with-gnu-ld=yes";
-		push @configureparams, "--disable-silent-rules";		
 		push @configureparams, "mono_cv_uscore=yes";
 		push @configureparams, "ac_cv_header_zlib_h=no" if($runningOnWindows);
 	}
@@ -1535,7 +1534,7 @@ if ($artifact)
 		}
 		elsif ($tizen || $tizenEmulator)
 		{
-			for my $file ('libmonosgen-2.0.so','libmonosgen-2.0.a','libmonoboehm-2.0.so','libmonoboehm-2.0.a')
+			for my $file ('libmonosgen-2.0.so','libmonoboehm-2.0.so')
 			{
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
