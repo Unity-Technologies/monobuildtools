@@ -14,5 +14,5 @@ GetOptions(
    "clean=i"=>\$clean,
 ) or die ("illegal cmdline options");
 
-system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=1", "--artifact=1", "--arch32=1", "--tizen=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed building mono for armv7a\n");
-system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=1", "--artifact=1", "--arch32=1", "--tizen=1", "--tizenemulator=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed building mono for x86\n");
+system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=1", "--artifact=1", "--arch32=1", "--tizen=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed building mono for tizen\n");
+system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=1", "--artifact=1", "--arch32=1", "--tizen=1", "--tizenemulator=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed building mono for tizen emulator\n");

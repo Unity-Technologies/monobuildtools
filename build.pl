@@ -108,7 +108,7 @@ GetOptions(
 	'iphonecross=i'=>\$iphoneCross,
 	'iphonesimulator=i'=>\$iphoneSimulator,
 	'tizen=i'=>\$tizen,
-	'tizenEmulator=i'=>\$tizenEmulator,
+	'tizenemulator=i'=>\$tizenEmulator,
 	'aotprofile=s'=>\$aotProfile,
 	'aotprofiledestname=s'=>\$aotProfileDestName,
 	'disablenormalprofile=i'=>\$disableNormalProfile,
@@ -1000,39 +1000,36 @@ if ($build)
 			$tizenPlatformRoot =~ s/\\/\//g;
 		}
 
-		print(">>> Tizen SDK Root = $tizenSdkRoot\n");
-		print(">>> Tizen Platform Root = $tizenPlatformRoot\n");
-		print(">>> Tizen Toolchain = $tizenToolchain\n");
-
-		if (!(-d "$tizenToolchain"))
-		{
-			die("Failed to locate tizen toolchain\n");
-		}
-
-		if (!(-d "$tizenPlatformRoot"))
-		{
-			die("Failed to locate tizen platform root\n");
-		}
-
 		if ($tizenEmulator)
 		{
-			$ENV{CFLAGS} = "-target i386-tizen-linux-gnueabi -gcc-toolchain $ENV{TIZEN_SDK_ROOT}/tools/i386-linux-gnueabi-gcc-4.9/ -ccc-gcc-name i386-linux-gnueabi-g++ -Os -g -march=i686 -msse2 -mfpmath=sse";
+			$tizenToolchain = "$tizenSdkRoot/tools/i386-linux-gnueabi-gcc-4.9/bin/i386";
+			$ENV{CFLAGS} = "-Os -g -march=i686 -msse2 -mfpmath=sse";
 		}
 		else
 		{
-			$ENV{CFLAGS} = "-target arm-tizen-linux-gnueabi -gcc-toolchain $ENV{TIZEN_SDK_ROOT}/tools/arm-linux-gnueabi-gcc-4.9/ -ccc-gcc-name arm-linux-gnueabi-g++ -Os -g -march=armv7-a -mfpu=vfp -mfloat-abi=softfp -DARM_FPU_VFP=1 -DHAVE_ARMV6=1";
-			$ENV{LDFLAGS} = "-target arm-tizen-linux-gnueabi -gcc-toolchain $ENV{TIZEN_SDK_ROOT}/tools/arm-linux-gnueabi-gcc-4.9/ -ccc-gcc-name arm-linux-gnueabi-g++ -Wl,-rpath-link=$tizenPlatformRoot/usr/lib -L$tizenPlatformRoot/usr/lib $ENV{LDFLAGS}";
+			$tizenToolchain = "$tizenSdkRoot/tools/arm-linux-gnueabi-gcc-4.9/bin/arm";
+			$ENV{CFLAGS} = "-Os -g -march=armv7-a -mfpu=vfp -mfloat-abi=softfp -DARM_FPU_VFP=1 -DHAVE_ARMV6=1";
+			$ENV{LDFLAGS} = "-Wl,-rpath-link=$tizenPlatformRoot/usr/lib -L$tizenPlatformRoot/usr/lib $ENV{LDFLAGS}";
+		}
+
+		print(">>> Tizen SDK Root = $tizenSdkRoot\n");
+		print(">>> Tizen Platform Root = $tizenPlatformRoot\n");
+		print(">>> Tizen Toolchain Prefix = $tizenToolchain\n");
+
+		if (!(-d "$tizenPlatformRoot"))
+		{
+			die("Failed to locate Tizen platform root\n");
 		}
 
 		$ENV{PATH} = "$tizenToolchain/bin:$ENV{PATH}";
-		$ENV{CC} = "$tizenToolchain/clang --sysroot=$tizenPlatformRoot";
-		$ENV{CXX} = "$tizenToolchain/clang++ --sysroot=$tizenPlatformRoot";
-		$ENV{CPP} = "$tizenToolchain/clang -E";
-		$ENV{CXXCPP} = "$tizenToolchain/clang -E";
+		$ENV{CC} = "$tizenToolchain-linux-gnueabi-gcc --sysroot=$tizenPlatformRoot";
+		$ENV{CXX} = "$tizenToolchain-linux-gnueabi-g++ --sysroot=$tizenPlatformRoot";
+		$ENV{CPP} = "$tizenToolchain-linux-gnueabi-cpp";
+		$ENV{CXXCPP} = "$tizenToolchain-linux-gnueabi-cpp";
 		$ENV{CPATH} = "$tizenPlatformRoot/usr/include";
-		$ENV{LD} = "$tizenToolchain/clang++ --sysroot=$tizenPlatformRoot";
-		$ENV{AS} = "$tizenToolchain/as";
-		$ENV{STRIP} = "$tizenToolchain/strip";
+		$ENV{LD} = "$tizenToolchain-linux-gnueabi-ld --sysroot=$tizenPlatformRoot";
+		$ENV{AS} = "$tizenToolchain-linux-gnueabi-as";
+		$ENV{STRIP} = "$tizenToolchain-linux-gnueabi-strip";
 
 		if ($tizenEmulator)
 		{
