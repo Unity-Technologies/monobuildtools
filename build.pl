@@ -1535,7 +1535,7 @@ if ($artifact)
 		}
 		elsif ($tizen || $tizenEmulator)
 		{
-			for my $file ('libmonosgen-2.0.so','libmonoboehm-2.0.so')
+			for my $file ('libmonosgen-2.0.so','libmonosgen-2.0.a','libmonoboehm-2.0.so','libmonoboehm-2.0.a')
 			{
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
