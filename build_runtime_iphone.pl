@@ -32,7 +32,7 @@ if ($runtime == 0 && $xcomp == 0 && $simulator == 0)
 if ($runtime)
 {
 	print ">>> Building iphone runtime\n";
-	system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=$clean", "--artifact=1", "--arch32=1", "--iphoneArch=armv7", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed builidng mono for iphone\n");
+	system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=$clean", "--artifact=1", "--arch32=1", "--iphoneArch=armv7", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed building mono for iphone\n");
 }
 
 if ($xcomp)
@@ -45,8 +45,8 @@ if ($xcomp)
 	{
 		print ">>> Building mono to use for bootstrapping.  The version in mono build deps is missing the 32bit slice and we need a 32bit version to run the MonoAotOffsetsDumper\n";
 		#system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--arch32=1", "--clean=$clean", "--classlibtests=0", "--artifact=1", "--artifactscommon=1", "--forcedefaultbuilddeps=1") eq 0 or die ("failing building mono 32bit for bootstrapping\n");
-		#system("perl", "$buildScriptsRoot/build_all_osx.pl", "--build=1", "--artifact=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed builidng mono\n");
-		system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=1", "--artifact=1", "--arch32=1", "--artifactscommon=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed builidng mono\n");
+		#system("perl", "$buildScriptsRoot/build_all_osx.pl", "--build=1", "--artifact=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed building mono\n");
+		system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=1", "--artifact=1", "--arch32=1", "--artifactscommon=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed building mono\n");
 
 		system("cp", "$monoroot/builds/monodistribution/bin-osx-tmp-i386/mono", "$monoroot/builds/monodistribution/bin/.") eq 0 or die ("failed to copy mono over from bin-osx-tmp-i386 to bin\n");
 		system("chmod", "+x", "$monoroot/builds/monodistribution/bin/mono") eq 0 or die("Failed to chmod mono\n");
@@ -57,11 +57,11 @@ if ($xcomp)
 	}
 
 	print ">>> Building iphone cross compiler\n";
-	system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=$clean", "--artifact=1", "--arch32=1", "--iphonecross=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed builidng iphone cross compiler\n");
+	system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=$clean", "--artifact=1", "--arch32=1", "--iphonecross=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed building iphone cross compiler\n");
 }
 
 if ($simulator)
 {
 	print ">>> Building iphone simulator\n";
-	system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=$clean", "--artifact=1", "--arch32=1", "--iphonesimulator=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed builidng iphone simulator\n");
+	system("perl", "$buildScriptsRoot/build.pl", "--build=1", "--clean=$clean", "--artifact=1", "--arch32=1", "--iphonesimulator=1", "--forcedefaultbuilddeps=1") eq 0 or die ("Failed building iphone simulator\n");
 }

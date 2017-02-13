@@ -59,6 +59,8 @@ my $iphoneArch = "";
 my $iphoneCross=0;
 my $iphoneSimulator=0;
 my $iphoneSimulatorArch="";
+my $tizen=0;
+my $tizenEmulator=0;
 my $aotProfile="";
 my $aotProfileDestName="";
 my $disableNormalProfile=0;
@@ -70,7 +72,7 @@ my $skipMonoMake=0;
 my $shortPrefix=1;
 
 # Disabled by default for now.  causes more problems than it's worth when actively making changes to the build scripts.
-# Would be okay to turn on once the build scripts stabilze and you just want to rebuild code changes
+# Would be okay to turn on once the build scripts stabilize and you just want to rebuild code changes
 my $enableCacheFile=0;
 
 print(">>> Build All Args = @ARGV\n");
@@ -105,6 +107,8 @@ GetOptions(
 	'iphonearch=s'=>\$iphoneArch,
 	'iphonecross=i'=>\$iphoneCross,
 	'iphonesimulator=i'=>\$iphoneSimulator,
+	'tizen=i'=>\$tizen,
+	'tizenEmulator=i'=>\$tizenEmulator,
 	'aotprofile=s'=>\$aotProfile,
 	'aotprofiledestname=s'=>\$aotProfileDestName,
 	'disablenormalprofile=i'=>\$disableNormalProfile,
@@ -154,7 +158,7 @@ if($iphoneSimulator)
 }
 
 my $isDesktopBuild = 1;
-if ($android || $iphone || $iphoneCross || $iphoneSimulator)
+if ($android || $iphone || $iphoneCross || $iphoneSimulator || $tizen || $tizenEmulator)
 {
 	$isDesktopBuild = 0;
 
@@ -888,6 +892,202 @@ if ($build)
 		push @configureparams, "mono_cv_uscore=yes";
 		push @configureparams, "ac_cv_header_zlib_h=no" if($runningOnWindows);
 	}
+	elsif ($tizen)
+	{
+		if (!(-d $externalBuildDeps))
+		{
+			die("mono build deps are required and the directory was not found : $externalBuildDeps\n");
+		}
+
+		my $sdkVersion = "2.4.0r1";
+		my $isArmArch = 1;
+
+		$isArmArch = 0 if ($tizenEmulator);
+
+		$ENV{TIZEN_PLATFORM} = "tizen-2.4";
+
+		if ($tizenEmulator)
+		{
+			$ENV{TIZEN_ROOTSTRAP} = "mobile-2.4-emulator.core";
+		}
+		else
+		{
+			$ENV{TIZEN_ROOTSTRAP} = "mobile-2.4-device.core";
+		}
+
+		if ($^O eq "linux")
+		{
+			$ENV{HOST_ENV} = "linux";
+		}
+		elsif ($^O eq 'darwin')
+		{
+			$ENV{HOST_ENV} = "darwin";
+		}
+		else
+		{
+			$ENV{HOST_ENV} = "windows";
+		}
+
+		print "\n";
+		print(">>> Tizen Platform = $ENV{TIZEN_PLATFORM}\n");
+		print(">>> Tizen SDK Version = $sdkVersion\n");
+
+		my $sdkName = "tizen-$sdkVersion-$ENV{HOST_ENV}.tar.bz2";
+		my $depsSdkArchive = "$externalBuildDeps/$sdkName";
+		my $depsSdkFinal = "$externalBuildDeps/tizen-$sdkVersion-$ENV{HOST_ENV}";
+
+		print(">>> Tizen SDK Archive = $depsSdkArchive\n");
+		print(">>> Tizen SDK Extraction Destination = $depsSdkFinal\n");
+		print("\n");
+
+		$ENV{TIZEN_SDK_ROOT} = "$depsSdkFinal";
+
+		if (-d $depsSdkFinal)
+		{
+			print(">>> Tizen SDK already extracted\n");
+		}
+		else
+		{
+			print(">>> Tizen SDK needs to be extracted\n");
+
+			if ($runningOnWindows)
+			{
+				my $sevenZip = "$externalBuildDeps/7z/win64/7za.exe";
+				my $winDepsSdkArchive = `cygpath -w $depsSdkArchive`;
+				my $winDepsSdkExtract = `cygpath -w $externalBuildDeps`;
+
+				# clean up trailing new lines that end up in the output from cygpath.  If left, they cause problems down the line
+				# for 7zip
+				$winDepsSdkArchive =~ s/\n+$//;
+				$winDepsSdkExtract =~ s/\n+$//;
+
+				system($sevenZip, "x", "$winDepsSdkArchive", "-o$winDepsSdkExtract");
+			}
+			else
+			{
+				my ($name,$path,$suffix) = fileparse($depsSdkArchive, qr/\.[^.]*/);
+
+				print(">>> Tizen SDK Extension = $suffix\n");
+
+				if (lc $suffix eq '.bz2')
+				{	chmod(0755, $depsSdkArchive);
+					system("tar xjf $depsSdkArchive -C $externalBuildDeps") eq 0  or die ("failed to extract Tizen SDK\n");
+				}
+				else
+				{
+					die "Unknown file extension '" . $suffix . "'\n";
+				}
+			}
+		}
+
+		if (!(-f "$ENV{TIZEN_SDK_ROOT}/tools/sdb"))
+		{
+			die("Something went wrong with the SDK extraction\n");
+		}
+
+		my $tizenSdkRoot = $ENV{TIZEN_SDK_ROOT};
+		my $tizenPlatformRoot = "$tizenSdkRoot/platforms/$ENV{TIZEN_PLATFORM}/mobile/rootstraps/$ENV{TIZEN_ROOTSTRAP}";
+		my $tizenToolchain = "$tizenSdkRoot/tools/llvm-3.6/bin";
+
+		if ($runningOnWindows)
+		{
+			$toolChainExtension = ".exe";
+
+			$tizenPlatformRoot = `cygpath -w $tizenPlatformRoot`;
+			# clean up trailing new lines that end up in the output from cygpath.
+			$tizenPlatformRoot =~ s/\n+$//;
+			# Switch over to forward slashes.  They propagate down the toolchain correctly
+			$tizenPlatformRoot =~ s/\\/\//g;
+		}
+
+		print(">>> Tizen SDK Root = $tizenSdkRoot\n");
+		print(">>> Tizen Platform Root = $tizenPlatformRoot\n");
+		print(">>> Tizen Toolchain = $tizenToolchain\n");
+
+		if (!(-d "$tizenToolchain"))
+		{
+			die("Failed to locate tizen toolchain\n");
+		}
+
+		if (!(-d "$tizenPlatformRoot"))
+		{
+			die("Failed to locate tizen platform root\n");
+		}
+
+		if ($tizenEmulator)
+		{
+			$ENV{CFLAGS} = "-target i386-tizen-linux-gnueabi -gcc-toolchain $ENV{TIZEN_SDK_ROOT}/tools/i386-linux-gnueabi-gcc-4.9/ -ccc-gcc-name i386-linux-gnueabi-g++ -Os -g -march=i686 -msse2 -mfpmath=sse";
+		}
+		else
+		{
+			$ENV{CFLAGS} = "-target arm-tizen-linux-gnueabi -gcc-toolchain $ENV{TIZEN_SDK_ROOT}/tools/arm-linux-gnueabi-gcc-4.9/ -ccc-gcc-name arm-linux-gnueabi-g++ -Os -g -march=armv7-a -mfpu=vfp -mfloat-abi=softfp -DARM_FPU_VFP=1 -DHAVE_ARMV6=1";
+			$ENV{LDFLAGS} = "-target arm-tizen-linux-gnueabi -gcc-toolchain $ENV{TIZEN_SDK_ROOT}/tools/arm-linux-gnueabi-gcc-4.9/ -ccc-gcc-name arm-linux-gnueabi-g++ -Wl,-rpath-link=$tizenPlatformRoot/usr/lib -L$tizenPlatformRoot/usr/lib $ENV{LDFLAGS}";
+		}
+
+		$ENV{PATH} = "$tizenToolchain/bin:$ENV{PATH}";
+		$ENV{CC} = "$tizenToolchain/clang --sysroot=$tizenPlatformRoot";
+		$ENV{CXX} = "$tizenToolchain/clang++ --sysroot=$tizenPlatformRoot";
+		$ENV{CPP} = "$tizenToolchain/clang -E";
+		$ENV{CXXCPP} = "$tizenToolchain/clang -E";
+		$ENV{CPATH} = "$tizenPlatformRoot/usr/include";
+		$ENV{LD} = "$tizenToolchain/clang++ --sysroot=$tizenPlatformRoot";
+		$ENV{AS} = "$tizenToolchain/as";
+		$ENV{STRIP} = "$tizenToolchain/strip";
+
+		if ($tizenEmulator)
+		{
+			$ENV{AR} = "$ENV{TIZEN_SDK_ROOT}/tools/i386-linux-gnueabi-gcc-4.9/bin/i386-linux-gnueabi-ar";
+			$ENV{RANLIB} = "$ENV{TIZEN_SDK_ROOT}/tools/i386-linux-gnueabi-gcc-4.9/bin/i386-linux-gnueabi-ranlib";
+		}
+		else
+		{
+			$ENV{AR} = "$ENV{TIZEN_SDK_ROOT}/tools/arm-linux-gnueabi-gcc-4.9/bin/arm-linux-gnueabi-ar";
+			$ENV{RANLIB} = "$ENV{TIZEN_SDK_ROOT}/tools/arm-linux-gnueabi-gcc-4.9/bin/arm-linux-gnueabi-ranlib";
+		}
+
+		$ENV{CFLAGS} = "-DTIZEN -DLINUX -D__linux__ -DHAVE_USR_INCLUDE_MALLOC_H -DPAGE_SIZE=0x1000 -D_POSIX_PATH_MAX=256 -DS_IWRITE=S_IWUSR -DHAVE_PTHREAD_MUTEX_TIMEDLOCK -fpic -g -ffunction-sections -fdata-sections $ENV{CFLAGS}";
+		$ENV{CXXFLAGS} = $ENV{CFLAGS};
+		$ENV{CPPFLAGS} = $ENV{CFLAGS};
+		$ENV{LDFLAGS} = "-Wl,--no-undefined -ldlog -shared -Xlinker --as-needed $ENV{LDFLAGS}";
+
+		print "\n";
+		print ">>> Environment:\n";
+		print ">>> \tCC = $ENV{CC}\n";
+		print ">>> \tCXX = $ENV{CXX}\n";
+		print ">>> \tCPP = $ENV{CPP}\n";
+		print ">>> \tCXXCPP = $ENV{CXXCPP}\n";
+		print ">>> \tCPATH = $ENV{CPATH}\n";
+		print ">>> \tLD = $ENV{LD}\n";
+		print ">>> \tAS = $ENV{AS}\n";
+		print ">>> \tAR = $ENV{AR}\n";
+		print ">>> \tRANLIB = $ENV{RANLIB}\n";
+		print ">>> \tSTRIP = $ENV{STRIP}\n";
+		print ">>> \tCFLAGS = $ENV{CFLAGS}\n";
+		print ">>> \tCXXFLAGS = $ENV{CXXFLAGS}\n";
+		print ">>> \tCPPFLAGS = $ENV{CPPFLAGS}\n";
+		print ">>> \tLDFLAGS = $ENV{LDFLAGS}\n";
+
+		if ($tizenEmulator)
+		{
+			push @configureparams, "--host=i386-tizen-linux-gnueabi";
+		}
+		else
+		{
+			push @configureparams, "--host=arm-tizen-linux-gnueabi";
+		}
+
+		push @configureparams, "--cache-file=tizen-cross.cache" if ($enableCacheFile);
+		push @configureparams, "--disable-parallel-mark";
+		push @configureparams, "--disable-shared-handles";
+		push @configureparams, "--with-sigaltstack=no";
+		push @configureparams, "--with-tls=pthread";
+		push @configureparams, "--disable-visibility-hidden";
+		push @configureparams, "--disable-executables";
+		push @configureparams, "--with-gnu-ld=yes";
+		push @configureparams, "--disable-silent-rules";		
+		push @configureparams, "mono_cv_uscore=yes";
+		push @configureparams, "ac_cv_header_zlib_h=no" if($runningOnWindows);
+	}
 	elsif($^O eq "linux")
 	{
 		push @configureparams, "--host=$monoHostArch-pc-linux-gnu";
@@ -1026,7 +1226,7 @@ if ($build)
 		}
 		
 		# this step needs to run after configure
-		if ($iphoneCross || $iphone || $android)
+		if ($iphoneCross || $iphone || $android || $tizen)
 		{
 			# This step generates the arm_dpimacros.h file, which is needed by the offset dumper
 			chdir("$monoroot/mono/arch/arm");
@@ -1148,7 +1348,7 @@ if ($buildUsAndBoo)
 	if (not $disableNormalProfile)
 	{
 		print(">>> Building Unity Script and Boo...\n");
-		system("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix") eq 0 or die ("Failed builidng Unity Script and Boo\n");
+		system("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix") eq 0 or die ("Failed building Unity Script and Boo\n");
 
 		if ($aotProfile ne "")
 		{
@@ -1265,6 +1465,16 @@ if ($artifact)
 		$embedDirArchDestination = "$embedDirRoot/android/$androidArch";
 		$versionsOutputFile = "$buildsroot/versions-android-$androidArch$versionsFileNamePostFix.txt";
 	}
+	elsif ($tizenEmulator)
+	{
+		$embedDirArchDestination = "$embedDirRoot/tizenemulator/";
+		$versionsOutputFile = "$buildsroot/versions-tizenemulator$versionsFileNamePostFix.txt";
+	}
+	elsif ($tizen)
+	{
+		$embedDirArchDestination = "$embedDirRoot/tizen/";
+		$versionsOutputFile = "$buildsroot/versions-tizen$versionsFileNamePostFix.txt";
+	}
 	elsif($^O eq "linux")
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/linux32" : "$embedDirRoot/linux64";
@@ -1306,7 +1516,7 @@ if ($artifact)
 
 		# embedruntimes directory setup
 		print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
-		if ($iphone)
+		if ($iphone || $iphoneSimulator)
 		{
 			for my $file ('libmonosgen-2.0.a','libmonoboehm-2.0.a')
 			{
@@ -1318,17 +1528,17 @@ if ($artifact)
 		{
 			# Nothing to do
 		}
-		elsif ($iphoneSimulator)
+		elsif ($android)
 		{
-			for my $file ('libmonosgen-2.0.a','libmonoboehm-2.0.a')
+			for my $file ('libmonosgen-2.0.so','libmonosgen-2.0.a','libmonoboehm-2.0.so','libmonoboehm-2.0.a')
 			{
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
 			}
 		}
-		elsif ($android)
+		elsif ($tizen || $tizenEmulator)
 		{
-			for my $file ('libmonosgen-2.0.so','libmonosgen-2.0.a','libmonoboehm-2.0.so','libmonoboehm-2.0.a')
+			for my $file ('libmonosgen-2.0.so','libmonoboehm-2.0.so')
 			{
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
@@ -1387,7 +1597,7 @@ if ($artifact)
 		
 		# monodistribution directory setup
 		print(">>> Creating monodistribution directory\n");
-		if ($android || $iphone || $iphoneCross || $iphoneSimulator)
+		if ($android || $iphone || $iphoneCross || $iphoneSimulator || $tizen || $tizenEmulator)
 		{
 			# Nothing to do
 		}
