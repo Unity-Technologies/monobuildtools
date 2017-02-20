@@ -36,4 +36,4 @@ system(
 	"--aotprofiledestname=unity_aot",
 	"--forcedefaultbuilddeps=1",
 	"--shortprefix=$shortPrefix",
-	"--disablenormalprofile=$disableNormalProfile") eq 0 or die ("Failed builidng aot profile\n");
+	"--disablenormalprofile=$disableNormalProfile") eq 0 or die ("Failed building aot profile\n");

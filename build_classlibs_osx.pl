@@ -33,4 +33,4 @@ system(
 	"--aotprofiledestname=unity_aot",
 	"--buildusandboo=1",
 	"--forcedefaultbuilddeps=1",
-	"--shortprefix=$shortPrefix") eq 0 or die ("Failed builidng mono\n");
+	"--shortprefix=$shortPrefix") eq 0 or die ("Failed building mono\n");
