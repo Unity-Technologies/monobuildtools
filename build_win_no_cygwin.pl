@@ -145,7 +145,7 @@ if ($build)
 	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=boehm") eq 0 or die ('failed building mono boehm with VS\n');
 	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=bdwgc") eq 0 or die ('failed building mono bdwgc with VS\n');
 	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=sgen") eq 0 or die ('failed building mono sgen with VS\n');
-    system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--noJit=1",  "--gc=boehm") eq 0 or die ('failed building NO JIT libmonoruntime boehm with VS\n');
+    system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--noJit=1",  "--gc=bdwgc") eq 0 or die ('failed building NO JIT libmonoruntime bdwgc with VS\n');
 
 	if (!(-d "$monoroot\\tmp"))
 	{
@@ -189,9 +189,9 @@ if ($build)
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/MonoPosixHelper.pdb", "$monoprefix/bin/.") or die ("failed copying MonoPosixHelper.pdb\n");
 
 	# copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
-	copy("$monoroot/msvc/build/boehm/$archNameForBuild/lib/$noJitConfigDirName/libmonoruntime-boehm-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoruntime-boehm-il2cpp.lib\n");
-	copy("$monoroot/msvc/build/boehm/$archNameForBuild/lib/$noJitConfigDirName/libmonoutils-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
-	copy("$monoroot/msvc/build/boehm/$archNameForBuild/lib/$noJitConfigDirName/eglib.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT eglib.lib\n");
+	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$noJitConfigDirName/libmonoruntime-bdwgc-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoruntime-bdwgc-il2cpp.lib\n");
+	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$noJitConfigDirName/libmonoutils-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
+	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$noJitConfigDirName/eglib.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT eglib.lib\n");
 
 	system("xcopy /y /f $addtoresultsdistdir\\bin\\*.* $monoprefix\\bin\\") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 }
@@ -262,7 +262,7 @@ if ($artifact)
 	copy("$monoprefix/bin/MonoPosixHelper.pdb", "$embedDirArchDestination/.") or die ("failed copying MonoPosixHelper.pdb\n");
 	
 	# copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
-	copy("$monoprefix/bin/libmonoruntime-boehm-il2cpp.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT libmonoruntime-boehm-il2cpp.lib\n");
+	copy("$monoprefix/bin/libmonoruntime-bdwgc-il2cpp.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT libmonoruntime-bdwgc-il2cpp.lib\n");
 	copy("$monoprefix/bin/libmonoutils-il2cpp.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
 	copy("$monoprefix/bin/eglib.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT eglib.lib\n");
 
