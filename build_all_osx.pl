@@ -34,7 +34,7 @@ foreach my $arg (@ARGV)
 			push @passAlongArgs, $arg;
 		}
 	}
-	
+
 	if ($arg =~ /^--artifact=/)
 	{
 		push @thisScriptArgs, $arg;
@@ -91,7 +91,7 @@ if ($artifact)
 	}
 
 	# Create universal binaries
-	for my $file ('libmonoboehm-2.0.dylib','libmonobdwgc-2.0.dylib','libmonosgen-2.0.dylib','libMonoPosixHelper.dylib','libmonoruntime-bdwgc-il2cpp.a','libwapi.a','libmonoutils-il2cpp.a','libeglib.a')
+	for my $file ('libmonoboehm-2.0.dylib','libmonobdwgc-2.0.dylib','libmonosgen-2.0.dylib','libMonoPosixHelper.dylib','libmonoruntime-il2cpp-bdwgc.a','libwapi.a','libmonoutils-il2cpp.a','libeglib.a')
 	{
 		print(">>> lipo $embedDirSource32/$file $embedDirSource64/$file -create -output $embedDirDestination/$file\n\n");
 		system ('lipo', "$embedDirSource32/$file", "$embedDirSource64/$file", '-create', '-output', "$embedDirDestination/$file");
@@ -107,7 +107,7 @@ if ($artifact)
 			print(">>> 'dsymutil $embedDirDestination/$file\n");
 			system ('dsymutil', "$embedDirDestination/$file") eq 0 or warn ("Failed creating $embedDirDestination/$file.dSYM");
 		}
-		
+
 		print(">>> Done with non-build machine stuff\n");
 	}
 
@@ -139,7 +139,7 @@ if ($artifact)
 	{
 		die("Expected source directory not found : $distDirSourceBin64\n");
 	}
-	
+
 	for my $file ('mono','pedump')
 	{
 		print(">>> lipo $distDirSourceBin32/$file $distDirSourceBin64/$file -create -output $distDirDestinationBin/$file\n\n");
@@ -156,7 +156,7 @@ if ($artifact)
 	if ($buildMachine)
 	{
 		print(">>> Clean up temporary arch specific build directories\n");
-		
+
 		rmtree("$distDirSourceBin32");
 		rmtree("$distDirSourceBin64");
 		rmtree("$embedDirSource32");

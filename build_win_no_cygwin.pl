@@ -91,7 +91,7 @@ if ($build)
 	if ($existingMonoRootPath eq "")
 	{
 		print(">>> No existing mono supplied.  Checking for external...\n");
-		
+
 		if (!(-d "$externalBuildDeps"))
 		{
 			if (not $checkoutonthefly)
@@ -110,16 +110,16 @@ if ($build)
 				die("failed to checkout mono build dependencies\n");
 			}
 		}
-		
+
 		if (-d "$existingExternalMono")
 		{
 			print(">>> External mono found at : $existingExternalMono\n");
-			
+
 			if (-d "$existingExternalMono/builds")
 			{
 				print(">>> Mono already extracted at : $existingExternalMono/builds\n");
 			}
-			
+
 			if (!(-d "$existingExternalMono/builds"))
 			{
 				# We need to extract builds.zip
@@ -128,7 +128,7 @@ if ($build)
 				print(">>> Using 7z : $SevenZip\n");
 				system("$SevenZip", "x", "$existingExternalMono/builds.zip", "-o$existingExternalMono") eq 0 or die("Failed extracting mono builds.zip\n");
 			}
-			
+
 			$existingMonoRootPath = "$existingExternalMono/builds";
 		}
 		else
@@ -136,7 +136,7 @@ if ($build)
 			print(">>> No external mono found.  Trusting a new enough mono is in your PATH.\n");
 		}
 	}
-	
+
 	if ($existingMonoRootPath ne "" && !(-d $existingMonoRootPath))
 	{
 		die("Existing mono not found at : $existingMonoRootPath\n");
@@ -145,7 +145,7 @@ if ($build)
 	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=boehm") eq 0 or die ('failed building mono boehm with VS\n');
 	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=bdwgc") eq 0 or die ('failed building mono bdwgc with VS\n');
 	system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--gc=sgen") eq 0 or die ('failed building mono sgen with VS\n');
-    system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--noJit=1",  "--gc=bdwgc") eq 0 or die ('failed building NO JIT libmonoruntime bdwgc with VS\n');
+    system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--il2cpp=1",  "--gc=bdwgc") eq 0 or die ('failed building NO JIT libmonoruntime bdwgc with VS\n');
 
 	if (!(-d "$monoroot\\tmp"))
 	{
@@ -168,7 +168,6 @@ if ($build)
 	# Copy over the VS built stuff that we want to use instead into the prefix directory
 	my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
 	my $configDirName = $debug ? "Debug" : "Release";
-	my $noJitConfigDirName = $debug ? "NO-JIT-Debug" : "NO-JIT-Release";
 
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-boehm.exe", "$monoprefix/bin/.") or die ("failed copying mono-boehm.exe\n");
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/mono-2.0-boehm.dll", "$monoprefix/bin/.") or die ("failed copying mono-2.0-boehm.dll\n");
@@ -188,10 +187,10 @@ if ($build)
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/MonoPosixHelper.dll", "$monoprefix/bin/.") or die ("failed copying MonoPosixHelper.dll\n");
 	copy("$monoroot/msvc/build/boehm/$archNameForBuild/bin/$configDirName/MonoPosixHelper.pdb", "$monoprefix/bin/.") or die ("failed copying MonoPosixHelper.pdb\n");
 
-	# copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
-	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$noJitConfigDirName/libmonoruntime-bdwgc-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoruntime-bdwgc-il2cpp.lib\n");
-	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$noJitConfigDirName/libmonoutils-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
-	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$noJitConfigDirName/eglib.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT eglib.lib\n");
+	# copy the static libraries used by il2cpp on mono
+	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$configDirName/libmonoruntime-il2cpp-bdwgc.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoruntime-il2cpp-bdwgc.lib\n");
+	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$configDirName/libmonoutils-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
+	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$configDirName/eglib.lib", "$monoprefix/bin/.") or die ("failed copying NO JIT eglib.lib\n");
 
 	system("xcopy /y /f $addtoresultsdistdir\\bin\\*.* $monoprefix\\bin\\") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 }
@@ -201,15 +200,15 @@ if ($build)
 if ($artifact)
 {
 	print(">>> Creating artifact...\n");
-	
+
 	# Do the platform specific logic to create the builds output structure that we want
-	
+
 	my $embedDirRoot = "$buildsroot\\embedruntimes";
 
 	my $embedDirArchDestination = $arch32 ? "$embedDirRoot\\win32" : "$embedDirRoot\\win64";
 	my $distDirArchBin = $arch32 ? "$distdir\\bin" : "$distdir\\bin-x64";
 	my $versionsOutputFile = $arch32 ? "$buildsroot\\versions-win32.txt" : "$buildsroot\\versions-win64.txt";
-	
+
 	# Make sure the directory for our architecture is clean before we copy stuff into it
 	if (-d "$embedDirArchDestination")
 	{
@@ -240,13 +239,13 @@ if ($artifact)
 		print(">>> Creating directory $distdir\n");
 		system("mkdir $distdir") eq 0 or die("failed to create directory $distdir\n");
 	}
-	
+
 	print(">>> Creating directory $embedDirArchDestination\n");
 	system("mkdir $embedDirArchDestination") eq 0 or die("failed to create directory $embedDirArchDestination\n");
 
 	print(">>> Creating directory $distDirArchBin\n");
 	system("mkdir $distDirArchBin") eq 0 or die("failed to create directory $distDirArchBin\n");
-	
+
 	# embedruntimes directory setup
 	print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
 	copy("$monoprefix/bin/mono-2.0-boehm.dll", "$embedDirArchDestination/.") or die ("failed copying mono-2.0-boehm.dll\n");
@@ -260,9 +259,9 @@ if ($artifact)
 
 	copy("$monoprefix/bin/MonoPosixHelper.dll", "$embedDirArchDestination/.") or die ("failed copying MonoPosixHelper.dll\n");
 	copy("$monoprefix/bin/MonoPosixHelper.pdb", "$embedDirArchDestination/.") or die ("failed copying MonoPosixHelper.pdb\n");
-	
-	# copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
-	copy("$monoprefix/bin/libmonoruntime-bdwgc-il2cpp.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT libmonoruntime-bdwgc-il2cpp.lib\n");
+
+	# copy over the static libraries used by il2cpp on mono
+	copy("$monoprefix/bin/libmonoruntime-il2cpp-bdwgc.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT libmonoruntime-il2cpp-bdwgc.lib\n");
 	copy("$monoprefix/bin/libmonoutils-il2cpp.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
 	copy("$monoprefix/bin/eglib.lib", "$embedDirArchDestination/.") or die ("failed copying NO JIT eglib.lib\n");
 
@@ -284,7 +283,7 @@ if ($artifact)
 
 	copy("$monoprefix/bin/MonoPosixHelper.dll", "$distDirArchBin/.") or die ("failed copying MonoPosixHelper.dll\n");
 	copy("$monoprefix/bin/MonoPosixHelper.pdb", "$distDirArchBin/.") or die ("failed copying MonoPosixHelper.pdb\n");
-	
+
 
 	# Output version information
 	print(">>> Creating version file : $versionsOutputFile\n");

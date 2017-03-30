@@ -164,7 +164,7 @@ if ($android || $iphone || $iphoneCross || $iphoneSimulator || $tizen || $tizenE
 
 	# Disable building of the class libraries by default when building the android runtime
 	# since we don't care about a class library build in this situation (as of writing this at least)
-	# but only if the test flag is not set.  If the test flag was set, we'd need to build the classlibs 
+	# but only if the test flag is not set.  If the test flag was set, we'd need to build the classlibs
 	# in order to run the tests
 	$disableMcs = 1 if(!($test));
 }
@@ -217,7 +217,7 @@ else
 	$monoHostArch = "i686";
 	$existingExternalMono = "$existingExternalMonoRoot/win";
 	$runningOnWindows = 1;
-	
+
 	# We only care about an existing mono if we need to build.
 	# So only do this path clean up if we are building.
 	if ($build)
@@ -227,7 +227,7 @@ else
 			$existingMonoRootPath = `cygpath -u $existingMonoRootPath`;
 			chomp($existingMonoRootPath);
 		}
-		
+
 		$existingMonoRootPath =~ tr/\\//d;
 	}
 }
@@ -274,11 +274,11 @@ if ($build)
 			push @configureparams, "--with-profile4_x=no";
 		}
 	}
-	
+
 	if ($existingMonoRootPath eq "")
 	{
 		print(">>> No existing mono supplied.  Checking for external...\n");
-		
+
 		if (!(-d "$externalBuildDeps"))
 		{
 			if (not $checkoutonthefly)
@@ -300,23 +300,23 @@ if ($build)
 			# Only clean up if the dir exists.   Otherwise abs_path will return empty string
 			$externalBuildDeps = abs_path($externalBuildDeps) if (-d $externalBuildDeps);
 		}
-		
+
 		if (-d "$existingExternalMono")
 		{
 			print(">>> External mono found at : $existingExternalMono\n");
-			
+
 			if (-d "$existingExternalMono/builds")
 			{
 				print(">>> Mono already extracted at : $existingExternalMono/builds\n");
 			}
-			
+
 			if (!(-d "$existingExternalMono/builds"))
 			{
 				# We need to extract builds.zip
 				print(">>> Extracting mono builds.zip...\n");
 				system("unzip", "$existingExternalMono/builds.zip", "-d", "$existingExternalMono") eq 0 or die("failed to extract mono builds.zip\n");
 			}
-			
+
 			$existingMonoRootPath = "$existingExternalMono/builds";
 		}
 		else
@@ -324,7 +324,7 @@ if ($build)
 			print(">>> No external mono found.  Trusting a new enough mono is in your PATH.\n");
 		}
 	}
-	
+
 	if ($existingMonoRootPath ne "" && !(-d $existingMonoRootPath))
 	{
 		die("Existing mono not found at : $existingMonoRootPath\n");
@@ -374,7 +374,7 @@ if ($build)
 		{
 			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
 			system("tar xzf libtool-$libtoolVersion.tar.gz") eq 0  or die ("failed to extract libtool\n");
-		
+
 			chdir("$libtoolDir") eq 1 or die ("failed to chdir to libtool directory\n");
 			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure libtool\n");
 			system("make") eq 0 or die ("failed to make libtool\n");
@@ -457,7 +457,7 @@ if ($build)
 			$ENV{LD} = "$iosBuildEnvDir/builds/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld";
 
 			$ENV{CFLAGS} = "$iosCFlagsCommon -gdwarf-2 -DSMALL_CONFIG -DHAVE_LARGE_FILE_SUPPORT=1 -DHAVE_ARMV6=1 -DARM_FPU_VFP=1 -Wl,-application_extension -miphoneos-version-min=$iphoneOsMinVersion -mno-thumb -Os -isysroot $iosSdkRoot";
-			
+
 			# Unity defines
 			$ENV{CFLAGS} = "-DPLATFORM_IPHONE $ENV{CFLAGS}";
 
@@ -490,9 +490,9 @@ if ($build)
 			push @configureparams, "--with-lazy-gc-thread-creation=yes";
 			push @configureparams, "--enable-icall-export";
 			push @configureparams, "--enable-dtrace=no";
-			
+
 			push @configureparams, "--enable-minimal=$iosMinimalCommon,ssa,jit,reflection_emit_save,reflection_emit,portability,assembly_remapping,attach,verifier,full_messages,security,sgen_remset,sgen_marksweep_par,sgen_marksweep_fixed,sgen_marksweep_fixed_par,sgen_copying,logging";
-			
+
 			push @configureparams, "mono_cv_uscore=yes";
 			push @configureparams, "cv_mono_sizeof_sunpath=104";
 			push @configureparams, "ac_cv_func_posix_getpwuid_r=yes";
@@ -532,7 +532,7 @@ if ($build)
 
 			push @configureparams, "--host=$iphoneSimulatorArch-apple-darwin$darwinVersion";
 			push @configureparams, "--enable-minimal=$iosMinimalCommon";
-			
+
 			push @configureparams, "mono_cv_uscore=yes";
 			push @configureparams, "ac_cv_func_clock_nanosleep=no";
 		}
@@ -585,7 +585,7 @@ if ($build)
 			push @configureparams, "--disable-libraries";
 			push @configureparams, "--enable-icall-symbol-map";
 			push @configureparams, "--enable-minimal=com,remoting";
-			
+
 			#push @configureparams, "--enable-llvm";
 			#push @configureparams, "--with-llvm=llvm/usr";
 
@@ -627,7 +627,7 @@ if ($build)
 		my $toolChainExtension = "";
 
 		$isArmArch = 0 if ($androidArch eq "x86");
-		
+
 		$ENV{ANDROID_PLATFORM} = "android-9";
 		$ENV{GCC_VERSION} = "4.8";
 
@@ -1087,15 +1087,15 @@ if ($build)
 	elsif($^O eq "linux")
 	{
 		push @configureparams, "--host=$monoHostArch-pc-linux-gnu";
-		
+
 		push @configureparams, "--disable-parallel-mark";  #this causes crashes
-		
+
 		my $archflags = '';
 		if ($arch32)
 		{
 			$archflags = '-m32';
 		}
-		
+
 		if ($debug)
 		{
 			$ENV{CFLAGS} = "$archflags -g -O0";
@@ -1113,7 +1113,7 @@ if ($build)
 			# Find the latest mono version and use that for boostrapping
 			my $monoInstalls = '/Library/Frameworks/Mono.framework/Versions';
 			my @monoVersions = ();
-			
+
 			opendir( my $DIR, $monoInstalls );
 			while ( my $entry = readdir $DIR )
 			{
@@ -1126,25 +1126,25 @@ if ($build)
 			my $monoVersionToUse = pop @monoVersions;
 			$existingMonoRootPath = "$monoInstalls/$monoVersionToUse";
 		}
-		
+
 		$mcs = "EXTERNAL_MCS=$existingMonoRootPath/bin/mcs";
 
 		$ENV{'CC'} = "$macSdkPath/../usr/bin/clang";
 		$ENV{'CXX'} = "$macSdkPath/../usr/bin/clang++";
 		$ENV{'CFLAGS'} = $ENV{MACSDKOPTIONS} = "-D_XOPEN_SOURCE -I$macBuildEnvDir/builds/usr/include -mmacosx-version-min=$macversion -isysroot $macSdkPath";
-		
+
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -g -O0" if $debug;
 		$ENV{CFLAGS} = "$ENV{CFLAGS} -Os" if not $debug; #optimize for size
-		
+
 		$ENV{CC} = "$ENV{CC} -arch $monoHostArch";
 		$ENV{CXX} = "$ENV{CXX} -arch $monoHostArch";
-		
+
 		# Add OSX specific autogen args
 		push @configureparams, "--host=$monoHostArch-apple-darwin12.2.0";
-		
+
 		# Need to define because Apple's SIP gets in the way of us telling mono where to find this
 		push @configureparams, "--with-libgdiplus=$addtoresultsdistdir/lib/libgdiplus.dylib";
-		
+
 		print "\n";
 		print ">>> Setting environment:\n";
 		print ">>> PATH = ".$ENV{PATH}."\n";
@@ -1173,9 +1173,9 @@ if ($build)
 
 	print ">>> Existing Mono : $existingMonoRootPath\n\n";
 	$ENV{'PATH'} = "$existingMonoRootPath/bin:$ENV{'PATH'}";
-	
+
 	print ">>> PATH before Build = $ENV{PATH}\n\n";
-	
+
 	print(">>> mcs Information : \n");
 	system("which", "mcs");
 	system("mcs", "--version");
@@ -1197,16 +1197,16 @@ if ($build)
 
 	print ">>> LIBTOOLIZE before Build = $ENV{LIBTOOLIZE}\n";
 	print ">>> LIBTOOL before Build = $ENV{LIBTOOL}\n";
-	
+
 	chdir("$monoroot") eq 1 or die ("failed to chdir 2\n");
-	
+
 	if (not $skipMonoMake)
 	{
 		if ($clean)
 		{
 			print(">>> Cleaning $monoprefix\n");
 			rmtree($monoprefix);
-			
+
 			# Avoid "source directory already configured" ...
 			system('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status');
 
@@ -1220,7 +1220,7 @@ if ($build)
 			print("\n>>> Calling make clean in mono\n");
 			system("make","clean") eq 0 or die ("failed to make clean\n");
 		}
-		
+
 		# this step needs to run after configure
 		if ($iphoneCross || $iphone || $android || $tizen)
 		{
@@ -1260,19 +1260,19 @@ if ($build)
 			system("mkdir .libs");
 			system("cp libmonoutils-il2cpp.a .libs/");
 			chdir("$currentdir");
-			print("\n>>> Calling make to build libmonoruntime-bdwgc-il2cpp.a for IL2CPP\n");
+			print("\n>>> Calling make to build libmonoruntime-il2cpp-bdwgc.a for IL2CPP\n");
 			chdir("mono/metadata");
-			system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT -fexceptions\"") eq 0 or die ('Failed to make libmonoruntime-bdwgc-il2cpp.a for IL2CPP\n');
-			system("cp .libs/libmonoruntimebdwgc.a libmonoruntime-bdwgc-il2cpp.a");
+			system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT -fexceptions\"") eq 0 or die ('Failed to make libmonoruntime-il2cpp-bdwgc.a for IL2CPP\n');
+			system("cp .libs/libmonoruntimebdwgc.a libmonoruntime-il2cpp-bdwgc.a");
 			system("make clean");
 			system("mkdir .libs");
-			system("cp libmonoruntime-bdwgc-il2cpp.a .libs/");
+			system("cp libmonoruntime-il2cpp-bdwgc.a .libs/");
 			chdir("$currentdir");
 		}
 
 		print("\n>>> Calling make\n");
 		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
-		
+
 		if ($isDesktopBuild)
 		{
 			print("\n>>> Calling make install\n");
@@ -1294,31 +1294,30 @@ if ($build)
 			}
 		}
 	}
-	
+
 	if ($isDesktopBuild)
 	{
 		if ($^O eq "cygwin")
 		{
 			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failed building mono with VS\n');
-		
-			# build the NO_JIT, IL2CPP-ON-MONO version of libmonoruntime
-			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--noJit=1", "--gc=boehm") eq 0 or die ('failed building NO JIT libmonoruntime boehm with VS\n');
-		
-			
+
+			# build the static libraries used by il2cpp on mono
+			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--il2cpp=1", "--gc=boehm") eq 0 or die ('failed building NO JIT libmonoruntime boehm with VS\n');
+
+
 			# Copy over the VS built stuff that we want to use instead into the prefix directory
 			my $archNameForBuild = $arch32 ? 'Win32' : 'x64';
 			my $config = $debug ? "Debug" : "Release";
-			my $noJitConfigDirName = $debug ? "NO-JIT-Debug" : "NO-JIT-Release";
 			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono.exe $monoprefix/bin/.") eq 0 or die ("failed copying mono.exe\n");
 			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.dll $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.dll\n");
 			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
 
-			 # copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
-			system("cp $monoroot/msvc/$archNameForBuild/lib/$noJitConfigDirName/libmonoruntime-bdwgc-il2cpp.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT libmonoruntime-bdwgc-il2cpp.lib\n");
-			system("cp $monoroot/msvc/$archNameForBuild/lib/$noJitConfigDirName/libmonoutils-il2cpp.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
-			system("cp $monoroot/msvc/$archNameForBuild/lib/$noJitConfigDirName/eglib.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT eglib.lib\n");
+			 # copy the static libraries used by il2cpp on mono
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/libmonoruntime-il2cpp-bdwgc.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT libmonoruntime-il2cpp-bdwgc.lib\n");
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/libmonoutils-il2cpp.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/eglib.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT eglib.lib\n");
 		}
-		
+
 		system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 	}
 
@@ -1369,7 +1368,7 @@ if ($artifact)
 	{
 		print(">>> Creating common artifacts...\n");
 		print(">>> distribution directory = $distdir\n");
-		
+
 		if (!(-d "$distdir"))
 		{
 			system("mkdir -p $distdir") eq 0 or die("failed to make directory $distdir\n");
@@ -1385,7 +1384,7 @@ if ($artifact)
 			system("cp -R $addtoresultsdistdir/. $distdir/") eq 0 or die ("Failed copying $addtoresultsdistdir to $distdir\n");
 
 			system("cp -r $monoprefix/lib/mono $distdir/lib");
-			
+
 			if($^O ne 'darwin')
 			{
 				# On OSX we build a universal binary for 32-bit and 64-bit in the mono executable. The class library build
@@ -1416,7 +1415,7 @@ if ($artifact)
 		{
 			system("rm -f $monoroot/ZippedClasslibs.tar.gz") eq 0 or die("Failed to clean existing ZippedClasslibs.tar.gz\n");
 		}
-		
+
 		print(">>> Creating ZippedClasslibs.tar.gz\n");
 		print(">>> Changing directory to : $buildsroot\n");
 		chdir("$buildsroot");
@@ -1424,9 +1423,9 @@ if ($artifact)
 		print(">>> Changing directory back to : $currentdir\n");
 		chdir("$currentdir");
 	}
-	
+
 	# Do the platform specific logic to create the builds output structure that we want
-	
+
 	my $embedDirRoot = "$buildsroot/embedruntimes";
 	my $embedDirArchDestination = "";
 	my $distDirArchBin = "";
@@ -1549,7 +1548,7 @@ if ($artifact)
 
 			print ">>> Copying libMonoPosixHelper.so\n";
 			system("cp", "$monoroot/support/.libs/libMonoPosixHelper.so","$embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die ("failed copying libMonoPosixHelper.so\n");
-			
+
 			if ($buildMachine)
 			{
 				system("strip $embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die("failed to strip libmonoboehm-2.0.so (shared)\n");
@@ -1561,8 +1560,8 @@ if ($artifact)
 		elsif($^O eq 'darwin')
 		{
 			# embedruntimes directory setup
-			print ">>> Hardlinking libmonoruntime-bdwgc-il2cpp.a for IL2CPP\n";
-			system("ln","-f", "$monoroot/mono/metadata/.libs/libmonoruntime-bdwgc-il2cpp.a","$embedDirArchDestination/libmonoruntime-bdwgc-il2cpp.a") eq 0 or die ("failed symlinking libmonoruntime-bdwgc-il2cpp.a\n");
+			print ">>> Hardlinking libmonoruntime-il2cpp-bdwgc.a for IL2CPP\n";
+			system("ln","-f", "$monoroot/mono/metadata/.libs/libmonoruntime-il2cpp-bdwgc.a","$embedDirArchDestination/libmonoruntime-il2cpp-bdwgc.a") eq 0 or die ("failed symlinking libmonoruntime-il2cpp-bdwgc.a\n");
 			system("ln","-f", "$monoroot/mono/io-layer/.libs/libwapi.a","$embedDirArchDestination/libwapi.a") eq 0 or die ("failed symlinking libwapi.a\n");
 			system("ln","-f", "$monoroot/mono/utils/.libs/libmonoutils-il2cpp.a","$embedDirArchDestination/libmonoutils-il2cpp.a") eq 0 or die ("failed symlinking libmonoutils-il2cpp.a\n");
 			system("ln","-f", "$monoroot/eglib/src/.libs/libeglib.a","$embedDirArchDestination/libeglib.a") eq 0 or die ("failed symlinking libeglib.a\n");
@@ -1572,10 +1571,10 @@ if ($artifact)
 			system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.dylib","$embedDirArchDestination/libmonoboehm-2.0.dylib") eq 0 or die ("failed symlinking libmonoboehm-2.0.dylib\n");
 			system("ln","-f", "$monoroot/mono/mini/.libs/libmonobdwgc-2.0.dylib","$embedDirArchDestination/libmonobdwgc-2.0.dylib") eq 0 or die ("failed symlinking libmonobdwgc-2.0.dylib\n");
 			system("ln","-f", "$monoroot/mono/mini/.libs/libmonosgen-2.0.dylib","$embedDirArchDestination/libmonosgen-2.0.dylib") eq 0 or die ("failed symlinking libmonosgen-2.0.dylib\n");
-			 
+
 			print "Hardlinking libMonoPosixHelper.dylib\n";
 			system("ln","-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$embedDirArchDestination/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib\n");
-		
+
 			InstallNameTool("$embedDirArchDestination/libmonoboehm-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonoboehm-2.0.dylib");
 			InstallNameTool("$embedDirArchDestination/libmonobdwgc-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonobdwgc-2.0.dylib");
 			InstallNameTool("$embedDirArchDestination/libmonosgen-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.dylib");
@@ -1597,7 +1596,7 @@ if ($artifact)
 			system("cp", "$monoprefix/bin/mono-2.0-sgen.dll", "$embedDirArchDestination/mono-2.0-sgen.dll") eq 0 or die ("failed copying mono-2.0-sgen.dll\n");
 			system("cp", "$monoprefix/bin/mono-2.0-sgen.pdb", "$embedDirArchDestination/mono-2.0-sgen.pdb") eq 0 or die ("failed copying mono-2.0-sgen.pdb\n");
 		}
-		
+
 		# monodistribution directory setup
 		print(">>> Creating monodistribution directory\n");
 		if ($android || $iphone || $iphoneCross || $iphoneSimulator || $tizen || $tizenEmulator)
@@ -1613,11 +1612,11 @@ if ($artifact)
 				print(">>> Cleaning $distDirArchEtc\n");
 				rmtree($distDirArchEtc);
 			}
-			
+
 			system("mkdir -p $distDirArchBin");
 			system("mkdir -p $distDirArchEtc");
 			system("mkdir -p $distDirArchEtc/mono");
-			
+
 			system("ln", "-f", "$monoroot/mono/mini/mono-boehm","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable\n");
 			system("ln", "-f", "$monoroot/tools/pedump/pedump","$distDirArchBin/pedump") eq 0 or die("failed symlinking pedump executable\n");
 			system('cp', "$monoroot/data/config","$distDirArchEtc/mono/config") eq 0 or die("failed to copy config\n");
@@ -1633,8 +1632,8 @@ if ($artifact)
 			system("cp", "$monoprefix/bin/mono-2.0.pdb", "$distDirArchBin/mono-2.0.pdb") eq 0 or die ("failed copying mono-2.0.pdb\n");
 			system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
 
-			# copy over out NO-JIT, IL2CPP-ON-MONO compiled libs
-			system("cp", "$monoprefix/bin/libmonoruntime-bdwgc-il2cpp.lib", "$embedDirArchDestination/libmonoruntime-bdwgc-il2cpp.lib") eq 0 or die ("failed copying NO JIT libmonoruntime-bdwgc-il2cpp.lib\n");
+			# copy the static libraries used by il2cpp on mono
+			system("cp", "$monoprefix/bin/libmonoruntime-il2cpp-bdwgc.lib", "$embedDirArchDestination/libmonoruntime-il2cpp-bdwgc.lib") eq 0 or die ("failed copying NO JIT libmonoruntime-il2cpp-bdwgc.lib\n");
 			system("cp", "$monoprefix/bin/libmonoutils-il2cpp.lib", "$embedDirArchDestination/libmonoutils-il2cpp.lib") eq 0 or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
 			system("cp", "$monoprefix/bin/eglib.lib", "$embedDirArchDestination/eglib.lib") eq 0 or die ("failed copying NO JIT eglib.lib\n");
 		}
@@ -1653,10 +1652,10 @@ if ($artifact)
 			system("cp", "$monoroot/mono/mini/mono","$crossCompilerDestination/mono-xcompiler") eq 0 or die ("failed copying mono-xcompiler\n");
 		}
 	}
-	
+
 	# Not all build configurations output to the distro dir, so only chmod it if it exists
 	system("chmod", "-R", "755", $distDirArchBin) if (-d "$distDirArchBin");
-	
+
 	# Output version information
 	print(">>> Creating version file : $versionsOutputFile\n");
 	system("echo \"mono-version =\" > $versionsOutputFile");
@@ -1687,7 +1686,7 @@ if ($test)
 	{
 		print(">>> Skipping runtime unit tests\n");
 	}
-	
+
 	if ($runClasslibTests)
 	{
 		if ($disableMcs)

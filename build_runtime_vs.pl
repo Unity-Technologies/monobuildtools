@@ -17,7 +17,7 @@ my $build = 0;
 my $clean = 0;
 my $arch32 = 0;
 my $debug = 0;
-my $noJit = 0;
+my $il2cpp = 0;
 my $gc = "boehm";
 my $msBuildVersion = "";
 
@@ -27,16 +27,15 @@ GetOptions(
 	'arch32=i'=>\$arch32,
 	'debug=i'=>\$debug,
 	'msbuildversion=s'=>\$msBuildVersion,
-	'noJit=i'=>\$noJit,
+	'il2cpp=i'=>\$il2cpp,
 	'gc=s'=>\$gc,
 ) or die ("illegal cmdline options");
 
 if ($build)
 {
-	if ($noJit)
+	if ($il2cpp)
 	{
-		CompileVCProj("$monoroot/msvc/libmonoruntime.vcxproj");
-		CompileVCProj("$monoroot/msvc/libmonoutils.vcxproj");
+        CompileVCProj("$monoroot/msvc/mono-il2cpp.sln");
 	}
 	else
 	{
@@ -50,20 +49,12 @@ sub CompileVCProj
 	my $config;
 
 	my $msbuild = $ENV{"ProgramFiles(x86)"}."/MSBuild/$msBuildVersion/Bin/MSBuild.exe";
-	
-	if ($noJit)
-	{
-		$config = $debug ? "NO-JIT-Debug" : "NO-JIT-Release";
-		
-	}
-	else
-	{
-		$config = $debug ? "Debug" : "Release";
-	}
+
+    $config = $debug ? "Debug" : "Release";
 	my $arch = $arch32 ? "Win32" : "x64";
-	my $target = $clean ? "/t:Clean,Build" :"/t:Build"; 
+	my $target = $clean ? "/t:Clean,Build" :"/t:Build";
 	my $properties = "/p:Configuration=$config;Platform=$arch;MONO_TARGET_GC=$gc";
-	
+
 	print ">>> $msbuild $properties $target $sln\n\n";
 	system($msbuild, $properties, $target, $sln) eq 0
 			or die("MSBuild failed to build $sln\n");
