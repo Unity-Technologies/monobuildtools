@@ -32,8 +32,8 @@ system(
 	"--artifact=1",
 	"--artifactscommon=1",
 	"--artifactsruntime=0",
-	"--aotprofile=mobile_static",
-	"--aotprofiledestname=unity_aot",
+#	"--aotprofile=mobile_static",
+#	"--aotprofiledestname=unity_aot",
 	"--forcedefaultbuilddeps=1",
 	"--shortprefix=$shortPrefix",
 	"--disablenormalprofile=$disableNormalProfile") eq 0 or die ("Failed building aot profile\n");
