@@ -10,7 +10,14 @@ mkpath("collectedbuilds");
 
 my @folders = ();
 opendir(DIR, $path) or die "cant find $path: $!";
-while (defined(my $file = readdir(DIR))) {
+# Sort the directories alphabetically so that classlibs comes before the
+# OSX universal runtime (in the osx-i386 directory). Both builds produce the same
+# files in some cases (notably libMonoPosixHelper.dylib), and we need the 
+# universal runtime build to be second, since it produces a universal binary
+# and the classlibs build produces a 32-bit binary only.  
+my @files = sort readdir(DIR);
+while (defined(my $file = shift @files)) {
+
 	next if $file =~ /^\.\.?$/;
 	if (-d "$path$file"){
 		if (-f "$path$file/versions.txt") {
