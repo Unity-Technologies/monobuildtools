@@ -1311,7 +1311,7 @@ if ($build)
 			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug") eq 0 or die ('failed building mono with VS\n');
 
 			# build the static libraries used by il2cpp on mono
-			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--il2cpp=1", "--gc=boehm") eq 0 or die ('failed building NO JIT libmonoruntime boehm with VS\n');
+			system("$winPerl", "$winMonoRoot/external/buildscripts/build_runtime_vs.pl", "--build=$build", "--arch32=$arch32", "--msbuildversion=$msBuildVersion", "--clean=$clean", "--debug=$debug", "--il2cpp=1", "--gc=boehm") eq 0 or die ('failed building IL2CPP libmonoruntime boehm with VS\n');
 
 
 			# Copy over the VS built stuff that we want to use instead into the prefix directory
@@ -1322,9 +1322,9 @@ if ($build)
 			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
 
 			 # copy the static libraries used by il2cpp on mono
-			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/libmonoruntime-il2cpp-bdwgc.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT libmonoruntime-il2cpp-bdwgc.lib\n");
-			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/libmonoutils-il2cpp.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
-			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/eglib.lib $monoprefix/bin/.") eq 0 or die ("failed copying NO JIT eglib.lib\n");
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/libmonoruntime-il2cpp-bdwgc.lib $monoprefix/bin/.") eq 0 or die ("failed copying IL2CPP libmonoruntime-il2cpp-bdwgc.lib\n");
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/libmonoutils-il2cpp.lib $monoprefix/bin/.") eq 0 or die ("failed copying IL2CPP libmonoutils-il2cpp.lib\n");
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/eglib-il2cpp.lib $monoprefix/bin/.") eq 0 or die ("failed copying IL2CPP eglib-il2cpp.lib\n");
 		}
 
 		system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
@@ -1573,7 +1573,7 @@ if ($artifact)
 			system("ln","-f", "$monoroot/mono/metadata/.libs/libmonoruntime-il2cpp-bdwgc.a","$embedDirArchDestination/libmonoruntime-il2cpp-bdwgc.a") eq 0 or die ("failed symlinking libmonoruntime-il2cpp-bdwgc.a\n");
 			system("ln","-f", "$monoroot/mono/io-layer/.libs/libwapi.a","$embedDirArchDestination/libwapi.a") eq 0 or die ("failed symlinking libwapi.a\n");
 			system("ln","-f", "$monoroot/mono/utils/.libs/libmonoutils-il2cpp.a","$embedDirArchDestination/libmonoutils-il2cpp.a") eq 0 or die ("failed symlinking libmonoutils-il2cpp.a\n");
-			system("ln","-f", "$monoroot/eglib/src/.libs/libeglib.a","$embedDirArchDestination/libeglib.a") eq 0 or die ("failed symlinking libeglib.a\n");
+			system("ln","-f", "$monoroot/eglib/src/.libs/libeglib-il2cpp.a","$embedDirArchDestination/libeglib.a") eq 0 or die ("failed symlinking libeglib-il2cpp.a\n");
 
 	 		print ">>> Hardlinking libmonosgen-2.0\n";
 
@@ -1642,9 +1642,9 @@ if ($artifact)
 			system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
 
 			# copy the static libraries used by il2cpp on mono
-			system("cp", "$monoprefix/bin/libmonoruntime-il2cpp-bdwgc.lib", "$embedDirArchDestination/libmonoruntime-il2cpp-bdwgc.lib") eq 0 or die ("failed copying NO JIT libmonoruntime-il2cpp-bdwgc.lib\n");
-			system("cp", "$monoprefix/bin/libmonoutils-il2cpp.lib", "$embedDirArchDestination/libmonoutils-il2cpp.lib") eq 0 or die ("failed copying NO JIT libmonoutils-il2cpp.lib\n");
-			system("cp", "$monoprefix/bin/eglib.lib", "$embedDirArchDestination/eglib.lib") eq 0 or die ("failed copying NO JIT eglib.lib\n");
+			system("cp", "$monoprefix/bin/libmonoruntime-il2cpp-bdwgc.lib", "$embedDirArchDestination/libmonoruntime-il2cpp-bdwgc.lib") eq 0 or die ("failed copying IL2CPP libmonoruntime-il2cpp-bdwgc.lib\n");
+			system("cp", "$monoprefix/bin/libmonoutils-il2cpp.lib", "$embedDirArchDestination/libmonoutils-il2cpp.lib") eq 0 or die ("failed copying IL2CPP libmonoutils-il2cpp.lib\n");
+			system("cp", "$monoprefix/bin/eglib-il2cpp.lib", "$embedDirArchDestination/eglib-il2cpp.lib") eq 0 or die ("failed copying IL2CPP eglib-il2cpp.lib\n");
 		}
 	}
 
