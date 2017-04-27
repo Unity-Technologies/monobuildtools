@@ -23,7 +23,7 @@ my @passAlongArgs = ();
 foreach my $arg (@ARGV)
 {
 	push @backupArgs, $arg;
-	
+
 	if ($arg =~ /^--cygwin=/)
 	{
 		push @thisScriptArgs, $arg;
@@ -76,7 +76,7 @@ else
 	{
 		$externalBuildDeps = "$monoroot/../../mono-build-deps/build";
 	}
-	
+
 	if (!(-d "$externalBuildDeps"))
 	{
 		if (not $checkoutonthefly && $cygwinRootWindows eq "")
@@ -94,6 +94,15 @@ else
 		{
 			die("failed to checkout mono build dependencies\n");
 		}
+
+        my $il2cpp_repo = "https://bitbucket.org/Unity-Technologies/il2cpp";
+        print(">>> Cloning $il2cpp_repo at $externalBuildDeps\n");
+        $checkoutResult = system("hg", "clone", $il2cpp_repo, "$externalBuildDeps/il2cpp");
+
+        if ($checkoutOnTheFly && $checkoutResult ne 0)
+        {
+            die("failed to checkout IL2CPP for the mono build dependencies\n");
+        }
 	}
 }
 
@@ -105,10 +114,10 @@ my $SevenZip = "$externalBuildDeps/7z/win64/7za.exe";
 if ($cygwinRootWindows eq "")
 {
 	print(">>> No cygwin install specified.  Looking for defaults...\n");
-	
+
 	my $externalCygwin = "$externalBuildDeps/cygwin64/builds";
 	my $externalCygwinZip = "$externalBuildDeps/cygwin64/builds.zip";
-	
+
 	if (-d "$externalCygwin")
 	{
 		$cygwinRootWindows = $externalCygwin;
@@ -155,10 +164,10 @@ else
 if ($monoInstallLinux eq "")
 {
 	print(">>> No mono install specified.  Looking for defaults...\n");
-	
+
 	my $externalMono = "$externalBuildDeps/mono/win/builds";
 	my $externalMonoZip = "$externalBuildDeps/mono/win/builds.zip";
-	
+
 	if (-d "$externalMono")
 	{
 		$monoInstallLinux = $externalMono;

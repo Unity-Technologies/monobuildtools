@@ -109,6 +109,15 @@ if ($build)
 			{
 				die("failed to checkout mono build dependencies\n");
 			}
+
+            my $il2cpp_repo = "https://bitbucket.org/Unity-Technologies/il2cpp";
+            print(">>> Cloning $il2cpp_repo at $externalBuildDeps\n");
+            $checkoutResult = system("hg", "clone", $il2cpp_repo, "$externalBuildDeps/il2cpp");
+
+            if ($checkoutOnTheFly && $checkoutResult ne 0)
+            {
+                die("failed to checkout IL2CPP for the mono build dependencies\n");
+            }
 		}
 
 		if (-d "$existingExternalMono")
