@@ -199,7 +199,7 @@ if ($build)
 	# copy the static libraries used by il2cpp on mono
 	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$configDirName/libmonoruntime-il2cpp-bdwgc.lib", "$monoprefix/bin/.") or die ("failed copying IL2CPP libmonoruntime-il2cpp-bdwgc.lib\n");
 	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$configDirName/libmonoutils-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying IL2CPP libmonoutils-il2cpp.lib\n");
-	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$configDirName/eglib-il2cpp.lib", "$monoprefix/bin/.") or die ("failed copying IL2CPP eglib-il2cpp.lib\n");
+	copy("$monoroot/msvc/build/bdwgc/$archNameForBuild/lib/$configDirName/eglib-unity.lib", "$monoprefix/bin/.") or die ("failed copying IL2CPP eglib-unity.lib\n");
 
 	system("xcopy /y /f $addtoresultsdistdir\\bin\\*.* $monoprefix\\bin\\") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 }
@@ -272,7 +272,7 @@ if ($artifact)
 	# copy over the static libraries used by il2cpp on mono
 	copy("$monoprefix/bin/libmonoruntime-il2cpp-bdwgc.lib", "$embedDirArchDestination/.") or die ("failed copying IL2CPP libmonoruntime-il2cpp-bdwgc.lib\n");
 	copy("$monoprefix/bin/libmonoutils-il2cpp.lib", "$embedDirArchDestination/.") or die ("failed copying IL2CPP libmonoutils-il2cpp.lib\n");
-	copy("$monoprefix/bin/eglib-il2cpp.lib", "$embedDirArchDestination/.") or die ("failed copying IL2CPP eglib-il2cpp.lib\n");
+	copy("$monoprefix/bin/eglib-unity.lib", "$embedDirArchDestination/.") or die ("failed copying IL2CPP eglib-unity.lib\n");
 
 	# monodistribution directory setup
 	print(">>> Creating monodistribution directory\n");
