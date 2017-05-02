@@ -1254,7 +1254,7 @@ if ($build)
 			print("\n>>> Calling make to build libmonoutils-il2cpp.a for IL2CPP\n");
 			chdir("mono/utils");
 			system("make mono-dtrace.h");
-			system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT -fexceptions\"") eq 0 or die ('Failed to make libmonoutils-il2cpp.a for IL2CPP\n');
+			system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT -DDISABLE_REMOTING -fexceptions\"") eq 0 or die ('Failed to make libmonoutils-il2cpp.a for IL2CPP\n');
 			system("cp .libs/libmonoutils.a libmonoutils-il2cpp.a");
 			system("make clean");
 			system("mkdir .libs");
@@ -1262,7 +1262,7 @@ if ($build)
 			chdir("$currentdir");
 			print("\n>>> Calling make to build libmonoruntime-il2cpp-bdwgc.a for IL2CPP\n");
 			chdir("mono/metadata");
-			system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT -fexceptions\"") eq 0 or die ('Failed to make libmonoruntime-il2cpp-bdwgc.a for IL2CPP\n');
+			system("make -j$jobs IL2CPP_CFLAGS=\"-DIL2CPP_ON_MONO -DDISABLE_JIT -DDISABLE_REMOTING -fexceptions\"") eq 0 or die ('Failed to make libmonoruntime-il2cpp-bdwgc.a for IL2CPP\n');
 			system("cp .libs/libmonoruntimebdwgc.a libmonoruntime-il2cpp-bdwgc.a");
 			system("make clean");
 			system("mkdir .libs");
