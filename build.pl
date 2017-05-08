@@ -171,7 +171,7 @@ if ($android || $iphone || $iphoneCross || $iphoneSimulator || $tizen || $tizenE
 
 # Do any settings agnostic per-platform stuff
 my $externalBuildDeps = "";
-my $externalBuildDepsIl2Cpp = "$monoroot/../../il2cpp/build";;
+my $externalBuildDepsIl2Cpp = "$monoroot/../../il2cpp/build";
 
 if ($buildDeps ne "" && not $forceDefaultBuildDeps)
 {
