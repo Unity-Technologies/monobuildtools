@@ -91,7 +91,7 @@ if ($artifact)
 	}
 
 	# Create universal binaries
-	for my $file ('libmonoboehm-2.0.dylib','libmonobdwgc-2.0.dylib','libmonosgen-2.0.dylib','libMonoPosixHelper.dylib','libmonoruntime-il2cpp-bdwgc.a','libwapi.a','libmonoutils-il2cpp.a','libeglib.a')
+	for my $file ('libmonobdwgc-2.0.dylib','libmonosgen-2.0.dylib','libMonoPosixHelper.dylib','libmonoruntime-il2cpp-bdwgc.a','libwapi.a','libmonoutils-il2cpp.a','libeglib.a')
 	{
 		print(">>> lipo $embedDirSource32/$file $embedDirSource64/$file -create -output $embedDirDestination/$file\n\n");
 		system ('lipo', "$embedDirSource32/$file", "$embedDirSource64/$file", '-create', '-output', "$embedDirDestination/$file");
@@ -100,7 +100,7 @@ if ($artifact)
 	if (not $buildMachine)
 	{
 		print(">>> Doing non-build machine stuff...\n");
-		for my $file ('libmonoboehm-2.0.dylib','libmonobdwgc-2.0.dylib','libmonosgen-2.0.dylib','libMonoPosixHelper.dylib')
+		for my $file ('libmonobdwgc-2.0.dylib','libmonosgen-2.0.dylib','libMonoPosixHelper.dylib')
 		{
 			print(">>> Removing $embedDirDestination/$file.dSYM\n");
 			rmtree ("$embedDirDestination/$file.dSYM");
