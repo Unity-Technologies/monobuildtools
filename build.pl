@@ -64,6 +64,7 @@ my $tizenEmulator=0;
 my $aotProfile="";
 my $aotProfileDestName="";
 my $disableNormalProfile=0;
+my $isWindowsSubsystemForLinux=0;
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -195,6 +196,15 @@ if($^O eq "linux")
 {
 	$monoHostArch = $arch32 ? "i686" : "x86_64";
 	$existingExternalMono = "$existingExternalMonoRoot/linux";
+
+	#The build is running through windows subsystem for linux. Here we can build the classlibs
+	#But at the moment there are issues building the runtime that need more time to work through
+	if (`which notepad.exe` ne "")
+	{
+		$isWindowsSubsystemForLinux = 1;
+		#$skipMonoMake = 1;
+		$artifact = 0;
+	}
 }
 elsif($^O eq 'darwin')
 {
@@ -346,11 +356,13 @@ if ($build)
 	if ($externalBuildDeps ne "")
 	{
 		print "\n";
-		print ">>> Building autoconf, automake, and libtool if needed...\n";
+		print ">>> Building autoconf, texinfo, automake, and libtool if needed...\n";
 		my $autoconfVersion = "2.69";
+		my $texinfoVersion = "4.8";
 		my $automakeVersion = "1.15";
 		my $libtoolVersion = "2.4.6";
 		my $autoconfDir = "$externalBuildDeps/autoconf-$autoconfVersion";
+		my $texinfoDir = "$externalBuildDeps/texinfo-$texinfoVersion";
 		my $automakeDir = "$externalBuildDeps/automake-$automakeVersion";
 		my $libtoolDir = "$externalBuildDeps/libtool-$libtoolVersion";
 		my $builtToolsDir = "$externalBuildDeps/built-tools";
@@ -370,16 +382,44 @@ if ($build)
 			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 
+		if($isWindowsSubsystemForLinux)
+		{
+			if (!(-d "$texinfoDir"))
+			{
+				chdir("$externalBuildDeps");
+				system("tar xzf texinfo-$texinfoVersion.tar.gz") eq 0 or die ("failed to extract texinfo\n");
+
+				chdir("$texinfoDir/doc/amhello");
+				system("./configure --prefix=$builtToolsDir");
+
+				chdir($texinfoDir);
+				system("./configure --prefix=$builtToolsDir");
+				system("make");
+				system("make install");
+
+				chdir("$monoroot");
+			}
+		}
+
 		if (!(-d "$automakeDir"))
 		{
 			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
 			system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
 
 			chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
-			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
-			system("make") eq 0 or die ("failed to make automake\n");
-			system("make install") eq 0 or die ("failed to make install automake\n");
-
+			if($isWindowsSubsystemForLinux)
+			{
+				#Windows subsystem needs to run bootstrap, and make needs to be run with -i due to one doc failing to build
+				system("./bootstrap.sh") eq 0 or die ("failed to boostrap automake\n");
+				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
+				system("make -i");
+			}
+			else
+			{
+				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
+				system("make") eq 0 or die ("failed to make automake\n");
+			}
+			system("make install");
 			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 
@@ -1335,6 +1375,13 @@ if ($buildUsAndBoo)
 	if (not $disableNormalProfile)
 	{
 		print(">>> Building Unity Script and Boo...\n");
+		if($isWindowsSubsystemForLinux)
+		{
+			#boo scripts expect a bin-platform folder, but we haven't built them that way
+			system("ln -s $monoprefix/bin $monoprefix/bin-linux64");
+			system("ln -s $monoprefix/bin $monoprefix/bin-linux32");
+		}
+
 		system("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix") eq 0 or die ("Failed building Unity Script and Boo\n");
 
 		if ($aotProfile ne "")
