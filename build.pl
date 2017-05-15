@@ -202,7 +202,7 @@ if($^O eq "linux")
 	if (`which notepad.exe` ne "")
 	{
 		$isWindowsSubsystemForLinux = 1;
-		$skipMonoMake = 1;
+		#$skipMonoMake = 1;
 		$artifact = 0;
 	}
 }
