@@ -64,7 +64,7 @@ my $tizenEmulator=0;
 my $aotProfile="";
 my $aotProfileDestName="";
 my $disableNormalProfile=0;
-my $isWindowsSubsystemForLinux=0;
+my $windowsSubsystemForLinux=0;
 
 # Handy troubleshooting/niche options
 my $skipMonoMake=0;
@@ -110,6 +110,7 @@ GetOptions(
 	'iphonesimulator=i'=>\$iphoneSimulator,
 	'tizen=i'=>\$tizen,
 	'tizenemulator=i'=>\$tizenEmulator,
+	'windowssubsystemforlinux=i'=>\$windowsSubsystemForLinux,
 	'aotprofile=s'=>\$aotProfile,
 	'aotprofiledestname=s'=>\$aotProfileDestName,
 	'disablenormalprofile=i'=>\$disableNormalProfile,
@@ -196,15 +197,6 @@ if($^O eq "linux")
 {
 	$monoHostArch = $arch32 ? "i686" : "x86_64";
 	$existingExternalMono = "$existingExternalMonoRoot/linux";
-
-	#The build is running through windows subsystem for linux. Here we can build the classlibs
-	#But at the moment there are issues building the runtime that need more time to work through
-	if (`which notepad.exe` ne "")
-	{
-		$isWindowsSubsystemForLinux = 1;
-		#$skipMonoMake = 1;
-		$artifact = 0;
-	}
 }
 elsif($^O eq 'darwin')
 {
@@ -382,23 +374,20 @@ if ($build)
 			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 
-		if($isWindowsSubsystemForLinux)
+		if (!(-d "$texinfoDir"))
 		{
-			if (!(-d "$texinfoDir"))
-			{
-				chdir("$externalBuildDeps");
-				system("tar xzf texinfo-$texinfoVersion.tar.gz") eq 0 or die ("failed to extract texinfo\n");
+			chdir("$externalBuildDeps");
+			system("tar xzf texinfo-$texinfoVersion.tar.gz") eq 0 or die ("failed to extract texinfo\n");
 
-				chdir("$texinfoDir/doc/amhello");
-				system("./configure --prefix=$builtToolsDir");
+			chdir("$texinfoDir/doc/amhello");
+			system("./configure --prefix=$builtToolsDir");
 
-				chdir($texinfoDir);
-				system("./configure --prefix=$builtToolsDir");
-				system("make");
-				system("make install");
+			chdir($texinfoDir);
+			system("./configure --prefix=$builtToolsDir");
+			system("make");
+			system("make install");
 
-				chdir("$monoroot");
-			}
+			chdir("$monoroot");
 		}
 
 		if (!(-d "$automakeDir"))
@@ -407,7 +396,7 @@ if ($build)
 			system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
 
 			chdir("$automakeDir") eq 1 or die ("failed to chdir to automake directory\n");
-			if($isWindowsSubsystemForLinux)
+			if($windowsSubsystemForLinux)
 			{
 				#Windows subsystem needs to run bootstrap, and make needs to be run with -i due to one doc failing to build
 				system("./bootstrap.sh") eq 0 or die ("failed to boostrap automake\n");
@@ -1238,6 +1227,9 @@ if ($build)
 	system("which", "autoconf");
 	system("autoconf", "--version");
 
+	system("which", "texi2dvi");
+	system("texi2dvi", "--version");
+
 	system("which", "automake");
 	system("automake", "--version");
 
@@ -1375,7 +1367,7 @@ if ($buildUsAndBoo)
 	if (not $disableNormalProfile)
 	{
 		print(">>> Building Unity Script and Boo...\n");
-		if($isWindowsSubsystemForLinux)
+		if($windowsSubsystemForLinux)
 		{
 			#boo scripts expect a bin-platform folder, but we haven't built them that way
 			system("ln -s $monoprefix/bin $monoprefix/bin-linux64");
@@ -1446,8 +1438,12 @@ if ($artifact)
 			system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.5-api");
 
 			# now remove nunit from a couple places (but not all, we need some of them)
-			system("rm -rf $distdirlibmono/2.0/nunit*");
-			system("rm -rf $distdirlibmono/gac/nunit*");
+			# linux tar is not happy these are removed(at least on wsl), so don't remove them for now
+			if(not $windowsSubsystemForLinux)
+			{
+				system("rm -rf $distdirlibmono/2.0/nunit*");
+				system("rm -rf $distdirlibmono/gac/nunit*");
+			}
 		}
 
 		if (-f "$monoroot/ZippedClasslibs.tar.gz")
