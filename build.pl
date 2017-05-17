@@ -376,22 +376,20 @@ if ($build)
 
 		if (!(-d "$texinfoDir"))
 		{
-			chdir("$externalBuildDeps");
+			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
 			system("tar xzf texinfo-$texinfoVersion.tar.gz") eq 0 or die ("failed to extract texinfo\n");
 
-			chdir("$texinfoDir/doc/amhello");
-			system("./configure --prefix=$builtToolsDir");
+			chdir($texinfoDir) eq 1 or die ("failed to chdir to texinfo directory\n");
+			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure texinfo\n");
+			system("make") eq 0 or die ("failed to make texinfo\n");
+			system("make install") eq 0 or die ("failed to make install texinfo\n");
 
-			chdir($texinfoDir);
-			system("./configure --prefix=$builtToolsDir");
-			system("make");
-			system("make install");
-
-			chdir("$monoroot");
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 
 		if (!(-d "$automakeDir"))
 		{
+			my $automakeMakeFlags = "";
 			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
 			system("tar xzf automake-$automakeVersion.tar.gz") eq 0  or die ("failed to extract automake\n");
 
@@ -399,15 +397,11 @@ if ($build)
 			if($windowsSubsystemForLinux)
 			{
 				#Windows subsystem needs to run bootstrap, and make needs to be run with -i due to one doc failing to build
-				system("./bootstrap.sh") eq 0 or die ("failed to boostrap automake\n");
-				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
-				system("make -i");
+				system("./bootstrap.sh") eq 0 or die ("failed to bootstrap automake\n");
+				$automakeMakeFlags = "-i";
 			}
-			else
-			{
-				system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
-				system("make") eq 0 or die ("failed to make automake\n");
-			}
+			system("./configure --prefix=$builtToolsDir") eq 0 or die ("failed to configure automake\n");
+			system("make $automakeMakeFlags") eq 0 or die ("failed to make automake\n");
 			system("make install");
 			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
