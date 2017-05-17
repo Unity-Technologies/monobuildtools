@@ -374,7 +374,7 @@ if ($build)
 			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 
-		if (!(-d "$texinfoDir"))
+		if (!(-d "$texinfoDir") and $windowsSubsystemForLinux)
 		{
 			chdir("$externalBuildDeps") eq 1 or die ("failed to chdir to external directory\n");
 			system("tar xzf texinfo-$texinfoVersion.tar.gz") eq 0 or die ("failed to extract texinfo\n");
