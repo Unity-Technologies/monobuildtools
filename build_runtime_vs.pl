@@ -18,7 +18,7 @@ my $clean = 0;
 my $arch32 = 0;
 my $debug = 0;
 my $il2cpp = 0;
-my $gc = "boehm";
+my $gc = "bdwgc";
 my $msBuildVersion = "";
 
 GetOptions(

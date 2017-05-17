@@ -1505,7 +1505,7 @@ if ($artifact)
 		print(">>> Creating embedruntimes directory : $embedDirArchDestination\n");
 		if ($iphone || $iphoneSimulator)
 		{
-			for my $file ('libmonosgen-2.0.a','libmonoboehm-2.0.a','libmonobdwgc-2.0.a')
+			for my $file ('libmonosgen-2.0.a','libmonobdwgc-2.0.a')
 			{
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
@@ -1517,7 +1517,7 @@ if ($artifact)
 		}
 		elsif ($android)
 		{
-			for my $file ('libmonosgen-2.0.so','libmonosgen-2.0.a','libmonoboehm-2.0.so','libmonoboehm-2.0.a','libmonobdwgc-2.0.so','libmonobdwgc-2.0.a')
+			for my $file ('libmonosgen-2.0.so','libmonosgen-2.0.a','libmonobdwgc-2.0.so','libmonobdwgc-2.0.a')
 			{
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
@@ -1525,7 +1525,7 @@ if ($artifact)
 		}
 		elsif ($tizen || $tizenEmulator)
 		{
-			for my $file ('libmonosgen-2.0.so','libmonoboehm-2.0.so','libmonobdwgc-2.0.so')
+			for my $file ('libmonosgen-2.0.so','libmonobdwgc-2.0.so')
 			{
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
@@ -1534,7 +1534,6 @@ if ($artifact)
 		elsif($^O eq "linux")
 		{
 			print ">>> Copying libmonosgen-2.0\n";
-			system("cp", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.so","$embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die ("failed copying libmonoboehm-2.0.so\n");
 			system("cp", "$monoroot/mono/mini/.libs/libmonobdwgc-2.0.so","$embedDirArchDestination/libmonobdwgc-2.0.so") eq 0 or die ("failed copying libmonobdwgc-2.0.so\n");
 			system("cp", "$monoroot/mono/mini/.libs/libmonosgen-2.0.so","$embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die ("failed copying libmonosgen-2.0.so\n");
 
@@ -1543,7 +1542,6 @@ if ($artifact)
 
 			if ($buildMachine)
 			{
-				system("strip $embedDirArchDestination/libmonoboehm-2.0.so") eq 0 or die("failed to strip libmonoboehm-2.0.so (shared)\n");
 				system("strip $embedDirArchDestination/libmonobdwgc-2.0.so") eq 0 or die("failed to strip libmonobdwgc-2.0.so (shared)\n");
 				system("strip $embedDirArchDestination/libmonosgen-2.0.so") eq 0 or die("failed to strip libmonosgen-2.0.so (shared)\n");
 				system("strip $embedDirArchDestination/libMonoPosixHelper.so") eq 0 or die("failed to strip libMonoPosixHelper (shared)\n");
@@ -1560,14 +1558,12 @@ if ($artifact)
 
 	 		print ">>> Hardlinking libmonosgen-2.0\n";
 
-			system("ln","-f", "$monoroot/mono/mini/.libs/libmonoboehm-2.0.dylib","$embedDirArchDestination/libmonoboehm-2.0.dylib") eq 0 or die ("failed symlinking libmonoboehm-2.0.dylib\n");
 			system("ln","-f", "$monoroot/mono/mini/.libs/libmonobdwgc-2.0.dylib","$embedDirArchDestination/libmonobdwgc-2.0.dylib") eq 0 or die ("failed symlinking libmonobdwgc-2.0.dylib\n");
 			system("ln","-f", "$monoroot/mono/mini/.libs/libmonosgen-2.0.dylib","$embedDirArchDestination/libmonosgen-2.0.dylib") eq 0 or die ("failed symlinking libmonosgen-2.0.dylib\n");
 
 			print "Hardlinking libMonoPosixHelper.dylib\n";
 			system("ln","-f", "$monoroot/support/.libs/libMonoPosixHelper.dylib","$embedDirArchDestination/libMonoPosixHelper.dylib") eq 0 or die ("failed symlinking $libtarget/libMonoPosixHelper.dylib\n");
 
-			InstallNameTool("$embedDirArchDestination/libmonoboehm-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonoboehm-2.0.dylib");
 			InstallNameTool("$embedDirArchDestination/libmonobdwgc-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonobdwgc-2.0.dylib");
 			InstallNameTool("$embedDirArchDestination/libmonosgen-2.0.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libmonosgen-2.0.dylib");
 			InstallNameTool("$embedDirArchDestination/libMonoPosixHelper.dylib", "\@executable_path/../Frameworks/MonoEmbedRuntime/osx/libMonoPosixHelper.dylib");
@@ -1579,9 +1575,6 @@ if ($artifact)
 		else
 		{
 			# embedruntimes directory setup
-			system("cp", "$monoprefix/bin/mono-2.0-boehm.dll", "$embedDirArchDestination/mono-2.0-boehm.dll") eq 0 or die ("failed copying mono-2.0-boehm.dll\n");
-			system("cp", "$monoprefix/bin/mono-2.0-boehm.pdb", "$embedDirArchDestination/mono-2.0-boehm.pdb") eq 0 or die ("failed copying mono-2.0-boehm.pdb\n");
-
 			system("cp", "$monoprefix/bin/mono-2.0-bdwgc.dll", "$embedDirArchDestination/mono-2.0-bdwgc.dll") eq 0 or die ("failed copying mono-2.0-bdwgc.dll\n");
 			system("cp", "$monoprefix/bin/mono-2.0-bdwgc.pdb", "$embedDirArchDestination/mono-2.0-bdwgc.pdb") eq 0 or die ("failed copying mono-2.0-bdwgc.pdb\n");
 
@@ -1609,7 +1602,7 @@ if ($artifact)
 			system("mkdir -p $distDirArchEtc");
 			system("mkdir -p $distDirArchEtc/mono");
 
-			system("ln", "-f", "$monoroot/mono/mini/mono-boehm","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable\n");
+			system("ln", "-f", "$monoroot/mono/mini/mono-sgen","$distDirArchBin/mono") eq 0 or die("failed symlinking mono executable\n");
 			system("ln", "-f", "$monoroot/tools/pedump/pedump","$distDirArchBin/pedump") eq 0 or die("failed symlinking pedump executable\n");
 			system('cp', "$monoroot/data/config","$distDirArchEtc/mono/config") eq 0 or die("failed to copy config\n");
 		}
