@@ -654,7 +654,7 @@ if ($build)
 			die("mono build deps are required and the directory was not found : $externalBuildDeps\n");
 		}
 
-		my $ndkVersion = "r10e";
+		my $ndkVersion = "r13b";
 		my $isArmArch = 1;
 		my $toolchainName = "";
 		my $platformRootPostfix = "";
@@ -665,7 +665,7 @@ if ($build)
 		$isArmArch = 0 if ($androidArch eq "x86");
 
 		$ENV{ANDROID_PLATFORM} = "android-9";
-		$ENV{GCC_VERSION} = "4.8";
+		$ENV{GCC_VERSION} = "4.9";
 
 		if ($isArmArch)
 		{
@@ -892,7 +892,7 @@ if ($build)
 			my $kraitPatchRepo = "git://github.com/Unity-Technologies/krait-signal-handler.git";
 			if (-d "$kraitPatchPath")
 			{
-				print ">>> Krait patch repository already cloned"
+				print ">>> Krait patch repository already cloned\n";
 			}
 			else
 			{
@@ -1560,6 +1560,12 @@ if ($artifact)
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
 			}
+
+			print ">>> Copying static libraries for IL2CPP on mono\n";
+			system("cp", "$monoroot/mono/metadata/.libs/libmonoruntime-unity-il2cpp-bdwgc.a","$embedDirArchDestination/libmonoruntime-unity-il2cpp-bdwgc.a") eq 0 or die ("failed symlinking libmonoruntime-unity-il2cpp-bdwgc.a\n");
+			system("cp", "$monoroot/mono/io-layer/.libs/libwapi.a","$embedDirArchDestination/libwapi.a") eq 0 or die ("failed symlinking libwapi.a\n");
+			system("cp", "$monoroot/mono/utils/.libs/libmonoutils-unity-il2cpp.a","$embedDirArchDestination/libmonoutils-unity-il2cpp.a") eq 0 or die ("failed symlinking libmonoutils-unity-il2cpp.a\n");
+			system("cp", "$monoroot/eglib/src/.libs/libeglib-unity.a","$embedDirArchDestination/libeglib-unity.a") eq 0 or die ("failed symlinking libeglib-unity.a\n");
 		}
 		elsif ($tizen || $tizenEmulator)
 		{
