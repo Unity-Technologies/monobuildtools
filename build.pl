@@ -703,15 +703,15 @@ if ($build)
 		my $ndkName = "";
 		if($^O eq "linux")
 		{
-			$ndkName = "android-ndk-$ndkVersion-linux-x86.bin";
+			$ndkName = "android-ndk-$ndkVersion-linux-x86_64.zip";
 		}
 		elsif($^O eq "darwin")
 		{
-			$ndkName = "android-ndk-$ndkVersion-darwin-x86_64.bin";
+			$ndkName = "android-ndk-$ndkVersion-darwin-x86_64.zip";
 		}
 		else
 		{
-			$ndkName = "android-ndk-$ndkVersion-windows-x86.exe";
+			$ndkName = "android-ndk-$ndkVersion-windows-x86.zip";
 		}
 
 		my $depsNdkArchive = "$externalBuildDeps/$ndkName";
