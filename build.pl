@@ -654,7 +654,7 @@ if ($build)
 			die("mono build deps are required and the directory was not found : $externalBuildDeps\n");
 		}
 
-		my $ndkVersion = "r10e";
+		my $ndkVersion = "r13b";
 		my $isArmArch = 1;
 		my $toolchainName = "";
 		my $platformRootPostfix = "";
@@ -665,7 +665,7 @@ if ($build)
 		$isArmArch = 0 if ($androidArch eq "x86");
 
 		$ENV{ANDROID_PLATFORM} = "android-9";
-		$ENV{GCC_VERSION} = "4.8";
+		$ENV{GCC_VERSION} = "4.9";
 
 		if ($isArmArch)
 		{
@@ -703,15 +703,15 @@ if ($build)
 		my $ndkName = "";
 		if($^O eq "linux")
 		{
-			$ndkName = "android-ndk-$ndkVersion-linux-x86.bin";
+			$ndkName = "android-ndk-$ndkVersion-linux-x86_64.zip";
 		}
 		elsif($^O eq "darwin")
 		{
-			$ndkName = "android-ndk-$ndkVersion-darwin-x86_64.bin";
+			$ndkName = "android-ndk-$ndkVersion-darwin-x86_64.zip";
 		}
 		else
 		{
-			$ndkName = "android-ndk-$ndkVersion-windows-x86.exe";
+			$ndkName = "android-ndk-$ndkVersion-windows-x86.zip";
 		}
 
 		my $depsNdkArchive = "$externalBuildDeps/$ndkName";
@@ -892,7 +892,7 @@ if ($build)
 			my $kraitPatchRepo = "git://github.com/Unity-Technologies/krait-signal-handler.git";
 			if (-d "$kraitPatchPath")
 			{
-				print ">>> Krait patch repository already cloned"
+				print ">>> Krait patch repository already cloned\n";
 			}
 			else
 			{
@@ -1331,7 +1331,7 @@ if ($build)
 			system("cp $monoroot/msvc/$archNameForBuild/bin/$config/mono-2.0.pdb $monoprefix/bin/.") eq 0 or die ("failed copying mono-2.0.pdb\n");
 
 			 # copy the static libraries used by il2cpp on mono
-			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/libmonoruntime-il2cpp-bdwgc.lib $monoprefix/bin/.") eq 0 or die ("failed copying IL2CPP libmonoruntime-il2cpp-bdwgc.lib\n");
+			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/libmonoruntime-unity-il2cpp-bdwgc.lib $monoprefix/bin/.") eq 0 or die ("failed copying IL2CPP libmonoruntime-unity-il2cpp-bdwgc.lib\n");
 			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/libmonoutils-unity-il2cpp.lib $monoprefix/bin/.") eq 0 or die ("failed copying IL2CPP libmonoutils-unity-il2cpp.lib\n");
 			system("cp $monoroot/msvc/$archNameForBuild/lib/$config/eglib-unity.lib $monoprefix/bin/.") eq 0 or die ("failed copying IL2CPP eglib-unity.lib\n");
 		}
@@ -1559,6 +1559,12 @@ if ($artifact)
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
 			}
+
+			print ">>> Copying static libraries for IL2CPP on mono\n";
+			system("cp", "$monoroot/mono/metadata/.libs/libmonoruntime-unity-il2cpp-bdwgc.a","$embedDirArchDestination/libmonoruntime-unity-il2cpp-bdwgc.a") eq 0 or die ("failed symlinking libmonoruntime-unity-il2cpp-bdwgc.a\n");
+			system("cp", "$monoroot/mono/io-layer/.libs/libwapi.a","$embedDirArchDestination/libwapi.a") eq 0 or die ("failed symlinking libwapi.a\n");
+			system("cp", "$monoroot/mono/utils/.libs/libmonoutils-unity-il2cpp.a","$embedDirArchDestination/libmonoutils-unity-il2cpp.a") eq 0 or die ("failed symlinking libmonoutils-unity-il2cpp.a\n");
+			system("cp", "$monoroot/eglib/src/.libs/libeglib-unity.a","$embedDirArchDestination/libeglib-unity.a") eq 0 or die ("failed symlinking libeglib-unity.a\n");
 		}
 		elsif ($tizen || $tizenEmulator)
 		{
@@ -1587,8 +1593,8 @@ if ($artifact)
 		elsif($^O eq 'darwin')
 		{
 			# embedruntimes directory setup
-			print ">>> Hardlinking libmonoruntime-il2cpp-bdwgc.a for IL2CPP\n";
-			system("ln","-f", "$monoroot/mono/metadata/.libs/libmonoruntime-il2cpp-bdwgc.a","$embedDirArchDestination/libmonoruntime-il2cpp-bdwgc.a") eq 0 or die ("failed symlinking libmonoruntime-il2cpp-bdwgc.a\n");
+			print ">>> Hardlinking libmonoruntime-unity-il2cpp-bdwgc.a for IL2CPP\n";
+			system("ln","-f", "$monoroot/mono/metadata/.libs/libmonoruntime-unity-il2cpp-bdwgc.a","$embedDirArchDestination/libmonoruntime-unity-il2cpp-bdwgc.a") eq 0 or die ("failed symlinking libmonoruntime-unity-il2cpp-bdwgc.a\n");
 			system("ln","-f", "$monoroot/mono/io-layer/.libs/libwapi.a","$embedDirArchDestination/libwapi.a") eq 0 or die ("failed symlinking libwapi.a\n");
 			system("ln","-f", "$monoroot/mono/utils/.libs/libmonoutils-unity-il2cpp.a","$embedDirArchDestination/libmonoutils-unity-il2cpp.a") eq 0 or die ("failed symlinking libmonoutils-unity-il2cpp.a\n");
 			system("ln","-f", "$monoroot/eglib/src/.libs/libeglib-unity.a","$embedDirArchDestination/libeglib-unity.a") eq 0 or die ("failed symlinking libeglib-unity.a\n");
@@ -1655,7 +1661,7 @@ if ($artifact)
 			system("cp", "$monoprefix/bin/mono.exe", "$distDirArchBin/mono.exe") eq 0 or die ("failed copying mono.exe\n");
 
 			# copy the static libraries used by il2cpp on mono
-			system("cp", "$monoprefix/bin/libmonoruntime-il2cpp-bdwgc.lib", "$embedDirArchDestination/libmonoruntime-il2cpp-bdwgc.lib") eq 0 or die ("failed copying IL2CPP libmonoruntime-il2cpp-bdwgc.lib\n");
+			system("cp", "$monoprefix/bin/libmonoruntime-unity-il2cpp-bdwgc.lib", "$embedDirArchDestination/libmonoruntime-unity-il2cpp-bdwgc.lib") eq 0 or die ("failed copying IL2CPP libmonoruntime-unity-il2cpp-bdwgc.lib\n");
 			system("cp", "$monoprefix/bin/libmonoutils-unity-il2cpp.lib", "$embedDirArchDestination/libmonoutils-unity-il2cpp.lib") eq 0 or die ("failed copying IL2CPP libmonoutils-unity-il2cpp.lib\n");
 			system("cp", "$monoprefix/bin/eglib-unity.lib", "$embedDirArchDestination/eglib-unity.lib") eq 0 or die ("failed copying IL2CPP eglib-unity.lib\n");
 		}
