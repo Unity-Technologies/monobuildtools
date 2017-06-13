@@ -1563,7 +1563,6 @@ if ($artifact)
 
 			print ">>> Copying static libraries for IL2CPP on mono\n";
 			system("cp", "$monoroot/mono/metadata/.libs/libmonoruntime-unity-il2cpp-bdwgc.a","$embedDirArchDestination/libmonoruntime-unity-il2cpp-bdwgc.a") eq 0 or die ("failed symlinking libmonoruntime-unity-il2cpp-bdwgc.a\n");
-			system("cp", "$monoroot/mono/io-layer/.libs/libwapi.a","$embedDirArchDestination/libwapi.a") eq 0 or die ("failed symlinking libwapi.a\n");
 			system("cp", "$monoroot/mono/utils/.libs/libmonoutils-unity-il2cpp.a","$embedDirArchDestination/libmonoutils-unity-il2cpp.a") eq 0 or die ("failed symlinking libmonoutils-unity-il2cpp.a\n");
 			system("cp", "$monoroot/eglib/src/.libs/libeglib-unity.a","$embedDirArchDestination/libeglib-unity.a") eq 0 or die ("failed symlinking libeglib-unity.a\n");
 		}
