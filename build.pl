@@ -1295,7 +1295,15 @@ if ($build)
 
 		if (!($disableMcs))
 		{
+			if ($aotProfile ne "")
+			{
+				print(">>> Making profile $aotProfile\n");
+				chdir("$monoroot/mcs/class") eq 1 or die ("failed to chdir to class library directory\n");
+				system("make PROFILE=\"$aotProfile\"") eq 0 or die("failed to run make for profile $aotProfile\n");
+			}
+
 			chdir("$monoroot/mcs/class/Facades/netstandard") eq 1 or die ("failed to chdir to netstandard facade directory\n");
+			print(">>> Making the netstandard facades for net_4_x\n");
 			system("make") eq 0 or die("failed to run make netstandard facade for net_4_x profile\n");
 
 			if ($aotProfile ne "")
