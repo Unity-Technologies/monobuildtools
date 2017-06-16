@@ -387,6 +387,7 @@ if ($build)
 			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
 		}
 
+
 		if (!(-d "$automakeDir"))
 		{
 			my $automakeMakeFlags = "";
@@ -1291,6 +1292,20 @@ if ($build)
 
 		print("\n>>> Calling make\n");
 		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
+
+		if (!($disableMcs))
+		{
+			chdir("$monoroot/mcs/class/Facades/netstandard") eq 1 or die ("failed to chdir to netstandard facade directory\n");
+			system("make") eq 0 or die("failed to run make netstandard facade for net_4_x profile\n");
+
+			if ($aotProfile ne "")
+			{
+				# TODO by Mike : Fix
+				#system("PROFILE=$aotProfile make") eq 0 or die("failed to run make netstandard facade for $aotProfile profile\n");
+			}
+
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+		}
 
 		if ($isDesktopBuild)
 		{
