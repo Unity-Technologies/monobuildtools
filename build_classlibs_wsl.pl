@@ -18,6 +18,18 @@ my $skipMonoMake = 0;
 # The prefix hack probably isn't needed anymore.  Let's disable it by default and see how things go
 my $shortPrefix = 1;
 
+# This script should not be ran on windows, if it is, kindly switch over to wsl
+if ($^O eq "MSWin32")
+{
+	print(">>> Called from Windows.  Switching over to wsl\n");
+	my $monoRootInBash = `bash -c pwd`;
+	chomp $monoRootInBash;
+	print(">>> monoRootInBash = $monoRootInBash\n");
+	my $cmdForBash = "$monoRootInBash/external/buildscripts/build_classlibs_wsl.pl @ARGV";
+	system("bash", "-c", "\"perl $cmdForBash\"") eq 0 or die("\n");
+	exit 0;
+}
+
 GetOptions(
    "build=i"=>\$build,
    "clean=i"=>\$clean,
