@@ -1158,11 +1158,8 @@ if ($build)
 				print(">>> Linux SDK needs to be extracted\n");
 				system('mkdir', '-p', $depsSdkFinal);
 				system('tar', 'xaf', $depsSdkArchive, '-C', $depsSdkFinal) eq 0  or die ("failed to extract Linux SDK\n");
-			}
-
-			if (!(-f "$linuxSdkRoot/$schroot.conf"))
-			{
-				die("Something went wrong with the SDK extraction\n");
+				system('sudo', 'cp', '-R', "$depsSdkFinal/linux-sdk-$sdkVersion", '/etc/schroot');
+				system("sed 's,^directory=.*,directory=$depsSdkFinal/$schroot,' \"$depsSdkFinal/$schroot.conf\" | sudo tee /etc/schroot/chroot.d/$schroot.conf") eq 0 or die ("failed to deploy Linux SDK\n");
 			}
 
 			@commandPrefix = @linuxToolchain;
