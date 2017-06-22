@@ -3,8 +3,6 @@ use Cwd 'abs_path';
 use Getopt::Long;
 use File::Basename;
 use File::Path;
-use File::Path qw(make_path);
-use File::Copy;
 use lib ('external/buildscripts', "../../Tools/perl_lib","perl_lib", 'external/buildscripts/perl_lib');
 use Tools qw(InstallNameTool);
 
