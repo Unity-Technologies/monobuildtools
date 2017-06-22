@@ -1630,89 +1630,42 @@ if ($artifact)
 		# sources directory setup
 		print ">>> Copying mono sources needed for il2cpp\n";
 		system("mkdir -p $sourcesroot");
-		sub parseFile(@)
+
+		my $sourcesFile = "$monoroot/external/buildscripts/sources.txt";
+		open(SOURCE_FILE, $sourcesFile) or die "could not read sources file";
+		my @listOfSourceFilesLines = <SOURCE_FILE>;
+		close(SOURCE_FILE);
+		chomp(@listOfSourceFilesLines);
+
+		my $isPrivateFile = 0;
+		foreach my $sourcesLine(@listOfSourceFilesLines)
 		{
-			return map {s/\\/\//g; s/\" \/>//g ;s/.*\(MonoSourceLocation\)\///g; $_} @_;
-		}
-		sub createDirAndCopyAndReplace(@)
-		{
-			$fileToCopy = $_[0];
-			$destFile = $_[1];
-
-			#print "Copy $fileToCopy to $destFile\n";
-			make_path(dirname("$destFile"));
-			unlink($destFile);
-			copy("$fileToCopy", "$destFile") or die "$!";
-		}
-
-		sub getCompilationFromTargets(@)
-		{
-			my $targetFile = $_[0];
-			open(F, $targetFile) or die "could not open targets file $targetFile";
-			my @lines = <F>;
-			close(F);
-
-			my @CompFiles = parseFile (grep { $_ =~ "<ClCompile.*/>" } @lines);
-			my @IncFiles =  parseFile (grep { $_ =~ "<ClInclude.*/>" } @lines);
-
-			chomp(@CompFiles);
-			chomp(@IncFiles);
-
-			return (\@CompFiles, \@IncFiles);
-		}
-
-		sub copyInc(@)
-		{
-			foreach my $target(@_)
+			if($sourcesLine =~ /#.*/)
 			{
-				$fileToCopy = "$monoroot/$target";
-				$destFile = "$sourcesroot/$target";
+				next;
+			}
+			elsif($sourcesLine =~ /SOURCES:/ or $sourcesLine =~ /HEADERS:/ or $sourcesLine =~ /METADATA:/)
+			{
+				$isPrivateFile = 0;
+				next;
+			}
+			elsif($sourcesLine =~ /PRIVATE:/)
+			{
+				$isPrivateFile = 1;
+				next;
+			}
+
+			$fileToCopy = "$monoroot/$sourcesLine";
+			$destFile = "$sourcesroot/$sourcesLine";
+			if($isPrivateFile)
+			{
 				$destFile =~ s/(.*)\/(.*\.c)/$1\/private\/$2/g;
-				createDirAndCopyAndReplace($fileToCopy, $destFile);
 			}
+
+			$destDir = dirname("$destFile");
+			system("mkdir -p $destDir");
+			system("cp", "$fileToCopy", "$destFile");
 		}
-
-		sub copyComp(@)
-		{
-			foreach my $target(@_)
-			{
-				$fileToCopy = "$monoroot/$target";
-				$destFile = "$sourcesroot/$target";
-				createDirAndCopyAndReplace($fileToCopy, $destFile);
-			}
-		}
-
-		print "Copying mono eglib files\n";
-		my ($EglibCommonTargetsComp, $EglibCommonTargetsInc) = getCompilationFromTargets("$monoroot/msvc/eglib-common.targets");
-		my ($EglibUnityTargetsComp, $EglibUnityTargetsInc) = getCompilationFromTargets("$monoroot/msvc/eglib-unity.targets");
-		copyInc(@$EglibCommonTargetsInc, @$EglibUnityTargetsInc);
-		copyComp(@$EglibCommonTargetsComp, @$EglibUnityTargetsComp);
-
-		print "Copying mono utils files\n";
-		my ($LibMonoUtilsCommonTargetsComp, $LibMonoUtilsCommonTargetsInc) = getCompilationFromTargets("$monoroot/msvc/libmonoutils-common.targets");
-		my ($LibMonoUtilsUnityTargetsComp, $LibMonoUtilsUnityTargetsInc) = getCompilationFromTargets("$monoroot/msvc/libmonoutils-unity.targets");
-		copyInc(@$LibMonoUtilsCommonTargetsInc, @$LibMonoUtilsUnityTargetsInc);
-		copyComp(@$LibMonoUtilsCommonTargetsComp, @$LibMonoUtilsUnityTargetsComp);
-
-		print "Copying mono runtime files\n";
-
-		my ($LibMonoRuntimeCommonTargetsComp, $LibMonoRuntimeCommonTargetsInc) = getCompilationFromTargets("$monoroot/msvc/libmonoruntime-common.targets");
-		my ($LibMonoRuntimeUnityTargetsComp, $LibMonoRuntimeUnityTargetsInc) = getCompilationFromTargets("$monoroot/msvc/libmonoruntime-unity.targets");
-		copyInc(@$LibMonoRuntimeCommonTargetsInc, @$LibMonoRuntimeUnityTargetsInc);
-		copyComp(@$LibMonoRuntimeCommonTargetsComp, @$LibMonoRuntimeUnityTargetsComp);
-		#fixme copy asm
-		createDirAndCopyAndReplace("$monoroot/mono/utils/win64.asm", "$sourcesroot/mono/utils/win64.asm");
-
-		#Fixme parse the sgen vcxproj for this
-		print "Copying mono sgen files\n";
-		system("cp -R $monoroot/mono/sgen $sourcesroot/mono/sgen");
-		system("cp -R $monoroot/mono/metadata/mono-gc.h $sourcesroot/mono/metadata/mono-gc.h");
-
-		print "Copying mono arch files\n";
-		system("cp -R $monoroot/mono/arch $sourcesroot/mono/arch");
-
-		print "Copying mono cil files\n";
-		system("cp -R $monoroot/mono/cil $sourcesroot/mono/cil"); 
 
 		# monodistribution directory setup
 		print(">>> Creating monodistribution directory\n");
