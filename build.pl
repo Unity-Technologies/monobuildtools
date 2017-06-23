@@ -1625,12 +1625,13 @@ if ($artifact)
 			system("cp", "$monoprefix/bin/mono-2.0-sgen.pdb", "$embedDirArchDestination/mono-2.0-sgen.pdb") eq 0 or die ("failed copying mono-2.0-sgen.pdb\n");
 		}
 
+
 		# sources directory setup
 		print ">>> Copying mono sources needed for il2cpp\n";
-		system("mkdir -p $sourcesroot");
+		system("mkdir -p $sourcesroot") eq 0 or die "failed making directory $sourcesroot\n";
 
 		my $sourcesFile = "$monoroot/external/buildscripts/sources.txt";
-		open(SOURCE_FILE, $sourcesFile) or die "could not read sources file";
+		open(SOURCE_FILE, $sourcesFile) or die "failed opening $sourcesFile\n";
 		my @listOfSourceFilesLines = <SOURCE_FILE>;
 		close(SOURCE_FILE);
 		chomp(@listOfSourceFilesLines);
@@ -1661,8 +1662,8 @@ if ($artifact)
 			}
 
 			$destDir = dirname("$destFile");
-			system("mkdir -p $destDir");
-			system("cp", "$fileToCopy", "$destFile");
+			system("mkdir -p $destDir") eq 0 or die "failed making directory $sourcesroot\n";;
+			system("cp", "$fileToCopy", "$destFile") eq 0 or die "failed to copy $fileToCopy to $destFile\n"
 		}
 
 		# monodistribution directory setup

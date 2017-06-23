@@ -138,7 +138,6 @@ mono/utils/mono-digest.h
 mono/utils/mono-dl-fallback.h
 mono/utils/mono-dl-windows-internals.h
 mono/utils/mono-dl.h
-mono/utils/mono-dtrace.h
 mono/utils/mono-embed.h
 mono/utils/mono-error-internals.h
 mono/utils/mono-error.h
@@ -472,7 +471,6 @@ mono/sgen/sgen-hash-table.h
 mono/sgen/sgen-layout-stats.h
 mono/sgen/sgen-major-copy-object.h
 mono/sgen/sgen-marksweep-drain-gray-stack.h
-mono/sgen/sgen-marksweep-scan-object-concurrent.h
 mono/sgen/sgen-memory-governor.h
 mono/sgen/sgen-minor-copy-object.h
 mono/sgen/sgen-minor-scan-object.h
