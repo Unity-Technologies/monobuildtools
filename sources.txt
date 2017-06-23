@@ -108,6 +108,7 @@ mono/utils/os-event-win32.c
 mono/utils/os-event-unix.c
 mono/utils/unity-rand.c
 mono/utils/unity-time.c
+mono/utils/win64.asm
 HEADERS:
 mono/utils/checked-build.h
 mono/utils/dlmalloc.h
