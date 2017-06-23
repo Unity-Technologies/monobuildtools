@@ -135,6 +135,7 @@ mono/utils/mono-coop-semaphore.h
 mono/utils/mono-counters.h
 mono/utils/mono-digest.h
 mono/utils/mono-dl-fallback.h
+mono/utils/mono-dl-windows-internals.h
 mono/utils/mono-dl.h
 mono/utils/mono-dtrace.h
 mono/utils/mono-embed.h
@@ -151,6 +152,7 @@ mono/utils/mono-math.h
 mono/utils/mono-membar.h
 mono/utils/mono-memory-model.h
 mono/utils/mono-mmap-internals.h
+mono/utils/mono-mmap-windows-internals.h
 mono/utils/mono-mmap.h
 mono/utils/mono-networkinterfaces.h
 mono/utils/mono-once.h
@@ -311,6 +313,7 @@ mono/metadata/cil-coff.h
 mono/metadata/class-inlines.h
 mono/metadata/class-internals.h
 mono/metadata/class.h
+mono/metadata/cominterop-win32-internals.h
 mono/metadata/cominterop.h
 mono/metadata/console-io.h
 mono/metadata/coree-internals.h
@@ -342,12 +345,14 @@ mono/metadata/sgen-dynarray.h
 mono/sgen/gc-internal-agnostic.h
 mono/metadata/icall-def.h
 mono/metadata/icall-internals.h
+mono/metadata/icall-windows-internals.h
 mono/metadata/image-internals.h
 mono/metadata/image.h
 mono/metadata/loader.h
 mono/metadata/locales.h
 mono/metadata/lock-tracer.h
 mono/metadata/marshal-internals.h
+mono/metadata/marshal-windows-internals.h
 mono/metadata/marshal.h
 mono/metadata/mempool-internals.h
 mono/metadata/mempool.h
@@ -368,6 +373,7 @@ mono/metadata/mono-perfcounters-def.h
 mono/metadata/mono-perfcounters.h
 mono/metadata/mono-ptr-array.h
 mono/metadata/mono-route.h
+mono/metadata/mono-security-windows-internals.h
 mono/metadata/normalization-tables.h
 mono/metadata/number-formatter.h
 mono/metadata/object-internals.h
