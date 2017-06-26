@@ -17,6 +17,7 @@ my $buildscriptsdir = "$monoroot/external/buildscripts";
 my $addtoresultsdistdir = "$buildscriptsdir/add_to_build_results/monodistribution";
 my $buildsroot = "$monoroot/builds";
 my $includesroot = "$buildsroot/include";
+my $sourcesroot = "$buildsroot/source";
 my $distdir = "$buildsroot/monodistribution";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
@@ -1622,6 +1623,47 @@ if ($artifact)
 
 			system("cp", "$monoprefix/bin/mono-2.0-sgen.dll", "$embedDirArchDestination/mono-2.0-sgen.dll") eq 0 or die ("failed copying mono-2.0-sgen.dll\n");
 			system("cp", "$monoprefix/bin/mono-2.0-sgen.pdb", "$embedDirArchDestination/mono-2.0-sgen.pdb") eq 0 or die ("failed copying mono-2.0-sgen.pdb\n");
+		}
+
+
+		# sources directory setup
+		print ">>> Copying mono sources needed for il2cpp\n";
+		system("mkdir -p $sourcesroot") eq 0 or die "failed making directory $sourcesroot\n";
+
+		my $sourcesFile = "$monoroot/external/buildscripts/sources.txt";
+		open(SOURCE_FILE, $sourcesFile) or die "failed opening $sourcesFile\n";
+		my @listOfSourceFilesLines = <SOURCE_FILE>;
+		close(SOURCE_FILE);
+		chomp(@listOfSourceFilesLines);
+
+		my $isPrivateFile = 0;
+		foreach my $sourcesLine(@listOfSourceFilesLines)
+		{
+			if($sourcesLine =~ /#.*/)
+			{
+				next;
+			}
+			elsif($sourcesLine =~ /SOURCES:/ or $sourcesLine =~ /HEADERS:/ or $sourcesLine =~ /METADATA:/)
+			{
+				$isPrivateFile = 0;
+				next;
+			}
+			elsif($sourcesLine =~ /PRIVATE:/)
+			{
+				$isPrivateFile = 1;
+				next;
+			}
+
+			$fileToCopy = "$monoroot/$sourcesLine";
+			$destFile = "$sourcesroot/$sourcesLine";
+			if($isPrivateFile)
+			{
+				$destFile =~ s/(.*)\/(.*\.c)/$1\/private\/$2/g;
+			}
+
+			$destDir = dirname("$destFile");
+			system("mkdir -p $destDir") eq 0 or die "failed making directory $sourcesroot\n";;
+			system("cp", "$fileToCopy", "$destFile") eq 0 or die "failed to copy $fileToCopy to $destFile\n"
 		}
 
 		# monodistribution directory setup
