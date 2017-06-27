@@ -138,6 +138,7 @@ mono/utils/mono-digest.h
 mono/utils/mono-dl-fallback.h
 mono/utils/mono-dl-windows-internals.h
 mono/utils/mono-dl.h
+mono/utils/mono-dtrace.h
 mono/utils/mono-embed.h
 mono/utils/mono-error-internals.h
 mono/utils/mono-error.h
