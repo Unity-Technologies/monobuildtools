@@ -1348,6 +1348,14 @@ if ($build)
 		}
 		system(@makeCommand) eq 0 or die ("Failed to make\n");
 
+		if (!($disableMcs))
+		{
+			print(">>> Making the netstandard facades for net_4_x\n");
+			chdir("$monoroot/mcs/class/Facades/netstandard") eq 1 or die ("failed to chdir to netstandard facade directory\n");
+			system("make") eq 0 or die("failed to run make netstandard facade for net_4_x profile\n");
+			chdir("$monoroot") eq 1 or die ("failed to chdir to $monoroot\n");
+		}
+
 		if ($isDesktopBuild)
 		{
 			print("\n>>> Calling make install\n");
