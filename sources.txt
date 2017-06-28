@@ -35,8 +35,6 @@ eglib/src/glib.h
 eglib/src/gmodule.h
 eglib/src/sort.frag.h
 eglib/src/eglib-remap.h
-eglib/src/eglib-config.hw
-eglib/src/eglib-config.h
 eglib/src/unicode-data.h
 ####################
 #mono utils files
