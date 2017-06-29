@@ -10,6 +10,8 @@ my $buildScriptsRoot = "$monoroot/external/buildscripts";
 
 my $build = 1;
 my $clean = 1;
+my $mcsOnly = 0;
+my $skipMonoMake = 0;
 
 # Handy troubleshooting/niche options
 
@@ -19,6 +21,8 @@ my $shortPrefix = 1;
 GetOptions(
    "build=i"=>\$build,
    "clean=i"=>\$clean,
+   "mcsOnly=i"=>\$mcsOnly,
+   'skipmonomake=i'=>\$skipMonoMake,
    'shortprefix=i'=>\$shortPrefix,
 ) or die ("illegal cmdline options");
 
@@ -27,6 +31,8 @@ system(
 	"$buildScriptsRoot/build.pl",
 	"--build=$build",
 	"--clean=$clean",
+	"--mcsonly=$mcsOnly",
+	"--skipmonomake=$skipMonoMake",
 	"--artifact=1",
 	"--artifactscommon=1",
 	#"--aotprofile=mobile_static",
