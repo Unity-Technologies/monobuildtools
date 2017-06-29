@@ -47,6 +47,7 @@ mono/utils/lock-free-alloc.c
 mono/utils/lock-free-array-queue.c
 mono/utils/lock-free-queue.c
 mono/utils/mach-support-amd64.c
+mono/utils/mach-support-x86.c
 mono/utils/mach-support.c
 mono/utils/mono-codeman.c
 mono/utils/mono-conc-hashtable.c
