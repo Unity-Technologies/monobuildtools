@@ -258,9 +258,7 @@ if ($build)
 	if(!($disableMcs))
 	{
 		push @configureparams, "--with-unityjit=yes";
-
-		# TODO by Mike : Uncomment once ready
-		#push @configureparams, "--with-unityaot=yes";
+		push @configureparams, "--with-unityaot=yes";
 	}
 
 	if ($isDesktopBuild)
@@ -1412,7 +1410,7 @@ if ($build)
 	{
 		my @additionalProfiles = ();
 		push @additionalProfiles, "unityjit";
-		#push @additionalProfiles, "unityaot";
+		push @additionalProfiles, "unityaot";
 
 		foreach my $profileName(@additionalProfiles)
 		{
