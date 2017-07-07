@@ -77,6 +77,9 @@ my $shortPrefix=1;
 # Would be okay to turn on once the build scripts stabilize and you just want to rebuild code changes
 my $enableCacheFile=0;
 
+# Linux toolchain setup needs this
+my @commandPrefix = ();
+
 print(">>> Build All Args = @ARGV\n");
 
 GetOptions(
@@ -1123,6 +1126,48 @@ if ($build)
 	}
 	elsif($^O eq "linux")
 	{
+		if (!(-d $externalBuildDeps))
+		{
+			die("mono build deps are required and the directory was not found : $externalBuildDeps\n");
+		}
+
+		if($ENV{UNITY_THISISABUILDMACHINE} || $ENV{UNITY_USE_LINUX_SDK})
+		{
+			my $sdkVersion = '20170609';
+			my $schroot = "LinuxBuildEnvironment-$sdkVersion";
+			my @linuxToolchain = ('schroot', '-c', $schroot, '--');
+
+			print "\n";
+			print(">>> Linux SDK Version = $sdkVersion\n");
+
+			my $sdkName = "linux-sdk-$sdkVersion.tar.bz2";
+			my $depsSdkArchive = "$externalBuildDeps/$sdkName";
+			my $depsSdkFinal = "$externalBuildDeps/linux-sdk-$sdkVersion";
+
+			print(">>> Linux SDK Archive = $depsSdkArchive\n");
+			print(">>> Linux SDK Extraction Destination = $depsSdkFinal\n");
+			print("\n");
+
+			my $linuxSdkRoot = $depsSdkFinal;
+
+			if (-d $depsSdkFinal)
+			{
+				print(">>> Linux SDK already extracted\n");
+			}
+			else
+			{
+				print(">>> Linux SDK needs to be extracted\n");
+				system('mkdir', '-p', $depsSdkFinal);
+				system('tar', 'xaf', $depsSdkArchive, '-C', $depsSdkFinal) eq 0  or die ("failed to extract Linux SDK\n");
+				system('sudo', 'cp', '-R', "$depsSdkFinal/linux-sdk-$sdkVersion", '/etc/schroot');
+				system("sed 's,^directory=.*,directory=$depsSdkFinal/$schroot,' \"$depsSdkFinal/$schroot.conf\" | sudo tee /etc/schroot/chroot.d/$schroot.conf") eq 0 or die ("failed to deploy Linux SDK\n");
+			}
+
+			@commandPrefix = @linuxToolchain;
+			print(">>> Linux SDK Root = $linuxSdkRoot\n");
+			print(">>> Linux Toolchain Command Prefix = " . join(' ', @commandPrefix) . "\n");
+		}
+
 		push @configureparams, "--host=$monoHostArch-pc-linux-gnu";
 
 		push @configureparams, "--disable-parallel-mark";  #this causes crashes
@@ -1131,6 +1176,10 @@ if ($build)
 		if ($arch32)
 		{
 			$archflags = '-m32';
+		}
+		else
+		{
+			$archflags = '-fPIC';
 		}
 
 		if ($debug)
@@ -1214,25 +1263,25 @@ if ($build)
 	print ">>> PATH before Build = $ENV{PATH}\n\n";
 
 	print(">>> mcs Information : \n");
-	system("which", "mcs");
-	system("mcs", "--version");
+	system(@commandPrefix, ("which", "mcs"));
+	system(@commandPrefix, ("mcs", "--version"));
 	print("\n");
 
 	print ">>> Checking on some tools...\n";
-	system("which", "autoconf");
-	system("autoconf", "--version");
+	system(@commandPrefix, ("which", "autoconf"));
+	system(@commandPrefix, ("autoconf", "--version"));
 
-	system("which", "texi2dvi");
-	system("texi2dvi", "--version");
+	system(@commandPrefix, ("which", "texi2dvi"));
+	system(@commandPrefix, ("texi2dvi", "--version"));
 
-	system("which", "automake");
-	system("automake", "--version");
+	system(@commandPrefix, ("which", "automake"));
+	system(@commandPrefix, ("automake", "--version"));
 
-	system("which", "libtool");
-	system("libtool", "--version");
+	system(@commandPrefix, ("which", "libtool"));
+	system(@commandPrefix, ("libtool", "--version"));
 
-	system("which", "libtoolize");
-	system("libtoolize", "--version");
+	system(@commandPrefix, ("which", "libtoolize"));
+	system(@commandPrefix, ("libtoolize", "--version"));
 	print("\n");
 
 	print ">>> LIBTOOLIZE before Build = $ENV{LIBTOOLIZE}\n";
@@ -1248,17 +1297,17 @@ if ($build)
 			rmtree($monoprefix);
 
 			# Avoid "source directory already configured" ...
-			system('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status');
+			system(@commandPrefix, ('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status'));
 
 			print("\n>>> Calling autogen in mono\n");
 			print("\n");
 			print("\n>>> Configure parameters are : @configureparams\n");
 			print("\n");
 
-			system('./autogen.sh', @configureparams) eq 0 or die ('failing autogenning mono');
+			system(@commandPrefix, ('./autogen.sh', @configureparams)) eq 0 or die ('failing autogenning mono');
 
 			print("\n>>> Calling make clean in mono\n");
-			system("make","clean") eq 0 or die ("failed to make clean\n");
+			system(@commandPrefix, ("make","clean")) eq 0 or die ("failed to make clean\n");
 		}
 
 		# this step needs to run after configure
@@ -1291,12 +1340,18 @@ if ($build)
 
 
 		print("\n>>> Calling make\n");
-		system("make $mcs -j$jobs") eq 0 or die ('Failed to make\n');
+
+		my @makeCommand = (@commandPrefix, ('make', "-j$jobs"));
+		if($mcs ne '')
+		{
+			push(@makeCommand, $mcs);
+		}
+		system(@makeCommand) eq 0 or die ("Failed to make\n");
 
 		if ($isDesktopBuild)
 		{
 			print("\n>>> Calling make install\n");
-			system("make install") eq 0 or die ("Failed to make install\n");
+			system(@commandPrefix, ('make', 'install')) eq 0 or die ("Failed to make install\n");
 		}
 		else
 		{
@@ -1370,7 +1425,7 @@ if ($buildUsAndBoo)
 			system("ln -s $monoprefix/bin $monoprefix/bin-linux32");
 		}
 
-		system("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix") eq 0 or die ("Failed building Unity Script and Boo\n");
+		system(@commandPrefix, ("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix")) eq 0 or die ("Failed building Unity Script and Boo\n");
 
 		if ($aotProfile ne "")
 		{
