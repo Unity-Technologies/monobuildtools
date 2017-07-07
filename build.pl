@@ -17,6 +17,7 @@ my $buildscriptsdir = "$monoroot/external/buildscripts";
 my $addtoresultsdistdir = "$buildscriptsdir/add_to_build_results/monodistribution";
 my $buildsroot = "$monoroot/builds";
 my $includesroot = "$buildsroot/include";
+my $sourcesroot = "$buildsroot/source";
 my $distdir = "$buildsroot/monodistribution";
 my $buildMachine = $ENV{UNITY_THISISABUILDMACHINE};
 
@@ -657,7 +658,7 @@ if ($build)
 			die("mono build deps are required and the directory was not found : $externalBuildDeps\n");
 		}
 
-		my $ndkVersion = "r10e";
+		my $ndkVersion = "r13b";
 		my $isArmArch = 1;
 		my $toolchainName = "";
 		my $platformRootPostfix = "";
@@ -668,7 +669,7 @@ if ($build)
 		$isArmArch = 0 if ($androidArch eq "x86");
 
 		$ENV{ANDROID_PLATFORM} = "android-9";
-		$ENV{GCC_VERSION} = "4.8";
+		$ENV{GCC_VERSION} = "4.9";
 
 		if ($isArmArch)
 		{
@@ -706,15 +707,15 @@ if ($build)
 		my $ndkName = "";
 		if($^O eq "linux")
 		{
-			$ndkName = "android-ndk-$ndkVersion-linux-x86.bin";
+			$ndkName = "android-ndk-$ndkVersion-linux-x86_64.zip";
 		}
 		elsif($^O eq "darwin")
 		{
-			$ndkName = "android-ndk-$ndkVersion-darwin-x86_64.bin";
+			$ndkName = "android-ndk-$ndkVersion-darwin-x86_64.zip";
 		}
 		else
 		{
-			$ndkName = "android-ndk-$ndkVersion-windows-x86.exe";
+			$ndkName = "android-ndk-$ndkVersion-windows-x86.zip";
 		}
 
 		my $depsNdkArchive = "$externalBuildDeps/$ndkName";
@@ -895,7 +896,7 @@ if ($build)
 			my $kraitPatchRepo = "git://github.com/Unity-Technologies/krait-signal-handler.git";
 			if (-d "$kraitPatchPath")
 			{
-				print ">>> Krait patch repository already cloned"
+				print ">>> Krait patch repository already cloned\n";
 			}
 			else
 			{
@@ -1615,6 +1616,11 @@ if ($artifact)
 				print ">>> Copying $file\n";
 				system("cp", "$monoroot/mono/mini/.libs/$file","$embedDirArchDestination/$file") eq 0 or die ("failed copying $file\n");
 			}
+
+			print ">>> Copying static libraries for IL2CPP on mono\n";
+			system("cp", "$monoroot/mono/metadata/.libs/libmonoruntime-unity-il2cpp-bdwgc.a","$embedDirArchDestination/libmonoruntime-unity-il2cpp-bdwgc.a") eq 0 or die ("failed symlinking libmonoruntime-unity-il2cpp-bdwgc.a\n");
+			system("cp", "$monoroot/mono/utils/.libs/libmonoutils-unity-il2cpp.a","$embedDirArchDestination/libmonoutils-unity-il2cpp.a") eq 0 or die ("failed symlinking libmonoutils-unity-il2cpp.a\n");
+			system("cp", "$monoroot/eglib/src/.libs/libeglib-unity.a","$embedDirArchDestination/libeglib-unity.a") eq 0 or die ("failed symlinking libeglib-unity.a\n");
 		}
 		elsif ($tizen || $tizenEmulator)
 		{
@@ -1672,6 +1678,47 @@ if ($artifact)
 
 			system("cp", "$monoprefix/bin/mono-2.0-sgen.dll", "$embedDirArchDestination/mono-2.0-sgen.dll") eq 0 or die ("failed copying mono-2.0-sgen.dll\n");
 			system("cp", "$monoprefix/bin/mono-2.0-sgen.pdb", "$embedDirArchDestination/mono-2.0-sgen.pdb") eq 0 or die ("failed copying mono-2.0-sgen.pdb\n");
+		}
+
+
+		# sources directory setup
+		print ">>> Copying mono sources needed for il2cpp\n";
+		system("mkdir -p $sourcesroot") eq 0 or die "failed making directory $sourcesroot\n";
+
+		my $sourcesFile = "$monoroot/external/buildscripts/sources.txt";
+		open(SOURCE_FILE, $sourcesFile) or die "failed opening $sourcesFile\n";
+		my @listOfSourceFilesLines = <SOURCE_FILE>;
+		close(SOURCE_FILE);
+		chomp(@listOfSourceFilesLines);
+
+		my $isPrivateFile = 0;
+		foreach my $sourcesLine(@listOfSourceFilesLines)
+		{
+			if($sourcesLine =~ /#.*/)
+			{
+				next;
+			}
+			elsif($sourcesLine =~ /SOURCES:/ or $sourcesLine =~ /HEADERS:/ or $sourcesLine =~ /METADATA:/)
+			{
+				$isPrivateFile = 0;
+				next;
+			}
+			elsif($sourcesLine =~ /PRIVATE:/)
+			{
+				$isPrivateFile = 1;
+				next;
+			}
+
+			$fileToCopy = "$monoroot/$sourcesLine";
+			$destFile = "$sourcesroot/$sourcesLine";
+			if($isPrivateFile)
+			{
+				$destFile =~ s/(.*)\/(.*\.c)/$1\/private\/$2/g;
+			}
+
+			$destDir = dirname("$destFile");
+			system("mkdir -p $destDir") eq 0 or die "failed making directory $sourcesroot\n";;
+			system("cp", "$fileToCopy", "$destFile") eq 0 or die "failed to copy $fileToCopy to $destFile\n"
 		}
 
 		# monodistribution directory setup
