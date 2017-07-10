@@ -1412,8 +1412,12 @@ if ($build)
 		push @additionalProfiles, "unityjit";
 		push @additionalProfiles, "unityaot";
 
+		chdir("$monoroot/mcs");
 		foreach my $profileName(@additionalProfiles)
 		{
+			print(">>> Making profile : $profileName\n");
+			system("make", "PROFILE=$profileName") eq 0 or die ("Failed to make $profileName profile in mcs\n");
+
 			print(">>> Copying $profileName to prefix directory\n");
 			my $profileDestDir = "$monoprefix/lib/mono/$profileName";
 
@@ -1426,6 +1430,8 @@ if ($build)
 			system("cp $monoroot/mcs/class/lib/$profileName/*.dll $profileDestDir") eq 0 or die("Failed copying dlls from $monoroot/mcs/class/lib/$profileName to $profileDestDir\n");
 			system("cp $monoroot/mcs/class/lib/$profileName/Facades/*.dll $profileDestDir/Facades") eq 0 or die("Failed copying dlls from $monoroot/mcs/class/lib/$profileName/Facades to $profileDestDir/Facades\n");
 		}
+
+		chdir("$monoroot");
 	}
 }
 else
