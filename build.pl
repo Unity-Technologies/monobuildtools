@@ -1687,7 +1687,7 @@ if ($artifact)
 
 		# need to build some arm headers to package up for android
 		chdir("$monoroot/mono/arch/arm") eq 1 or die ("failed to chdir to mono/arch/arm directory\n");
-		system("make") eq 0 or die "failed to make arm files\n";
+		system(@commandPrefix, ("make")) eq 0 or die ("failed to make arm headers\n");
 		print(">>> Changing directory back to : $currentdir\n");
 		chdir("$currentdir") eq 1 or die ("failed to chdir to $currentdir\n");
 
