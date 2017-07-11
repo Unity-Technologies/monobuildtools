@@ -63,6 +63,7 @@ mono/utils/mono-internal-hash.c
 mono/utils/mono-io-portability.c
 mono/utils/mono-linked-list-set.c
 mono/utils/mono-logger.c
+mono/utils/mono-log-android.c
 mono/utils/mono-log-windows.c
 mono/utils/mono-log-darwin.c
 mono/utils/mono-log-posix.c
@@ -85,6 +86,7 @@ mono/utils/mono-property-hash.c
 mono/utils/mono-publib.c
 mono/utils/mono-sha1.c
 mono/utils/mono-stdlib.c
+mono/utils/mono-threads-android.c
 mono/utils/mono-threads-mach.c
 mono/utils/mono-threads-mach-helper.c
 mono/utils/mono-threads-posix.c
@@ -99,6 +101,7 @@ mono/utils/monobitset.c
 mono/utils/strenc.c
 mono/utils/atomic.c
 mono/utils/mono-hwcap.c
+mono/utils/mono-hwcap-arm.c
 mono/utils/mono-hwcap-x86.c
 mono/utils/bsearch.c
 mono/utils/memfuncs.c
@@ -291,6 +294,7 @@ mono/metadata/w32handle.c
 mono/metadata/w32mutex-win32.c
 mono/metadata/w32mutex-unix.c
 mono/metadata/w32process-unix-osx.c
+mono/metadata/w32process-unix-default.c
 mono/metadata/w32process-unix.c
 mono/metadata/w32process-win32.c
 mono/metadata/w32process.c
@@ -494,3 +498,15 @@ mono/cil/tables.def
 HEADERS:
 mono/arch/amd64/amd64-codegen.h
 mono/arch/x86/x86-codegen.h
+mono/arch/arm/arm-codegen.h
+mono/arch/arm/arm_dpimacros.h
+mono/arch/arm/arm-vfp-codegen.h
+mono/arch/arm/arm_vfpmacros.h
+####################
+#mono complex files
+####################
+SOURCES:
+support/libm/complex.c
+HEADERS:
+support/libm/complex.h
+support/libm/math_private.h
