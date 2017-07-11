@@ -1630,6 +1630,12 @@ if ($artifact)
 		print ">>> Copying mono sources needed for il2cpp\n";
 		system("mkdir -p $sourcesroot") eq 0 or die "failed making directory $sourcesroot\n";
 
+		# need to build some arm headers to package up for android
+		chdir("$monoroot/mono/arch/arm") eq 1 or die ("failed to chdir to mono/arch/arm directory\n");
+		system("make") eq 0 or die "failed to make arm files\n";
+		print(">>> Changing directory back to : $currentdir\n");
+		chdir("$currentdir") eq 1 or die ("failed to chdir to $currentdir\n");
+
 		my $sourcesFile = "$monoroot/external/buildscripts/sources.txt";
 		open(SOURCE_FILE, $sourcesFile) or die "failed opening $sourcesFile\n";
 		my @listOfSourceFilesLines = <SOURCE_FILE>;
