@@ -1418,8 +1418,8 @@ if ($build)
 			print(">>> Making profile : $profileName\n");
 			system("make", "PROFILE=$profileName") eq 0 or die ("Failed to make $profileName profile in mcs\n");
 
-			print(">>> Copying $profileName to prefix directory\n");
 			my $profileDestDir = "$monoprefix/lib/mono/$profileName";
+			print(">>> Copying $profileName to $profileDestDir directory\n");
 
 			print(">>> Cleaning $profileDestDir\n");
 			system("rm -rf $profileDestDir");
