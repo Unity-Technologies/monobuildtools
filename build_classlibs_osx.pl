@@ -29,8 +29,6 @@ system(
 	"--clean=$clean",
 	"--artifact=1",
 	"--artifactscommon=1",
-#	"--aotprofile=mobile_static",
-#	"--aotprofiledestname=unity_aot",
 	"--buildusandboo=1",
 	"--forcedefaultbuilddeps=1",
 	"--shortprefix=$shortPrefix") eq 0 or die ("Failed building mono\n");

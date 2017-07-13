@@ -47,8 +47,6 @@ system(
 	"--skipmonomake=$skipMonoMake",
 	"--artifact=1",
 	"--artifactscommon=1",
-	#"--aotprofile=mobile_static",
-	#"--aotprofiledestname=unity_aot",
 	"--buildusandboo=1",
 	"--forcedefaultbuilddeps=1",
 	"--windowssubsystemforlinux=1",
