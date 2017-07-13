@@ -39,6 +39,7 @@ my $test=0;
 my $artifact=0;
 my $debug=0;
 my $disableMcs=0;
+my $mcsOnly=0;
 my $buildUsAndBoo=0;
 my $artifactsCommon=0;
 my $artifactsRuntime=1;
@@ -62,9 +63,6 @@ my $iphoneSimulator=0;
 my $iphoneSimulatorArch="";
 my $tizen=0;
 my $tizenEmulator=0;
-my $aotProfile="";
-my $aotProfileDestName="";
-my $disableNormalProfile=0;
 my $windowsSubsystemForLinux=0;
 
 # Handy troubleshooting/niche options
@@ -91,6 +89,7 @@ GetOptions(
 	'artifactsruntime=i'=>\$artifactsRuntime,
 	'debug=i'=>\$debug,
 	'disablemcs=i'=>\$disableMcs,
+	'mcsonly=i'=>\$mcsOnly,
 	'buildusandboo=i'=>\$buildUsAndBoo,
 	'runtimetests=i'=>\$runRuntimeTests,
 	'classlibtests=i'=>\$runClasslibTests,
@@ -115,9 +114,6 @@ GetOptions(
 	'tizen=i'=>\$tizen,
 	'tizenemulator=i'=>\$tizenEmulator,
 	'windowssubsystemforlinux=i'=>\$windowsSubsystemForLinux,
-	'aotprofile=s'=>\$aotProfile,
-	'aotprofiledestname=s'=>\$aotProfileDestName,
-	'disablenormalprofile=i'=>\$disableNormalProfile,
 	'enablecachefile=i'=>\$enableCacheFile,
 ) or die ("illegal cmdline options");
 
@@ -133,13 +129,6 @@ chdir("$monoroot") eq 1 or die ("failed to chdir : $monoroot\n");
 
 print(">>> Mono Revision = $monoRevision\n");
 print(">>> Build Scripts Revision = $buildScriptsRevision\n");
-
-# Optionally, Let the mono profile name be decoupled from the final profile directory name we use in the final build
-# if a different name was not specified, use the same name as the mono profile
-if ($aotProfile ne "" && aotProfileDestName eq "")
-{
-	$aotProfileDestName = $aotProfile;
-}
 
 if ($androidArch ne "")
 {
@@ -266,20 +255,15 @@ if ($build)
 	push @configureparams, "--with-mcs-docs=no";
 	push @configureparams, "--prefix=$monoprefix";
 
+	if(!($disableMcs))
+	{
+		push @configureparams, "--with-unityjit=yes";
+		push @configureparams, "--with-unityaot=yes";
+	}
+
 	if ($isDesktopBuild)
 	{
 		push @configureparams, "--with-monotouch=no";
-	}
-
-	if ($aotProfile ne "")
-	{
-		push @configureparams, "--with-$aotProfile=yes";
-
-		if ($disableNormalProfile)
-		{
-			push @configureparams, "--with-profile4=no";
-			push @configureparams, "--with-profile4_x=no";
-		}
 	}
 
 	if ($existingMonoRootPath eq "")
@@ -1293,8 +1277,11 @@ if ($build)
 	{
 		if ($clean)
 		{
-			print(">>> Cleaning $monoprefix\n");
-			rmtree($monoprefix);
+			if (!($mcsOnly))
+			{
+				print(">>> Cleaning $monoprefix\n");
+				rmtree($monoprefix);
+			}
 
 			# Avoid "source directory already configured" ...
 			system(@commandPrefix, ('rm', '-f', 'config.status', 'eglib/config.status', 'libgc/config.status'));
@@ -1306,8 +1293,18 @@ if ($build)
 
 			system(@commandPrefix, ('./autogen.sh', @configureparams)) eq 0 or die ('failing autogenning mono');
 
-			print("\n>>> Calling make clean in mono\n");
-			system(@commandPrefix, ("make","clean")) eq 0 or die ("failed to make clean\n");
+			if ($mcsOnly)
+			{
+				print("\n>>> Calling make clean in mcs\n");
+				chdir("$monoroot/mcs");
+				system(@commandPrefix, ("make","clean")) eq 0 or die ("failed to make clean\n");
+				chdir("$monoroot");
+			}
+			else
+			{
+				print("\n>>> Calling make clean in mono\n");
+				system(@commandPrefix, ("make","clean")) eq 0 or die ("failed to make clean\n");
+			}
 		}
 
 		# this step needs to run after configure
@@ -1338,15 +1335,28 @@ if ($build)
 			system("arch", "-i386", "$iphoneCrossMonoBinToUse/mono", @monoArgs) eq 0 or die("failed to run MonoAotOffsetsDumper\n");
 		}
 
-
-		print("\n>>> Calling make\n");
-
-		my @makeCommand = (@commandPrefix, ('make', "-j$jobs"));
-		if($mcs ne '')
+		if ($mcsOnly)
 		{
-			push(@makeCommand, $mcs);
+			print("\n>>> Calling make in mcs\n");
+			chdir("$monoroot/mcs");
+			my @makeCommand = (@commandPrefix, ('make', "-j$jobs"));
+			if($mcs ne '')
+			{
+				push(@makeCommand, $mcs);
+			}
+			system(@makeCommand) eq 0 or die ("Failed to make\n");
+			chdir("$monoroot");
 		}
-		system(@makeCommand) eq 0 or die ("Failed to make\n");
+		else
+		{
+			print("\n>>> Calling make\n");
+			my @makeCommand = (@commandPrefix, ('make', "-j$jobs"));
+			if($mcs ne '')
+			{
+				push(@makeCommand, $mcs);
+			}
+			system(@makeCommand) eq 0 or die ("Failed to make\n");
+		}
 
 		if ($isDesktopBuild)
 		{
@@ -1396,16 +1406,32 @@ if ($build)
 		system("cp -R $addtoresultsdistdir/bin/. $monoprefix/bin/") eq 0 or die ("Failed copying $addtoresultsdistdir/bin to $monoprefix/bin\n");
 	}
 
-	if ($aotProfile ne "")
+	if(!($disableMcs))
 	{
-		print(">>> Copying $aotProfile to prefix directory named $aotProfileDestName\n");
-		system("cp -r $monoroot/mcs/class/lib/$aotProfile $monoprefix/lib/mono/$aotProfileDestName") eq 0 or die("Failed copying $monoroot/mcs/class/lib/$aotProfile to $monoprefix/lib/mono/$aotProfileDestName");
+		my @additionalProfiles = ();
+		push @additionalProfiles, "unityjit";
+		push @additionalProfiles, "unityaot";
 
-		# Clean up some stuff we don't need/want
-		system("rm -rf $monoprefix/lib/mono/$aotProfileDestName/.stamp");
-		system("rm -rf $monoprefix/lib/mono/$aotProfileDestName/bare");
-		system("rm -rf $monoprefix/lib/mono/$aotProfileDestName/plaincore");
-		system("rm -rf $monoprefix/lib/mono/$aotProfileDestName/secxml");
+		chdir("$monoroot/mcs");
+		foreach my $profileName(@additionalProfiles)
+		{
+			print(">>> Making profile : $profileName\n");
+			system("make", "PROFILE=$profileName") eq 0 or die ("Failed to make $profileName profile in mcs\n");
+
+			my $profileDestDir = "$monoprefix/lib/mono/$profileName";
+			print(">>> Copying $profileName to $profileDestDir directory\n");
+
+			print(">>> Cleaning $profileDestDir\n");
+			system("rm -rf $profileDestDir");
+
+			system("mkdir -p $profileDestDir") eq 0 or die("failed to make directory $profileDestDir\n");
+			system("mkdir -p $profileDestDir/Facades") eq 0 or die("failed to make directory $profileDestDir/Facades\n");
+
+			system("cp $monoroot/mcs/class/lib/$profileName/*.dll $profileDestDir") eq 0 or die("Failed copying dlls from $monoroot/mcs/class/lib/$profileName to $profileDestDir\n");
+			system("cp $monoroot/mcs/class/lib/$profileName/Facades/*.dll $profileDestDir/Facades") eq 0 or die("Failed copying dlls from $monoroot/mcs/class/lib/$profileName/Facades to $profileDestDir/Facades\n");
+		}
+
+		chdir("$monoroot");
 	}
 }
 else
@@ -1415,27 +1441,19 @@ else
 
 if ($buildUsAndBoo)
 {
-	if (not $disableNormalProfile)
+	print(">>> Building Unity Script and Boo...\n");
+	if($windowsSubsystemForLinux)
 	{
-		print(">>> Building Unity Script and Boo...\n");
-		if($windowsSubsystemForLinux)
-		{
-			#boo scripts expect a bin-platform folder, but we haven't built them that way
-			system("ln -s $monoprefix/bin $monoprefix/bin-linux64");
-			system("ln -s $monoprefix/bin $monoprefix/bin-linux32");
-		}
-
-		system(@commandPrefix, ("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix")) eq 0 or die ("Failed building Unity Script and Boo\n");
-
-		if ($aotProfile ne "")
-		{
-			# Copy the *.Lang .dll's from Boo & US for our AOT profile.  We will have to trust they are compatible.  Actually running the boo compiler against the AOT profile is not currently practical because
-			# it depends on things like TypeBuilder which are not in the AOT profile
-			print(">>> Copying Unity Script and Boo *.Lang.dll's from 4.5 profile to $aotProfileDestName profile...\n");
-			system("cp $monoprefix/lib/mono/4.5/Boo.Lang.dll $monoprefix/lib/mono/$aotProfileDestName/.") eq 0 or die("Failed copying Boo.Lang.dll\n");
-			system("cp $monoprefix/lib/mono/4.5/UnityScript.Lang.dll $monoprefix/lib/mono/$aotProfileDestName/.") eq 0 or die("Failed copying Boo.Lang.dll\n");
-		}
+		#boo scripts expect a bin-platform folder, but we haven't built them that way
+		system("ln -s $monoprefix/bin $monoprefix/bin-linux64");
+		system("ln -s $monoprefix/bin $monoprefix/bin-linux32");
 	}
+
+	system(@commandPrefix, ("perl", "$buildscriptsdir/build_us_and_boo.pl", "--monoprefix=$monoprefix")) eq 0 or die ("Failed building Unity Script and Boo\n");
+
+	print(">>> Copying Unity Script and Boo *.Lang.dll's from 4.5 profile to unityjit profile...\n");
+	system("cp $monoprefix/lib/mono/4.5/Boo.Lang.dll $monoprefix/lib/mono/unityjit/.") eq 0 or die("Failed copying Boo.Lang.dll\n");
+	system("cp $monoprefix/lib/mono/4.5/UnityScript.Lang.dll $monoprefix/lib/mono/unityjit/.") eq 0 or die("Failed copying Boo.Lang.dll\n");
 }
 else
 {
@@ -1460,42 +1478,45 @@ if ($artifact)
 
 		my $distdirlibmono = "$distdir/lib/mono";
 
-		if (not $disableNormalProfile)
+		print(">>> Cleaning $distdir/lib\n");
+		system("rm -rf $distdir/lib");
+
+		print(">>> Creating normal profile artifacts...\n");
+		system("cp -R $addtoresultsdistdir/. $distdir/") eq 0 or die ("Failed copying $addtoresultsdistdir to $distdir\n");
+
+		system("cp -r $monoprefix/lib/mono $distdir/lib");
+
+		if($^O ne 'darwin')
 		{
-			print(">>> Creating normal profile artifacts...\n");
-			system("cp -R $addtoresultsdistdir/. $distdir/") eq 0 or die ("Failed copying $addtoresultsdistdir to $distdir\n");
-
-			system("cp -r $monoprefix/lib/mono $distdir/lib");
-
-			if($^O ne 'darwin')
-			{
-				# On OSX we build a universal binary for 32-bit and 64-bit in the mono executable. The class library build
-				# only creates the 64-bit slice, so we don't want to end up with a single slice binary in the output.
-				# If we do, it will step on the universal binary produced but the OSX runtime build.
-				system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder\n");
-			}
-			system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder\n");
-
-			system("cp -R $externalBuildDeps/reference-assemblies/unity $distdirlibmono/unity");
-	 		system("cp -R $externalBuildDeps/reference-assemblies/unity_web $distdirlibmono/unity_web");
-
-	 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/2.0-api");
-	 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/2.0-api");
-
-	 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.0-api");
-	 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.0-api");
-
-			system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.5-api");
-			system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.5-api");
-
-			# now remove nunit from a couple places (but not all, we need some of them)
-			# linux tar is not happy these are removed(at least on wsl), so don't remove them for now
-			if(not $windowsSubsystemForLinux)
-			{
-				system("rm -rf $distdirlibmono/2.0/nunit*");
-				system("rm -rf $distdirlibmono/gac/nunit*");
-			}
+			# On OSX we build a universal binary for 32-bit and 64-bit in the mono executable. The class library build
+			# only creates the 64-bit slice, so we don't want to end up with a single slice binary in the output.
+			# If we do, it will step on the universal binary produced but the OSX runtime build.
+			system("cp -r $monoprefix/bin $distdir/") eq 0 or die ("failed copying bin folder\n");
 		}
+		system("cp -r $monoprefix/etc $distdir/") eq 0 or die("failed copying etc folder\n");
+
+		system("cp -R $externalBuildDeps/reference-assemblies/unity $distdirlibmono/unity");
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity_web $distdirlibmono/unity_web");
+
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/2.0-api");
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/2.0-api");
+
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.0-api");
+ 		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.0-api");
+
+		system("cp -R $externalBuildDeps/reference-assemblies/unity/Boo*.dll $distdirlibmono/4.5-api");
+		system("cp -R $externalBuildDeps/reference-assemblies/unity/UnityScript*.dll $distdirlibmono/4.5-api");
+
+		# now remove nunit from a couple places (but not all, we need some of them)
+		# linux tar is not happy these are removed(at least on wsl), so don't remove them for now
+		if(not $windowsSubsystemForLinux)
+		{
+			system("rm -rf $distdirlibmono/2.0/nunit*");
+			system("rm -rf $distdirlibmono/gac/nunit*");
+		}
+
+		# Remove a self referencing sym link that causes problems
+		system("rm -rf $monoprefix/bin/bin");
 
 		if (-f "$monoroot/ZippedClasslibs.tar.gz")
 		{
@@ -1519,17 +1540,10 @@ if ($artifact)
 	my $crossCompilerRoot = "$buildsroot/crosscompiler";
 	my $crossCompilerDestination = "";
 
-	my $versionsFileNamePostFix = "";
-
-	if ($aotProfile ne "" && $disableNormalProfile)
-	{
-		$versionsFileNamePostFix = "-profile-$aotProfileDestName";
-	}
-
 	if ($iphone)
 	{
 		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneArch";
-		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneArch$versionsFileNamePostFix.txt";
+		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneArch.txt";
 	}
 	elsif ($iphoneCross)
 	{
@@ -1539,41 +1553,41 @@ if ($artifact)
 	elsif ($iphoneSimulator)
 	{
 		$embedDirArchDestination = "$embedDirRoot/iphone/$iphoneSimulatorArch";
-		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneSimulatorArch$versionsFileNamePostFix.txt";
+		$versionsOutputFile = "$buildsroot/versions-iphone-$iphoneSimulatorArch.txt";
 	}
 	elsif ($android)
 	{
 		$embedDirArchDestination = "$embedDirRoot/android/$androidArch";
-		$versionsOutputFile = "$buildsroot/versions-android-$androidArch$versionsFileNamePostFix.txt";
+		$versionsOutputFile = "$buildsroot/versions-android-$androidArch.txt";
 	}
 	elsif ($tizenEmulator)
 	{
 		$embedDirArchDestination = "$embedDirRoot/tizenemulator/";
-		$versionsOutputFile = "$buildsroot/versions-tizenemulator$versionsFileNamePostFix.txt";
+		$versionsOutputFile = "$buildsroot/versions-tizenemulator.txt";
 	}
 	elsif ($tizen)
 	{
 		$embedDirArchDestination = "$embedDirRoot/tizen/";
-		$versionsOutputFile = "$buildsroot/versions-tizen$versionsFileNamePostFix.txt";
+		$versionsOutputFile = "$buildsroot/versions-tizen.txt";
 	}
 	elsif($^O eq "linux")
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/linux32" : "$embedDirRoot/linux64";
 		$distDirArchBin = $arch32 ? "$distdir/bin-linux32" : "$distdir/bin-linux64";
-		$versionsOutputFile = $arch32 ? "$buildsroot/versions-linux32$versionsFileNamePostFix.txt" : "$buildsroot/versions-linux64$versionsFileNamePostFix.txt";
+		$versionsOutputFile = $arch32 ? "$buildsroot/versions-linux32.txt" : "$buildsroot/versions-linux64.txt";
 	}
 	elsif($^O eq 'darwin')
 	{
 		# Note these tmp directories will get merged into a single 'osx' directory later by a parent script
 		$embedDirArchDestination = "$embedDirRoot/osx-tmp-$monoHostArch";
 		$distDirArchBin = "$distdir/bin-osx-tmp-$monoHostArch";
-		$versionsOutputFile = $arch32 ? "$buildsroot/versions-osx32$versionsFileNamePostFix.txt" : "$buildsroot/versions-osx64$versionsFileNamePostFix.txt";
+		$versionsOutputFile = $arch32 ? "$buildsroot/versions-osx32.txt" : "$buildsroot/versions-osx64.txt";
 	}
 	else
 	{
 		$embedDirArchDestination = $arch32 ? "$embedDirRoot/win32" : "$embedDirRoot/win64";
 		$distDirArchBin = $arch32 ? "$distdir/bin" : "$distdir/bin-x64";
-		$versionsOutputFile = $arch32 ? "$buildsroot/versions-win32$versionsFileNamePostFix.txt" : "$buildsroot/versions-win64$versionsFileNamePostFix.txt";
+		$versionsOutputFile = $arch32 ? "$buildsroot/versions-win32.txt" : "$buildsroot/versions-win64.txt";
 	}
 
 	# Make sure the directory for our architecture is clean before we copy stuff into it
