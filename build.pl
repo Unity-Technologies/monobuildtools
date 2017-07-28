@@ -1704,7 +1704,7 @@ if ($artifact)
 		print(">>> Changing directory back to : $currentdir\n");
 		chdir("$currentdir") eq 1 or die ("failed to chdir to $currentdir\n");
 
-		system("perl", "$buildscriptsdir/copy_il2cpp_sources.pl", "--monoroot=$monoroot", "--sourcesroot="$sourcesroot") eq 0 or die ('failed to copy the source files needed for il2cpp');
+		system("perl", "$buildscriptsdir/copy_il2cpp_sources.pl", "--monoroot=$monoroot", "--sourcesroot=$sourcesroot") eq 0 or die ('failed to copy the source files needed for il2cpp');
 
 		# monodistribution directory setup
 		print(">>> Creating monodistribution directory\n");
