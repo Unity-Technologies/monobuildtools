@@ -5,6 +5,7 @@
 
 use File::Basename;
 use File::Copy;
+use File::Path;
 use Getopt::Long;
 
 my $monoroot ="";
@@ -47,8 +48,9 @@ foreach my $sourcesLine(@listOfSourceFilesLines)
     }
 
     $destDir = dirname("$destFile");
-    unless(-e $destDir or mkdir $destDir) {
-        die "failed making directory $sourcesroot\n";
+    if (!-d $destDir)
+    {
+        mkpath($destDir) or die "failed making directory $destDir\n";
     }
 
     if (-e $fileToCopy)
