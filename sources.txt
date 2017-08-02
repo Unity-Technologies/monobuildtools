@@ -223,8 +223,6 @@ mono/metadata/dynamic-stream.c
 mono/metadata/environment.c
 mono/metadata/exception.c
 mono/metadata/file-mmap-unity.c
-mono/metadata/file-mmap-windows.c
-mono/metadata/file-mmap-posix.c
 mono/metadata/filewatcher.c
 mono/metadata/gc-stats.c
 mono/metadata/gc.c
